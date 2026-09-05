@@ -1,0 +1,1 @@
+ALTER TYPE "OrderSource" ADD VALUE 'PUBLIC_MENU';

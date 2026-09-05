@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id            String       @id @default(uuid()) @db.Uuid
+  email         String       @unique
+  passwordHash  String
+  active        Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  lastLoginAt   DateTime?
+  sessions      Session[]
+  createdOrders Order[]      @relation("OrderCreatedBy")
+  updatedOrders Order[]      @relation("OrderUpdatedBy")
+  orderEvents   OrderEvent[]
+}
+
+enum OrderStatus {
+  RECEIVED
+  CONFIRMED
+  IN_PREPARATION
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum OrderFulfillment {
+  PICKUP
+  DINE_IN
+}
+
+enum OrderSource {
+  WHATSAPP
+  PUBLIC_MENU
+}
+
+model Order {
+  id                 String           @id @default(uuid()) @db.Uuid
+  orderNumber        Int              @unique @default(autoincrement())
+  status             OrderStatus      @default(RECEIVED)
+  fulfillment        OrderFulfillment @default(PICKUP)
+  source             OrderSource      @default(WHATSAPP)
+  customerName       String?
+  customerPhone      String?
+  tableLabel         String?
+  notes              String?
+  subtotalAmount     Int
+  adjustmentAmount   Int              @default(0)
+  totalAmount        Int
+  cancellationReason String?
+  confirmedAt        DateTime?
+  closedAt           DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  clientReference    String?          @unique
+  createdById        String?          @db.Uuid
+  updatedById        String?          @db.Uuid
+  createdBy          AdminUser?       @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy          AdminUser?       @relation("OrderUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  lines              OrderLine[]
+  events             OrderEvent[]
+
+  @@index([status, createdAt])
+  @@index([customerPhone])
+}
+
+model OrderLine {
+  id                String   @id @default(uuid()) @db.Uuid
+  orderId           String   @db.Uuid
+  productId         String?  @db.Uuid
+  productName       String
+  unitPriceAmount   Int
+  quantity          Int
+  modifiersSnapshot Json?
+  note              String?
+  createdAt         DateTime @default(now())
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product           Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+}
+
+model OrderEvent {
+  id         String       @id @default(uuid()) @db.Uuid
+  sequence   BigInt       @unique @default(autoincrement())
+  orderId    String       @db.Uuid
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  reason     String?
+  createdAt  DateTime     @default(now())
+  actorId    String?      @db.Uuid
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  actor      AdminUser?   @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, createdAt])
+}
+
+model Session {
+  id        String    @id @default(uuid()) @db.Uuid
+  tokenHash String    @unique
+  userId    String    @db.Uuid
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  user      AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model MenuSettings {
+  id              String   @id @default(uuid()) @db.Uuid
+  businessName    String
+  whatsappPhone   String
+  whatsappMessage String
+  currency        String   @default("ARS")
+  acceptingOrders Boolean  @default(true)
+  statusMessage   String?
+  weeklySchedule  Json?
+  updatedAt       DateTime @updatedAt
+}
+
+model Category {
+  id         String    @id @default(uuid()) @db.Uuid
+  name       String
+  slug       String    @unique
+  active     Boolean   @default(true)
+  sortOrder  Int       @default(0)
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  products   Product[]
+
+  @@index([active, sortOrder])
+}
+
+model Product {
+  id             String                 @id @default(uuid()) @db.Uuid
+  categoryId     String                 @db.Uuid
+  name           String
+  description    String?
+  priceAmount    Int
+  imageKey       String?
+  imageAlt       String?
+  available      Boolean                @default(true)
+  published      Boolean                @default(true)
+  featured       Boolean                @default(false)
+  sortOrder      Int                    @default(0)
+  archivedAt     DateTime?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  category       Category               @relation(fields: [categoryId], references: [id])
+  modifierGroups ProductModifierGroup[]
+  orderLines     OrderLine[]
+
+  @@index([categoryId, published, sortOrder])
+  @@index([featured, published])
+}
+
+model ModifierGroup {
+  id        String                 @id @default(uuid()) @db.Uuid
+  name      String
+  active    Boolean                @default(true)
+  sortOrder Int                    @default(0)
+  options   ModifierOption[]
+  products  ProductModifierGroup[]
+}
+
+model ModifierOption {
+  id        String        @id @default(uuid()) @db.Uuid
+  groupId   String        @db.Uuid
+  name      String
+  sortOrder Int           @default(0)
+  active    Boolean       @default(true)
+  group     ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, active, sortOrder])
+}
+
+model ProductModifierGroup {
+  productId       String        @db.Uuid
+  modifierGroupId String        @db.Uuid
+  required        Boolean       @default(false)
+  minSelections   Int?
+  maxSelections   Int?
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+
+  @@id([productId, modifierGroupId])
+}
