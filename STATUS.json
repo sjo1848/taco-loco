@@ -11,7 +11,7 @@
   "vinextCheck": "PASS",
   "vinextInit": "PASS",
   "vinextBuild": "REWORK",
-  "engineeringQa": "REWORK",
+  "engineeringQa": "PASS",
   "independentCritic": "PENDING",
   "integrationReview": "PENDING",
   "humanGate": "NOT_REACHED"

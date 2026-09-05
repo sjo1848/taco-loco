@@ -1,0 +1,147 @@
+===== prisma-generate =====
+$ prisma generate
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v6.19.3) to ./node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client in 186ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+
+exit=0
+===== prisma-deploy =====
+$ prisma migrate deploy
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "taco_loco", schema "public" at "localhost:5433"
+
+6 migrations found in prisma/migrations
+
+Applying migration `20260808214908_init`
+Applying migration `20260809191538_c8_orders`
+Applying migration `20260810000000_c9_operating_context`
+Applying migration `20260810000001_c10_public_order_intent`
+Applying migration `20260810003000_c10_public_menu_source`
+Applying migration `20260812000000_add_order_event_sequence`
+
+┌─────────────────────────────────────────────────────────┐
+│  Update available 6.19.3 -> 8.0.0-rc.13                 │
+│                                                         │
+│  This is a major update - please follow the guide at    │
+│  https://pris.ly/d/major-version-upgrade                │
+│                                                         │
+│  Run the following to update                            │
+│    npm i --save-dev prisma@latest                       │
+│    npm i @prisma/client@latest                          │
+└─────────────────────────────────────────────────────────┘
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260808214908_init/
+    └─ migration.sql
+  └─ 20260809191538_c8_orders/
+    └─ migration.sql
+  └─ 20260810000000_c9_operating_context/
+    └─ migration.sql
+  └─ 20260810000001_c10_public_order_intent/
+    └─ migration.sql
+  └─ 20260810003000_c10_public_menu_source/
+    └─ migration.sql
+  └─ 20260812000000_add_order_event_sequence/
+    └─ migration.sql
+      
+All migrations have been successfully applied.
+exit=0
+===== prisma-seed =====
+$ tsx prisma/seed.ts
+exit=0
+===== lint =====
+$ eslint .
+exit=0
+===== typecheck =====
+$ tsc --noEmit
+exit=0
+===== tests =====
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/taco-loco/taco-loco[39m
+
+ [32m✓[39m src/modules/selection/model.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/modules/orders/model.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/modules/orders/service.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/modules/orders/confirmation.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/lib/request-security.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m src/modules/catalog/read-model.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/modules/media/image-policy.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/modules/settings/operating-context.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/modules/catalog/discovery.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/lib/env.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/modules/auth/crypto.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 152[2mms[22m[39m
+ [32m✓[39m src/modules/media/pipeline.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+[2m      Tests [22m [1m[32m30 passed[39m[22m[90m (30)[39m
+[2m   Start at [22m 12:11:31
+[2m   Duration [22m 1.38s[2m (transform 282ms, setup 0ms, import 1.30s, tests 322ms, environment 2ms)[22m
+
+exit=0
+===== next-build =====
+$ next build
+▲ Next.js 16.3.0 (Turbopack)
+✓ Running next.config.ts took 29ms
+⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 8.6s
+  Running TypeScript ...
+  Finished TypeScript in 4.8s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/15) ...
+  Generating static pages using 3 workers (3/15) 
+  Generating static pages using 3 workers (7/15) 
+  Generating static pages using 3 workers (11/15) 
+✓ Generating static pages using 3 workers (15/15) in 324ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /admin
+├ ƒ /admin/categories
+├ ○ /admin/login
+├ ƒ /admin/orders
+├ ƒ /admin/orders/[id]
+├ ƒ /admin/orders/new
+├ ƒ /admin/products/[id]
+├ ƒ /admin/products/new
+├ ƒ /admin/settings
+├ ƒ /api/admin/categories
+├ ƒ /api/admin/categories/[id]
+├ ƒ /api/admin/media/products
+├ ƒ /api/admin/orders
+├ ƒ /api/admin/orders/[id]
+├ ƒ /api/admin/orders/events
+├ ƒ /api/admin/products
+├ ƒ /api/admin/products/[id]
+├ ƒ /api/admin/products/[id]/availability
+├ ƒ /api/admin/settings
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/auth/session
+├ ƒ /api/health
+├ ƒ /api/media/products/[...key]
+├ ƒ /api/orders/intents
+├ ○ /icon.svg
+└ ƒ /menu
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+exit=0
