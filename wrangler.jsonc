@@ -20,6 +20,12 @@
   "images": {
     "binding": "IMAGES"
   },
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "taco-loco-media"
+    }
+  ],
   "kv_namespaces": [
     {
       "binding": "VINEXT_KV_CACHE",

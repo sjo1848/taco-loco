@@ -21,7 +21,14 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "sharp": path.resolve(__dirname, "empty-stub.js"),
+      "@/modules/media/pipeline": path.resolve(
+        import.meta.dirname,
+        "src/modules/media/pipeline.worker.ts",
+      ),
+      "@/modules/media/storage": path.resolve(
+        import.meta.dirname,
+        "src/modules/media/storage.worker.ts",
+      ),
     },
   },
 });
