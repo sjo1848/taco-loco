@@ -1,0 +1,16 @@
+{
+  "contract": "TL-CF-MIG-01",
+  "status": "ACTIVE",
+  "sourceRepo": "sjo1848/taco-loco-foodtrack",
+  "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
+  "targetBranch": "migration/cloudflare-native",
+  "stage": "BASELINE_PARITY",
+  "baselineParity": "CANDIDATE",
+  "baselineQa": "PENDING",
+  "vinextCheck": "PENDING",
+  "vinextBuild": "PENDING",
+  "engineeringQa": "PENDING",
+  "independentCritic": "PENDING",
+  "integrationReview": "PENDING",
+  "humanGate": "NOT_REACHED"
+}

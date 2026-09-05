@@ -71,13 +71,29 @@ async function main() {
   ];
   for (const association of selectableModifiers) {
     const product = await prisma.product.findFirstOrThrow({ where: { name: association.product, archivedAt: null } });
-    await prisma.productModifierGroup.upsert({ where: { productId_modifierGroupId: { productId: product.id, modifierGroupId: association.groupId } }, update: { required: true, minSelections: 1, maxSelections: 1 }, create: { productId: product.id, modifierGroupId: association.groupId, required: true, minSelections: 1, maxSelections: 1 } });
+    await prisma.productModifierGroup.upsert({
+      where: { productId_modifierGroupId: { productId: product.id, modifierGroupId: association.groupId } },
+      update: { required: true, minSelections: 1, maxSelections: 1 },
+      create: { productId: product.id, modifierGroupId: association.groupId, required: true, minSelections: 1, maxSelections: 1 },
+    });
   }
 
   const sampleOrder = await prisma.order.findFirst({ where: { notes: "Pedido de demostración C8" } });
   if (!sampleOrder) {
     const taco = await prisma.product.findFirstOrThrow({ where: { name: "Taco x2 común", archivedAt: null } });
-    const order = await prisma.order.create({ data: { status: "RECEIVED", fulfillment: "PICKUP", customerName: "Cliente demo", customerPhone: "2615956912", notes: "Pedido de demostración C8", subtotalAmount: taco.priceAmount, totalAmount: taco.priceAmount, createdById: admin.id, lines: { create: [{ productId: taco.id, productName: taco.name, unitPriceAmount: taco.priceAmount, quantity: 1, modifiersSnapshot: [] }] } } });
+    const order = await prisma.order.create({
+      data: {
+        status: "RECEIVED",
+        fulfillment: "PICKUP",
+        customerName: "Cliente demo",
+        customerPhone: "2615956912",
+        notes: "Pedido de demostración C8",
+        subtotalAmount: taco.priceAmount,
+        totalAmount: taco.priceAmount,
+        createdById: admin.id,
+        lines: { create: [{ productId: taco.id, productName: taco.name, unitPriceAmount: taco.priceAmount, quantity: 1, modifiersSnapshot: [] }] },
+      },
+    });
     await prisma.orderEvent.create({ data: { orderId: order.id, toStatus: "RECEIVED", actorId: admin.id, reason: "Pedido inicial de demostración" } });
   }
 }

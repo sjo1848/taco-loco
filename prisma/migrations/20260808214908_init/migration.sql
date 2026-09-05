@@ -100,17 +100,44 @@ CREATE TABLE "ProductModifierGroup" (
     CONSTRAINT "ProductModifierGroup_pkey" PRIMARY KEY ("productId","modifierGroupId")
 );
 
+-- CreateIndex
 CREATE UNIQUE INDEX "AdminUser_email_key" ON "AdminUser"("email");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Session_tokenHash_key" ON "Session"("tokenHash");
+
+-- CreateIndex
 CREATE INDEX "Session_userId_idx" ON "Session"("userId");
+
+-- CreateIndex
 CREATE INDEX "Session_expiresAt_idx" ON "Session"("expiresAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Category_slug_key" ON "Category"("slug");
+
+-- CreateIndex
 CREATE INDEX "Category_active_sortOrder_idx" ON "Category"("active", "sortOrder");
+
+-- CreateIndex
 CREATE INDEX "Product_categoryId_published_sortOrder_idx" ON "Product"("categoryId", "published", "sortOrder");
+
+-- CreateIndex
 CREATE INDEX "Product_featured_published_idx" ON "Product"("featured", "published");
+
+-- CreateIndex
 CREATE INDEX "ModifierOption_groupId_active_sortOrder_idx" ON "ModifierOption"("groupId", "active", "sortOrder");
+
+-- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "AdminUser"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Product" ADD CONSTRAINT "Product_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "ModifierOption" ADD CONSTRAINT "ModifierOption_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "ModifierGroup"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "ProductModifierGroup" ADD CONSTRAINT "ProductModifierGroup_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "ProductModifierGroup" ADD CONSTRAINT "ProductModifierGroup_modifierGroupId_fkey" FOREIGN KEY ("modifierGroupId") REFERENCES "ModifierGroup"("id") ON DELETE CASCADE ON UPDATE CASCADE;
