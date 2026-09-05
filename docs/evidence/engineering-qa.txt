@@ -1,88 +1,95 @@
 ===== pnpm lint =====
-✓ Lockfile passes supply-chain policies (verified 2s ago)
-Lockfile is up to date, resolution step is skipped
-Already up to date
+$ eslint .
 
-[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: workerd@1.20260903.1
+/home/runner/work/taco-loco/taco-loco/target/dist/server/vinext-client-assets.js
+  1:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
 
-Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
-[ERROR] Command failed with exit code 1: /opt/hostedtoolcache/node/22.13.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
+✖ 1 problem (0 errors, 1 warning)
 
-pnpm: Command failed with exit code 1: /opt/hostedtoolcache/node/22.13.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
-    at getFinalError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:88127:14)
-    at makeError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:90434:21)
-    at getSyncResult (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92278:10)
-    at spawnSubprocessSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92238:14)
-    at execaCoreSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92168:23)
-    at callBoundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94696:23)
-    at boundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94673:49)
-    at sync2 (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94832:10)
-    at runPnpmCli (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:248744:5)
-    at runDepsStatusCheck (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:250510:7)
-exit=1
+exit=0
 ===== pnpm typecheck =====
-✓ Lockfile passes supply-chain policies (verified 4s ago)
-Lockfile is up to date, resolution step is skipped
-Already up to date
-
-[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: workerd@1.20260903.1
-
-Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
-[ERROR] Command failed with exit code 1: /opt/hostedtoolcache/node/22.13.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
-
-pnpm: Command failed with exit code 1: /opt/hostedtoolcache/node/22.13.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
-    at getFinalError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:88127:14)
-    at makeError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:90434:21)
-    at getSyncResult (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92278:10)
-    at spawnSubprocessSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92238:14)
-    at execaCoreSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92168:23)
-    at callBoundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94696:23)
-    at boundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94673:49)
-    at sync2 (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94832:10)
-    at runPnpmCli (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:248744:5)
-    at runDepsStatusCheck (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:250510:7)
-exit=1
+$ tsc --noEmit
+.next/types/validator.ts(5,15): error TS2305: Module '"./routes.js"' has no exported member 'AppRoutes'.
+.next/types/validator.ts(5,26): error TS2305: Module '"./routes.js"' has no exported member 'LayoutRoutes'.
+.next/types/validator.ts(5,40): error TS2305: Module '"./routes.js"' has no exported member 'ParamMap'.
+.next/types/validator.ts(5,50): error TS2305: Module '"./routes.js"' has no exported member 'AppRouteHandlerRoutes'.
+[ELIFECYCLE] Command failed with exit code 2.
+exit=2
 ===== pnpm test =====
-✓ Lockfile passes supply-chain policies (verified 5s ago)
-Lockfile is up to date, resolution step is skipped
-Already up to date
+$ vitest run
 
-[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: workerd@1.20260903.1
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/taco-loco/taco-loco/target[39m
 
-Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
-[ERROR] Command failed with exit code 1: /opt/hostedtoolcache/node/22.13.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
+ [32m✓[39m src/lib/request-security.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/modules/settings/operating-context.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/modules/auth/crypto.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 150[2mms[22m[39m
+ [32m✓[39m src/modules/orders/confirmation.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/modules/catalog/read-model.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/modules/orders/service.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/modules/orders/model.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/modules/selection/model.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/modules/media/pipeline.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/modules/catalog/discovery.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/lib/env.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
 
-pnpm: Command failed with exit code 1: /opt/hostedtoolcache/node/22.13.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
-    at getFinalError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:88127:14)
-    at makeError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:90434:21)
-    at getSyncResult (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92278:10)
-    at spawnSubprocessSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92238:14)
-    at execaCoreSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92168:23)
-    at callBoundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94696:23)
-    at boundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94673:49)
-    at sync2 (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94832:10)
-    at runPnpmCli (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:248744:5)
-    at runDepsStatusCheck (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:250510:7)
-exit=1
+[2m Test Files [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+[2m      Tests [22m [1m[32m28 passed[39m[22m[90m (28)[39m
+[2m   Start at [22m 06:56:03
+[2m   Duration [22m 920ms[2m (transform 209ms, setup 0ms, import 956ms, tests 273ms, environment 1ms)[22m
+
+exit=0
 ===== pnpm build =====
-✓ Lockfile passes supply-chain policies (verified 7s ago)
-Lockfile is up to date, resolution step is skipped
-Already up to date
+$ next build
+▲ Next.js 16.3.0 (Turbopack)
+✓ Running next.config.ts took 23ms
 
-[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: workerd@1.20260903.1
+  Creating an optimized production build ...
+✓ Compiled successfully in 162ms
+  Running TypeScript ...
+  Finished TypeScript in 1908ms ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/15) ...
+  Generating static pages using 3 workers (3/15) 
+  Generating static pages using 3 workers (7/15) 
+  Generating static pages using 3 workers (11/15) 
+✓ Generating static pages using 3 workers (15/15) in 207ms
+  Finalizing page optimization ...
 
-Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
-[ERROR] Command failed with exit code 1: /opt/hostedtoolcache/node/22.13.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /admin
+├ ƒ /admin/categories
+├ ○ /admin/login
+├ ƒ /admin/orders
+├ ƒ /admin/orders/[id]
+├ ƒ /admin/orders/new
+├ ƒ /admin/products/[id]
+├ ƒ /admin/products/new
+├ ƒ /admin/settings
+├ ƒ /api/admin/categories
+├ ƒ /api/admin/categories/[id]
+├ ƒ /api/admin/media/products
+├ ƒ /api/admin/orders
+├ ƒ /api/admin/orders/[id]
+├ ƒ /api/admin/orders/events
+├ ƒ /api/admin/products
+├ ƒ /api/admin/products/[id]
+├ ƒ /api/admin/products/[id]/availability
+├ ƒ /api/admin/settings
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/auth/session
+├ ƒ /api/health
+├ ƒ /api/media/products/[...key]
+├ ƒ /api/orders/intents
+├ ○ /icon.svg
+└ ƒ /menu
 
-pnpm: Command failed with exit code 1: /opt/hostedtoolcache/node/22.13.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
-    at getFinalError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:88127:14)
-    at makeError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:90434:21)
-    at getSyncResult (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92278:10)
-    at spawnSubprocessSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92238:14)
-    at execaCoreSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92168:23)
-    at callBoundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94696:23)
-    at boundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94673:49)
-    at sync2 (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94832:10)
-    at runPnpmCli (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:248744:5)
-    at runDepsStatusCheck (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:250510:7)
-exit=1
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+exit=0
