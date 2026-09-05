@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: taco_loco
+          POSTGRES_USER: taco_loco
+          POSTGRES_PASSWORD: taco_loco_ci
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U taco_loco -d taco_loco"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://taco_loco:taco_loco_ci@localhost:5433/taco_loco?schema=public
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: change-me-in-development
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.15.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm db:deploy
+      - run: pnpm db:seed
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm audit --audit-level=high
+      - run: pnpm build

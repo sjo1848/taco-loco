@@ -1,0 +1,17 @@
+node_modules/
+.next/
+.playwright-cli/
+*.tsbuildinfo
+taco-loco-ui.pen
+out/
+.env
+.env.*
+!.env.example
+coverage/
+src/generated/
+*.log
+.local-media/
+prisma/*.db
+prisma/*.db-journal
+.wrangler/
+.dev.vars
