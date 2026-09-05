@@ -1,4 +1,3 @@
 # Migration status
-
-Durable migration authority lives in `STATE.md`, `STATUS.json`, `INVARIANTS.md`, `docs/contracts/`, and `docs/evidence/`.
-The historical source repository remains read-only.
+Durable authority: `STATE.md`, `STATUS.json`, `INVARIANTS.md`, `docs/contracts/`, `docs/evidence/`.
+Historical source remains read-only. Control-plane workflow remains on `main`.
