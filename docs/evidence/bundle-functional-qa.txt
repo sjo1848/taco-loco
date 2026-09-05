@@ -2,11 +2,11 @@
 $ prisma generate
 Prisma schema loaded from prisma/schema.prisma
 
-✔ Generated Prisma Client (v6.19.3) to ./node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client in 186ms
+✔ Generated Prisma Client (v6.19.3) to ./node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client in 286ms
 
 Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
 
-Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
 
 exit=0
 ===== prisma-deploy =====
@@ -65,29 +65,29 @@ $ vitest run
 
 [1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/taco-loco/taco-loco[39m
 
- [32m✓[39m src/modules/selection/model.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 12[2mms[22m[39m
- [32m✓[39m src/modules/orders/model.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 13[2mms[22m[39m
- [32m✓[39m src/modules/orders/service.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
- [32m✓[39m src/modules/orders/confirmation.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 29[2mms[22m[39m
- [32m✓[39m src/lib/request-security.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 27[2mms[22m[39m
- [32m✓[39m src/modules/catalog/read-model.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 29[2mms[22m[39m
- [32m✓[39m src/modules/media/image-policy.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m src/modules/settings/operating-context.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 22[2mms[22m[39m
- [32m✓[39m src/modules/catalog/discovery.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m src/lib/env.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m src/modules/auth/crypto.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 152[2mms[22m[39m
+ [32m✓[39m src/modules/selection/model.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/modules/orders/model.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/modules/orders/service.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/modules/orders/confirmation.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/lib/request-security.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/modules/catalog/read-model.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m src/modules/settings/operating-context.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/modules/media/image-policy.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/modules/catalog/discovery.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/lib/env.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/modules/auth/crypto.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 162[2mms[22m[39m
  [32m✓[39m src/modules/media/pipeline.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 11[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m12 passed[39m[22m[90m (12)[39m
 [2m      Tests [22m [1m[32m30 passed[39m[22m[90m (30)[39m
-[2m   Start at [22m 12:11:31
-[2m   Duration [22m 1.38s[2m (transform 282ms, setup 0ms, import 1.30s, tests 322ms, environment 2ms)[22m
+[2m   Start at [22m 12:24:54
+[2m   Duration [22m 1.24s[2m (transform 292ms, setup 0ms, import 1.20s, tests 319ms, environment 1ms)[22m
 
 exit=0
 ===== next-build =====
 $ next build
 ▲ Next.js 16.3.0 (Turbopack)
-✓ Running next.config.ts took 29ms
+✓ Running next.config.ts took 28ms
 ⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
 Attention: Next.js now collects completely anonymous telemetry regarding usage.
 This information is used to shape Next.js' roadmap and prioritize features.
@@ -96,15 +96,15 @@ https://nextjs.org/telemetry
 
 
   Creating an optimized production build ...
-✓ Compiled successfully in 8.6s
+✓ Compiled successfully in 8.9s
   Running TypeScript ...
-  Finished TypeScript in 4.8s ...
+  Finished TypeScript in 4.5s ...
   Collecting page data using 3 workers ...
   Generating static pages using 3 workers (0/15) ...
   Generating static pages using 3 workers (3/15) 
   Generating static pages using 3 workers (7/15) 
   Generating static pages using 3 workers (11/15) 
-✓ Generating static pages using 3 workers (15/15) in 324ms
+✓ Generating static pages using 3 workers (15/15) in 322ms
   Finalizing page optimization ...
 
 Route (app)
