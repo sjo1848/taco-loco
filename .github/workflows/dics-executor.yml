@@ -38,6 +38,7 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'issue_comment' &&
        github.event.issue.pull_request == null &&
+       github.event.issue.title == 'DICS Control Plane' &&
        startsWith(github.event.comment.body, '/dics '))
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -92,12 +93,15 @@ jobs:
             *) echo "Unauthorized author association: $association" >&2; exit 3 ;;
           esac
 
-      - name: Checkout control plane
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          path: control
-          persist-credentials: false
+      - name: Ensure DICS control-plane issue
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'DICS Control Plane in:title' --json number --jq '.[0].number // empty')"
+          if [[ -z "$existing" ]]; then
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "DICS Control Plane" --body $'Control channel for the Taco Loco migration executor.\n\nAccepted commands: `/dics baseline`, `/dics qa`, `/dics vinext`, and `/dics patch64` followed by a base64-encoded unified diff. Repository code mutations are applied by GitHub Actions.'
+          fi
 
       - name: Checkout migration target
         uses: actions/checkout@v4
@@ -128,56 +132,7 @@ jobs:
             cp "source/$file" "target/$file"
           done
           node -e 'const fs=require("fs");const p="target/package.json";const j=JSON.parse(fs.readFileSync(p,"utf8"));j.name="taco-loco";fs.writeFileSync(p,JSON.stringify(j,null,2)+"\n")'
-          mkdir -p target/.github/workflows target/docs/contracts target/docs/evidence
-          cp control/.github/workflows/dics-executor.yml target/.github/workflows/dics-executor.yml
-          cat > target/.github/workflows/ci.yml <<'YAML'
-          name: CI
-          on:
-            pull_request:
-            push:
-              branches: [main, migration/cloudflare-native]
-          jobs:
-            quality:
-              runs-on: ubuntu-latest
-              timeout-minutes: 20
-              services:
-                postgres:
-                  image: postgres:16-alpine
-                  env:
-                    POSTGRES_DB: taco_loco
-                    POSTGRES_USER: taco_loco
-                    POSTGRES_PASSWORD: taco_loco_ci
-                  ports:
-                    - 5433:5432
-                  options: >-
-                    --health-cmd "pg_isready -U taco_loco -d taco_loco"
-                    --health-interval 5s
-                    --health-timeout 5s
-                    --health-retries 10
-              env:
-                DATABASE_URL: postgresql://taco_loco:taco_loco_ci@localhost:5433/taco_loco?schema=public
-                ADMIN_EMAIL: admin@example.com
-                ADMIN_PASSWORD: change-me-in-development
-              steps:
-                - uses: actions/checkout@v4
-                - uses: pnpm/action-setup@v4
-                  with:
-                    version: 11.15.1
-                - uses: actions/setup-node@v4
-                  with:
-                    node-version: 22.13.0
-                    cache: pnpm
-                - run: pnpm install --frozen-lockfile
-                - run: pnpm db:generate
-                - run: pnpm db:deploy
-                - run: pnpm db:seed
-                - run: pnpm lint
-                - run: pnpm typecheck
-                - run: pnpm test
-                - run: pnpm audit --audit-level=high
-                - run: pnpm build
-          YAML
-          sed -i 's/^          //' target/.github/workflows/ci.yml
+          mkdir -p target/docs/contracts target/docs/evidence
           cat > target/INVARIANTS.md <<EOF
           # Taco Loco migration invariants
 
@@ -274,7 +229,7 @@ jobs:
           set -euo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -A
+          git add -A -- ':!.github/workflows'
           if ! git diff --cached --quiet; then
             git commit -m "chore: complete frozen baseline parity"
             git push origin HEAD:$TARGET_BRANCH
@@ -340,7 +295,8 @@ jobs:
       - name: Initialize Cloudflare vinext path
         if: >-
           (steps.command.outputs.action == 'baseline' || steps.command.outputs.action == 'vinext') &&
-          steps.qa.outputs.failures == '0'
+          steps.qa.outputs.failures == '0' &&
+          steps.vinext_check.outputs.rc == '0'
         id: vinext_init
         shell: bash
         working-directory: target
@@ -355,6 +311,7 @@ jobs:
         if: >-
           (steps.command.outputs.action == 'baseline' || steps.command.outputs.action == 'vinext') &&
           steps.qa.outputs.failures == '0' &&
+          steps.vinext_check.outputs.rc == '0' &&
           steps.vinext_init.outputs.rc == '0'
         id: vinext_build
         shell: bash
@@ -414,7 +371,7 @@ jobs:
             s.baselineQa = 'REWORK';
             s.stage = 'BASELINE_QA_REWORK';
           }
-          if (check && check !== 'not-run') s.vinextCheck = check === '0' ? 'PASS' : 'REVIEW';
+          if (check && check !== 'not-run') s.vinextCheck = check === '0' ? 'PASS' : 'REWORK';
           if (init && init !== 'not-run') s.vinextInit = init === '0' ? 'PASS' : 'REWORK';
           if (build && build !== 'not-run') {
             s.vinextBuild = build === '0' ? 'PASS' : 'REWORK';
@@ -425,25 +382,15 @@ jobs:
           NODE
 
       - name: Commit executor results
+        if: steps.command.outputs.action != 'patch64' || steps.qa.outputs.failures == '0'
         shell: bash
         working-directory: target
         run: |
           set -euo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -A
+          git add -A -- ':!.github/workflows'
           if ! git diff --cached --quiet; then
             git commit -m "chore: record DICS migration evidence"
             git push origin HEAD:$TARGET_BRANCH
-          fi
-
-      - name: Ensure DICS control-plane issue
-        if: github.event_name == 'push'
-        shell: bash
-        working-directory: target
-        run: |
-          set -euo pipefail
-          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'DICS Control Plane in:title' --json number --jq '.[0].number // empty')"
-          if [[ -z "$existing" ]]; then
-            gh issue create --repo "$GITHUB_REPOSITORY" --title "DICS Control Plane" --body $'Control channel for the Taco Loco migration executor.\n\nAccepted commands are `/dics baseline`, `/dics qa`, `/dics vinext`, and `/dics patch64` followed by a base64-encoded unified diff. Code mutations are applied by GitHub Actions, not by direct repository API writes.'
           fi
