@@ -1,0 +1,449 @@
+name: DICS Executor
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/dics-executor.yml
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: DICS action
+        required: true
+        default: qa
+        type: choice
+        options: [baseline, qa, vinext]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: read
+  actions: read
+
+concurrency:
+  group: dics-taco-loco
+  cancel-in-progress: false
+
+env:
+  SOURCE_REPO: sjo1848/taco-loco-foodtrack
+  SOURCE_SHA: a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48
+  TARGET_BRANCH: migration/cloudflare-native
+
+jobs:
+  execute:
+    if: >-
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request == null &&
+       startsWith(github.event.comment.body, '/dics '))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: taco_loco
+          POSTGRES_USER: taco_loco
+          POSTGRES_PASSWORD: taco_loco_ci
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U taco_loco -d taco_loco"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://taco_loco:taco_loco_ci@localhost:5433/taco_loco?schema=public
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: change-me-in-development
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Resolve DICS action
+        id: command
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            action=baseline
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            action="${{ inputs.action }}"
+          else
+            body="$(jq -r '.comment.body' "$GITHUB_EVENT_PATH")"
+            action="$(printf '%s\n' "$body" | head -n1 | sed -E 's#^/dics[[:space:]]+([^[:space:]]+).*#\1#')"
+          fi
+          case "$action" in
+            baseline|qa|vinext|patch64) ;;
+            *) echo "Unsupported DICS action: $action" >&2; exit 2 ;;
+          esac
+          echo "action=$action" >> "$GITHUB_OUTPUT"
+
+      - name: Authorize control-plane comment
+        if: github.event_name == 'issue_comment'
+        shell: bash
+        run: |
+          set -euo pipefail
+          association="$(jq -r '.comment.author_association' "$GITHUB_EVENT_PATH")"
+          case "$association" in
+            OWNER|MEMBER|COLLABORATOR) ;;
+            *) echo "Unauthorized author association: $association" >&2; exit 3 ;;
+          esac
+
+      - name: Checkout control plane
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: control
+          persist-credentials: false
+
+      - name: Checkout migration target
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          path: target
+          fetch-depth: 0
+
+      - name: Checkout frozen source baseline
+        if: steps.command.outputs.action == 'baseline'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.SOURCE_REPO }}
+          ref: ${{ env.SOURCE_SHA }}
+          path: source
+          persist-credentials: false
+
+      - name: Synchronize frozen application baseline
+        if: steps.command.outputs.action == 'baseline'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf target/src target/prisma target/public
+          cp -a source/src target/src
+          cp -a source/prisma target/prisma
+          cp -a source/public target/public
+          for file in .env.example eslint.config.mjs middleware.ts next-env.d.ts next.config.ts package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json vitest.config.mts; do
+            cp "source/$file" "target/$file"
+          done
+          node -e 'const fs=require("fs");const p="target/package.json";const j=JSON.parse(fs.readFileSync(p,"utf8"));j.name="taco-loco";fs.writeFileSync(p,JSON.stringify(j,null,2)+"\n")'
+          mkdir -p target/.github/workflows target/docs/contracts target/docs/evidence
+          cp control/.github/workflows/dics-executor.yml target/.github/workflows/dics-executor.yml
+          cat > target/.github/workflows/ci.yml <<'YAML'
+          name: CI
+          on:
+            pull_request:
+            push:
+              branches: [main, migration/cloudflare-native]
+          jobs:
+            quality:
+              runs-on: ubuntu-latest
+              timeout-minutes: 20
+              services:
+                postgres:
+                  image: postgres:16-alpine
+                  env:
+                    POSTGRES_DB: taco_loco
+                    POSTGRES_USER: taco_loco
+                    POSTGRES_PASSWORD: taco_loco_ci
+                  ports:
+                    - 5433:5432
+                  options: >-
+                    --health-cmd "pg_isready -U taco_loco -d taco_loco"
+                    --health-interval 5s
+                    --health-timeout 5s
+                    --health-retries 10
+              env:
+                DATABASE_URL: postgresql://taco_loco:taco_loco_ci@localhost:5433/taco_loco?schema=public
+                ADMIN_EMAIL: admin@example.com
+                ADMIN_PASSWORD: change-me-in-development
+              steps:
+                - uses: actions/checkout@v4
+                - uses: pnpm/action-setup@v4
+                  with:
+                    version: 11.15.1
+                - uses: actions/setup-node@v4
+                  with:
+                    node-version: 22.13.0
+                    cache: pnpm
+                - run: pnpm install --frozen-lockfile
+                - run: pnpm db:generate
+                - run: pnpm db:deploy
+                - run: pnpm db:seed
+                - run: pnpm lint
+                - run: pnpm typecheck
+                - run: pnpm test
+                - run: pnpm audit --audit-level=high
+                - run: pnpm build
+          YAML
+          sed -i 's/^          //' target/.github/workflows/ci.yml
+          cat > target/INVARIANTS.md <<EOF
+          # Taco Loco migration invariants
+
+          1. Source repo \`$SOURCE_REPO@$SOURCE_SHA\` is read-only.
+          2. Product behavior is preserved during infrastructure migration.
+          3. PostgreSQL remains transactional source of truth until a separate approved contract changes it.
+          4. D1 is out of scope for the initial migration.
+          5. Server-side catalog validation, order idempotency, sessions and persisted OrderEvent replay semantics must remain intact.
+          6. No PASS/closure without exact SHA plus executable evidence.
+          7. Implementation and independent review are separate roles/gates.
+          8. Production cutover requires a Human Gate.
+          EOF
+          sed -i 's/^          //' target/INVARIANTS.md
+          cat > target/STATE.md <<EOF
+          # Taco Loco — DICS State
+
+          Contract: TL-CF-MIG-01
+          Status: ACTIVE
+          Source baseline: \`$SOURCE_REPO@$SOURCE_SHA\`
+          Destination branch: \`$TARGET_BRANCH\`
+          Current stage: BASELINE_PARITY
+          Next technical gates: BASELINE_QA -> VINEXT_CHECK -> VINEXT_BUILD -> ENGINEERING_QA -> INDEPENDENT_CRITIC -> INTEGRATION_REVIEW
+          Human gate: PRODUCTION_CUTOVER only after technical gates are evidenced.
+          EOF
+          sed -i 's/^          //' target/STATE.md
+          cat > target/STATUS.json <<EOF
+          {
+            "contract": "TL-CF-MIG-01",
+            "status": "ACTIVE",
+            "sourceRepo": "$SOURCE_REPO",
+            "sourceSha": "$SOURCE_SHA",
+            "targetBranch": "$TARGET_BRANCH",
+            "stage": "BASELINE_PARITY",
+            "baselineParity": "CANDIDATE",
+            "baselineQa": "PENDING",
+            "vinextCheck": "PENDING",
+            "vinextBuild": "PENDING",
+            "engineeringQa": "PENDING",
+            "independentCritic": "PENDING",
+            "integrationReview": "PENDING",
+            "humanGate": "NOT_REACHED"
+          }
+          EOF
+          sed -i 's/^          //' target/STATUS.json
+          cat > target/docs/contracts/TL-CF-MIG-01.md <<EOF
+          # TL-CF-MIG-01 — Baseline Parity & Cloudflare Readiness
+
+          ## Goal
+          Reproduce the frozen Taco Loco application baseline in the successor repository, prove baseline QA, then add a non-destructive vinext/Cloudflare Workers path without product-feature changes.
+
+          ## Frozen source
+          \`$SOURCE_REPO@$SOURCE_SHA\`
+
+          ## Acceptance
+          - application runtime files are synchronized from the frozen source;
+          - lockfile-backed install succeeds;
+          - Prisma generate/deploy/seed succeeds against CI PostgreSQL;
+          - lint, typecheck, tests, audit and Next.js build pass;
+          - \`vinext check\` evidence is captured;
+          - vinext initialization uses Cloudflare target and preserves the Next.js path;
+          - vinext production build result is captured;
+          - no production deploy occurs in this contract.
+
+          ## Explicit non-goals
+          Payments, delivery tracking, accounts, loyalty, reviews, maps, advanced analytics, multi-tenancy, WhatsApp webhooks and D1 migration.
+          EOF
+          sed -i 's/^          //' target/docs/contracts/TL-CF-MIG-01.md
+          cat > target/MIGRATION.md <<'EOF'
+          # Migration status
+
+          Durable migration authority lives in `STATE.md`, `STATUS.json`, `INVARIANTS.md`, `docs/contracts/`, and `docs/evidence/`.
+          The historical source repository remains read-only.
+          EOF
+          sed -i 's/^          //' target/MIGRATION.md
+
+      - name: Apply DICS patch payload
+        if: steps.command.outputs.action == 'patch64'
+        shell: bash
+        working-directory: target
+        run: |
+          set -euo pipefail
+          body="$(jq -r '.comment.body' "$GITHUB_EVENT_PATH")"
+          payload="$(printf '%s\n' "$body" | tail -n +2 | tr -d '\r\n ')"
+          test -n "$payload"
+          printf '%s' "$payload" | base64 -d > /tmp/dics.patch
+          git apply --check /tmp/dics.patch
+          git apply /tmp/dics.patch
+
+      - name: Commit baseline synchronization
+        if: steps.command.outputs.action == 'baseline'
+        shell: bash
+        working-directory: target
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: complete frozen baseline parity"
+            git push origin HEAD:$TARGET_BRANCH
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.15.1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: pnpm
+          cache-dependency-path: target/pnpm-lock.yaml
+
+      - name: Install frozen dependencies
+        shell: bash
+        working-directory: target
+        run: pnpm install --frozen-lockfile
+
+      - name: Execute baseline QA harness
+        id: qa
+        shell: bash
+        working-directory: target
+        run: |
+          set +e
+          mkdir -p docs/evidence
+          : > docs/evidence/baseline-qa.log
+          failures=0
+          run_step() {
+            name="$1"; shift
+            echo "===== $name =====" | tee -a docs/evidence/baseline-qa.log
+            "$@" 2>&1 | tee -a docs/evidence/baseline-qa.log
+            rc=${PIPESTATUS[0]}
+            echo "exit=$rc" | tee -a docs/evidence/baseline-qa.log
+            if [[ $rc -ne 0 ]]; then failures=$((failures+1)); fi
+          }
+          run_step prisma-generate pnpm db:generate
+          run_step prisma-deploy pnpm db:deploy
+          run_step prisma-seed pnpm db:seed
+          run_step lint pnpm lint
+          run_step typecheck pnpm typecheck
+          run_step test pnpm test
+          run_step audit pnpm audit --audit-level=high
+          run_step next-build pnpm build
+          echo "failures=$failures" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Run vinext compatibility check
+        if: steps.command.outputs.action == 'baseline' || steps.command.outputs.action == 'vinext'
+        id: vinext_check
+        shell: bash
+        working-directory: target
+        run: |
+          set +e
+          pnpm dlx vinext check 2>&1 | tee docs/evidence/vinext-check.log
+          rc=${PIPESTATUS[0]}
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Initialize Cloudflare vinext path
+        if: >-
+          (steps.command.outputs.action == 'baseline' || steps.command.outputs.action == 'vinext') &&
+          steps.qa.outputs.failures == '0'
+        id: vinext_init
+        shell: bash
+        working-directory: target
+        run: |
+          set +e
+          pnpm dlx vinext init --platform=cloudflare 2>&1 | tee docs/evidence/vinext-init.log
+          rc=${PIPESTATUS[0]}
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Build Cloudflare vinext target
+        if: >-
+          (steps.command.outputs.action == 'baseline' || steps.command.outputs.action == 'vinext') &&
+          steps.qa.outputs.failures == '0' &&
+          steps.vinext_init.outputs.rc == '0'
+        id: vinext_build
+        shell: bash
+        working-directory: target
+        run: |
+          set +e
+          pnpm run build:vinext 2>&1 | tee docs/evidence/vinext-build.log
+          rc=${PIPESTATUS[0]}
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Record evidence and state
+        shell: bash
+        working-directory: target
+        env:
+          ACTION: ${{ steps.command.outputs.action }}
+          QA_FAILURES: ${{ steps.qa.outputs.failures }}
+          VINEXT_CHECK_RC: ${{ steps.vinext_check.outputs.rc }}
+          VINEXT_INIT_RC: ${{ steps.vinext_init.outputs.rc }}
+          VINEXT_BUILD_RC: ${{ steps.vinext_build.outputs.rc }}
+        run: |
+          set -euo pipefail
+          qa="${QA_FAILURES:-unknown}"
+          check="${VINEXT_CHECK_RC:-not-run}"
+          init="${VINEXT_INIT_RC:-not-run}"
+          build="${VINEXT_BUILD_RC:-not-run}"
+          sha="$(git rev-parse HEAD)"
+          cat > docs/evidence/TL-CF-MIG-01-latest.md <<EOF
+          # TL-CF-MIG-01 latest executable evidence
+
+          - Action: \`$ACTION\`
+          - Candidate SHA before evidence commit: \`$sha\`
+          - Baseline QA failures: \`$qa\`
+          - vinext check exit: \`$check\`
+          - vinext init exit: \`$init\`
+          - vinext build exit: \`$build\`
+          - Source baseline: \`$SOURCE_REPO@$SOURCE_SHA\`
+
+          Full command logs are stored alongside this file.
+          EOF
+          sed -i 's/^          //' docs/evidence/TL-CF-MIG-01-latest.md
+          node <<'NODE'
+          const fs = require('fs');
+          const p = 'STATUS.json';
+          let s = fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : {};
+          const qa = process.env.QA_FAILURES;
+          const check = process.env.VINEXT_CHECK_RC;
+          const init = process.env.VINEXT_INIT_RC;
+          const build = process.env.VINEXT_BUILD_RC;
+          s.contract = 'TL-CF-MIG-01';
+          s.status = 'ACTIVE';
+          if (qa === '0') {
+            s.baselineParity = 'PASS';
+            s.baselineQa = 'PASS';
+            s.stage = 'VINEXT_READINESS';
+          } else if (qa && qa !== 'unknown') {
+            s.baselineQa = 'REWORK';
+            s.stage = 'BASELINE_QA_REWORK';
+          }
+          if (check && check !== 'not-run') s.vinextCheck = check === '0' ? 'PASS' : 'REVIEW';
+          if (init && init !== 'not-run') s.vinextInit = init === '0' ? 'PASS' : 'REWORK';
+          if (build && build !== 'not-run') {
+            s.vinextBuild = build === '0' ? 'PASS' : 'REWORK';
+            s.stage = build === '0' ? 'ENGINEERING_QA' : 'VINEXT_BUILD_REWORK';
+          }
+          s.humanGate = 'NOT_REACHED';
+          fs.writeFileSync(p, JSON.stringify(s, null, 2) + '\n');
+          NODE
+
+      - name: Commit executor results
+        shell: bash
+        working-directory: target
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: record DICS migration evidence"
+            git push origin HEAD:$TARGET_BRANCH
+          fi
+
+      - name: Ensure DICS control-plane issue
+        if: github.event_name == 'push'
+        shell: bash
+        working-directory: target
+        run: |
+          set -euo pipefail
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'DICS Control Plane in:title' --json number --jq '.[0].number // empty')"
+          if [[ -z "$existing" ]]; then
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "DICS Control Plane" --body $'Control channel for the Taco Loco migration executor.\n\nAccepted commands are `/dics baseline`, `/dics qa`, `/dics vinext`, and `/dics patch64` followed by a base64-encoded unified diff. Code mutations are applied by GitHub Actions, not by direct repository API writes.'
+          fi
