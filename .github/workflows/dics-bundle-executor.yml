@@ -1,0 +1,197 @@
+name: DICS Bundle Executor
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: read
+  actions: read
+
+concurrency:
+  group: dics-taco-loco
+  cancel-in-progress: false
+
+env:
+  TARGET_BRANCH: migration/cloudflare-native
+
+jobs:
+  execute:
+    if: >-
+      github.event.issue.pull_request == null &&
+      github.event.issue.title == 'DICS Control Plane' &&
+      startsWith(github.event.comment.body, '/dics-bundle')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: taco_loco
+          POSTGRES_USER: taco_loco
+          POSTGRES_PASSWORD: taco_loco_ci
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd "pg_isready -U taco_loco -d taco_loco"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://taco_loco:taco_loco_ci@localhost:5433/taco_loco?schema=public
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: change-me-in-development
+
+    steps:
+      - name: Authorize DICS bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          association="$(jq -r '.comment.author_association' "$GITHUB_EVENT_PATH")"
+          case "$association" in OWNER|MEMBER|COLLABORATOR) ;; *) echo "Unauthorized bundle author"; exit 3 ;; esac
+
+      - name: Checkout migration target
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 0
+
+      - name: Apply declarative bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          body="$(jq -r '.comment.body' "$GITHUB_EVENT_PATH")"
+          payload="$(printf '%s\n' "$body" | tail -n +2 | tr -d '\r\n ')"
+          test -n "$payload"
+          printf '%s' "$payload" | base64 -d > /tmp/dics-bundle.json
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const bundle = JSON.parse(fs.readFileSync('/tmp/dics-bundle.json', 'utf8'));
+          if (!Array.isArray(bundle.operations) || bundle.operations.length === 0 || bundle.operations.length > 30) {
+            throw new Error('Bundle operations must contain 1..30 entries');
+          }
+          const validate = (p) => {
+            if (typeof p !== 'string' || !p || path.isAbsolute(p)) throw new Error(`Invalid path: ${p}`);
+            const normalized = path.posix.normalize(p.replaceAll('\\', '/'));
+            if (normalized === '..' || normalized.startsWith('../') || normalized.startsWith('.git/') || normalized.startsWith('.github/')) {
+              throw new Error(`Forbidden path: ${p}`);
+            }
+            return normalized;
+          };
+          for (const op of bundle.operations) {
+            const target = validate(op.path);
+            if (op.action === 'write') {
+              if (typeof op.contentBase64 !== 'string') throw new Error(`Missing content for ${target}`);
+              fs.mkdirSync(path.dirname(target), { recursive: true });
+              fs.writeFileSync(target, Buffer.from(op.contentBase64, 'base64'));
+            } else if (op.action === 'delete') {
+              fs.rmSync(target, { force: true, recursive: true });
+            } else {
+              throw new Error(`Unsupported operation: ${op.action}`);
+            }
+          }
+          NODE
+
+      - uses: pnpm/action-setup@v4
+        with: {version: 11.15.1}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install candidate dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Functional and Engineering QA
+        id: qa
+        shell: bash
+        run: |
+          set +e
+          mkdir -p docs/evidence
+          : > docs/evidence/bundle-functional-qa.txt
+          failures=0
+          run_step(){ name="$1"; shift; echo "===== $name =====" | tee -a docs/evidence/bundle-functional-qa.txt; "$@" 2>&1 | tee -a docs/evidence/bundle-functional-qa.txt; rc=${PIPESTATUS[0]}; echo "exit=$rc" | tee -a docs/evidence/bundle-functional-qa.txt; [[ $rc -eq 0 ]] || failures=$((failures+1)); }
+          run_step prisma-generate pnpm db:generate
+          run_step prisma-deploy pnpm db:deploy
+          run_step prisma-seed pnpm db:seed
+          run_step lint pnpm lint
+          run_step typecheck pnpm typecheck
+          run_step tests pnpm test
+          run_step next-build pnpm build
+          echo "failures=$failures" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Security audit
+        id: security
+        shell: bash
+        run: |
+          set +e
+          pnpm audit --audit-level=high 2>&1 | tee docs/evidence/bundle-security-audit.txt
+          rc=${PIPESTATUS[0]}; echo "rc=$rc" >> "$GITHUB_OUTPUT"; exit 0
+
+      - name: Cloudflare vinext build
+        id: vinext
+        shell: bash
+        run: |
+          set +e
+          if node -e 'const p=require("./package.json");process.exit(p.scripts?.["build:vinext"]?0:1)'; then
+            pnpm run build:vinext 2>&1 | tee docs/evidence/bundle-vinext-build.txt
+            rc=${PIPESTATUS[0]}
+          else
+            echo 'build:vinext script missing' | tee docs/evidence/bundle-vinext-build.txt
+            rc=125
+          fi
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Record bundle evidence
+        if: steps.qa.outputs.failures == '0'
+        shell: bash
+        env:
+          QA_FAILURES: ${{ steps.qa.outputs.failures }}
+          SECURITY_RC: ${{ steps.security.outputs.rc }}
+          VINEXT_RC: ${{ steps.vinext.outputs.rc }}
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const p='STATUS.json';
+          const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
+          s.functionalQa='PASS';
+          s.engineeringQa='PASS';
+          s.securityAudit=process.env.SECURITY_RC==='0'?'PASS':'REWORK_BLOCKING_INTEGRATION';
+          s.vinextBuild=process.env.VINEXT_RC==='0'?'PASS':'REWORK';
+          s.stage=process.env.VINEXT_RC==='0'?'INDEPENDENT_CRITIC':'VINEXT_BUILD_REWORK';
+          s.independentCritic=s.independentCritic ?? 'PENDING';
+          s.integrationReview=s.integrationReview ?? 'PENDING';
+          s.humanGate='NOT_REACHED';
+          fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
+          NODE
+          cat > docs/evidence/DICS-BUNDLE-latest.md <<EOF
+          # DICS bundle evidence
+          - Base SHA: \`$(git rev-parse HEAD)\`
+          - Functional/Engineering QA failures: \`${QA_FAILURES}\`
+          - Security audit exit: \`${SECURITY_RC}\`
+          - vinext build exit: \`${VINEXT_RC}\`
+          EOF
+          sed -i 's/^          //' docs/evidence/DICS-BUNDLE-latest.md
+
+      - name: Commit passing candidate
+        if: steps.qa.outputs.failures == '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A -- ':!.github'
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: apply DICS bundle candidate'
+            git pull --rebase origin $TARGET_BRANCH
+            git push origin HEAD:$TARGET_BRANCH
+          fi
+
+      - name: Fail rejected functional candidate
+        if: steps.qa.outputs.failures != '0'
+        run: exit 1
