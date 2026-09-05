@@ -21,6 +21,10 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
+      "@/lib/db": path.resolve(
+        import.meta.dirname,
+        "src/lib/db.worker.ts",
+      ),
       "@/modules/media/pipeline": path.resolve(
         import.meta.dirname,
         "src/modules/media/pipeline.worker.ts",

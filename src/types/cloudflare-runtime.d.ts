@@ -16,5 +16,10 @@ declare module "cloudflare:workers" {
     get(key: string): Promise<R2ObjectBody | null>;
     delete(key: string): Promise<void>;
   }
-  export const env: { IMAGES: ImagesBinding; MEDIA_BUCKET: R2Bucket };
+  interface HyperdriveBinding { connectionString: string }
+  export const env: {
+    IMAGES: ImagesBinding;
+    MEDIA_BUCKET: R2Bucket;
+    HYPERDRIVE: HyperdriveBinding;
+  };
 }

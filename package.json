@@ -19,12 +19,13 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "dev:vinext": "vinext dev --port 3001",
-    "build:vinext": "vinext build",
+    "build:vinext": "prisma generate --no-engine && vinext build",
     "start:vinext": "wrangler dev --config dist/server/wrangler.json",
     "deploy:vinext": "vinext-cloudflare deploy --config dist/server/wrangler.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1106.0",
+    "@prisma/adapter-pg": "6.19.3",
     "@prisma/client": "6.19.3",
     "@vinext/cloudflare": "1.0.0-beta.7",
     "file-type": "^22.0.1",

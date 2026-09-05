@@ -26,6 +26,12 @@
       "bucket_name": "taco-loco-media"
     }
   ],
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "<your-hyperdrive-id-here>"
+    }
+  ],
   "kv_namespaces": [
     {
       "binding": "VINEXT_KV_CACHE",
