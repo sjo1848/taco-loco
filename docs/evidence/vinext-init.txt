@@ -1,0 +1,138 @@
+
+  vinext init
+
+  Running compatibility check...
+
+
+  [1mvinext compatibility report[0m
+  ========================================
+
+  [1mImports[0m: 5/5 fully supported
+    [32m✓[0m  next/server [90m(16 files)[0m [90m— NextRequest/NextResponse shimmed[0m
+    [32m✓[0m  next/navigation [90m(13 files)[0m
+    [32m✓[0m  next/link [90m(9 files)[0m
+    [32m✓[0m  next/image [90m(2 files)[0m [90m— uses @unpic/react (no local optimization yet)[0m
+    [32m✓[0m  next/headers [90m(1 file)[0m
+
+  [1mConfig[0m: 3/4 options supported
+    [33m~[0m  reactStrictMode [90m— enforced for the Pages Router (client root wrapped in <React.StrictMode> when true); App Router is not yet wrapped (Next.js defaults App Router strict mode on)[0m
+    [32m✓[0m  headers
+    [32m✓[0m  allowedDevOrigins [90m— dev server cross-origin allowlist[0m
+    [32m✓[0m  output [90m— 'export' mode and 'standalone' output (dist/standalone/server.js)[0m
+
+  [1mLibraries[0m: 2/2 compatible
+    [32m✓[0m  zod
+    [32m✓[0m  prisma [90m— works on Cloudflare Workers with Prisma Accelerate[0m
+
+  [1mProject structure[0m:
+    [32m✓[0m  App Router (src/app/)
+    [32m✓[0m  11 page(s)
+    [32m✓[0m  1 layout(s)
+    [32m✓[0m  16 route handler(s)
+    [32m✓[0m  2 loading boundary(ies)
+    [32m✓[0m  2 error boundary(ies)
+    [32m✓[0m  1 not-found page(s)
+    [32m✓[0m  middleware.ts (deprecated in Next.js 16)
+    [31m✗[0m  Missing "type": "module" in package.json [90m— required for Vite — vinext init will add it automatically[0m
+
+  ----------------------------------------
+  [1mOverall[0m: [32m93% compatible[0m (18 supported, 1 partial, 1 issues)
+
+  [1mIssues to address:[0m
+    [31m✗[0m  Missing "type": "module" in package.json — required for Vite — vinext init will add it automatically
+
+  [1mPartial support (may need attention):[0m
+    [33m~[0m  reactStrictMode — enforced for the Pages Router (client root wrapped in <React.StrictMode> when true); App Router is not yet wrapped (Next.js defaults App Router strict mode on)
+
+
+  Installing dependencies:
+    - vinext
+    - react-server-dom-webpack
+    - @vinext/cloudflare
+✓ Lockfile passes supply-chain policies (verified 38s ago)
+Progress: resolved 1, reused 0, downloaded 0, added 0
+[WARN] deprecated eslint@9.37.0: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+Progress: resolved 17, reused 15, downloaded 1, added 0
+Progress: resolved 22, reused 20, downloaded 2, added 0
+Progress: resolved 160, reused 125, downloaded 5, added 0
+Progress: resolved 310, reused 237, downloaded 5, added 0
+Progress: resolved 528, reused 383, downloaded 7, added 0
+Progress: resolved 647, reused 493, downloaded 54, added 0
+Packages: +105 -21
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--------------
+Progress: resolved 647, reused 493, downloaded 54, added 105, done
+
+dependencies:
++ @vinext/cloudflare 1.0.0-beta.7
++ react-server-dom-webpack 19.2.8
++ vinext 1.0.0-beta.9
+
+Done in 7.8s using pnpm v11.15.1
+
+  Installing devDependencies:
+    - vite
+    - @vitejs/plugin-react
+    - @vitejs/plugin-rsc
+    - @cloudflare/vite-plugin
+    - wrangler
+✓ Lockfile passes supply-chain policies (verified 630ms ago)
+Progress: resolved 1, reused 0, downloaded 0, added 0
+[WARN] deprecated eslint@9.37.0: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+Progress: resolved 26, reused 24, downloaded 0, added 0
+Progress: resolved 179, reused 80, downloaded 2, added 0
+Progress: resolved 397, reused 216, downloaded 14, added 0
+Progress: resolved 617, reused 382, downloaded 27, added 0
+Packages: +69 -33
+++++++++++++++++++++++++++++++++++++++++++++++++++++++--------------------------
+Progress: resolved 737, reused 547, downloaded 35, added 67
+Progress: resolved 737, reused 547, downloaded 36, added 68
+Progress: resolved 737, reused 547, downloaded 37, added 69, done
+.../esbuild@0.28.1/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.28.1/node_modules/esbuild postinstall: Done
+
+devDependencies:
++ @cloudflare/vite-plugin 1.54.4
++ @vitejs/plugin-react 6.1.1
++ @vitejs/plugin-rsc 0.5.34
++ vite 8.2.2
++ wrangler 4.129.0
+
+[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: workerd@1.20260903.1
+
+Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+
+  vinext init complete!
+
+    ✓ Added dependencies to dependencies:
+      - vinext
+      - react-server-dom-webpack
+      - @vinext/cloudflare
+    ! Dependency installation is waiting for build-script approval
+    ✓ Added "type": "module" to package.json
+    ✓ Added dev:vinext script
+    ✓ Added build:vinext script
+    ✓ Added start:vinext script
+    ✓ Added deploy:vinext script
+    ✓ Generated vite.config.ts
+    ✓ Generated wrangler.jsonc
+    ✓ Added vinext output directories to .gitignore
+
+  Next steps:
+    Cloudflare setup is incomplete until you finish KV configuration:
+    1. Create the KV namespace:
+       npx wrangler kv namespace create VINEXT_KV_CACHE
+    2. Copy the returned namespace ID into the VINEXT_KV_CACHE entry in wrangler.jsonc:
+       Set its "id" value, replacing "<your-kv-namespace-id>" if present.
+    Dependency installation is incomplete because pnpm blocked dependency build scripts:
+    1. Review and approve the required build scripts:
+       pnpm approve-builds
+    2. Finish installing dependencies:
+       pnpm install
+
+    pnpm run dev:vinext    Start the vinext dev server
+    pnpm run build:vinext  Build production output
+    pnpm run start:vinext  Start the built Worker locally with Wrangler
+    pnpm run deploy:vinext Deploy to Cloudflare Workers
+    pnpm run dev           Start Next.js (still works as before)
+
+

@@ -17,29 +17,42 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "dev:vinext": "vinext dev --port 3001",
+    "build:vinext": "vinext build",
+    "start:vinext": "wrangler dev --config dist/server/wrangler.json",
+    "deploy:vinext": "vinext-cloudflare deploy --config dist/server/wrangler.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1106.0",
     "@prisma/client": "6.19.3",
+    "@vinext/cloudflare": "1.0.0-beta.7",
     "file-type": "^22.0.1",
     "next": "16.3.0",
     "pg": "^8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "react-server-dom-webpack": "^19.2.8",
     "sharp": "^0.35.3",
+    "vinext": "1.0.0-beta.9",
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.54.4",
     "@types/node": "24.10.0",
     "@types/pg": "^8.21.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
+    "@vitejs/plugin-react": "^6.1.1",
+    "@vitejs/plugin-rsc": "^0.5.34",
     "eslint": "9.37.0",
     "eslint-config-next": "16.3.0",
     "prisma": "6.19.3",
     "tsx": "4.20.6",
     "typescript": "5.9.3",
-    "vitest": "4.1.10"
-  }
+    "vite": "^8.2.2",
+    "vitest": "4.1.10",
+    "wrangler": "^4.129.0"
+  },
+  "type": "module"
 }

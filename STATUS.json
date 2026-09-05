@@ -1,1 +1,18 @@
-{"contract":"TL-CF-MIG-01","status":"ACTIVE","sourceRepo":"sjo1848/taco-loco-foodtrack","sourceSha":"a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48","targetBranch":"migration/cloudflare-native","stage":"BASELINE_PARITY","baselineParity":"CANDIDATE","functionalQa":"PENDING","securityAudit":"PENDING","vinextCheck":"PENDING","vinextInit":"PENDING","vinextBuild":"PENDING","engineeringQa":"PENDING","independentCritic":"PENDING","integrationReview":"PENDING","humanGate":"NOT_REACHED"}
+{
+  "contract": "TL-CF-MIG-01",
+  "status": "ACTIVE",
+  "sourceRepo": "sjo1848/taco-loco-foodtrack",
+  "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
+  "targetBranch": "migration/cloudflare-native",
+  "stage": "VINEXT_BUILD_REWORK",
+  "baselineParity": "PASS",
+  "functionalQa": "PASS",
+  "securityAudit": "REWORK_BLOCKING_INTEGRATION",
+  "vinextCheck": "PASS",
+  "vinextInit": "PASS",
+  "vinextBuild": "REWORK",
+  "engineeringQa": "REWORK",
+  "independentCritic": "PENDING",
+  "integrationReview": "PENDING",
+  "humanGate": "NOT_REACHED"
+}

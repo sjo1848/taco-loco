@@ -1,0 +1,88 @@
+===== pnpm lint =====
+✓ Lockfile passes supply-chain policies (verified 2s ago)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: workerd@1.20260903.1
+
+Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+[ERROR] Command failed with exit code 1: /opt/hostedtoolcache/node/22.13.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
+
+pnpm: Command failed with exit code 1: /opt/hostedtoolcache/node/22.13.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
+    at getFinalError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:88127:14)
+    at makeError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:90434:21)
+    at getSyncResult (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92278:10)
+    at spawnSubprocessSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92238:14)
+    at execaCoreSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92168:23)
+    at callBoundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94696:23)
+    at boundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94673:49)
+    at sync2 (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94832:10)
+    at runPnpmCli (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:248744:5)
+    at runDepsStatusCheck (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:250510:7)
+exit=1
+===== pnpm typecheck =====
+✓ Lockfile passes supply-chain policies (verified 4s ago)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: workerd@1.20260903.1
+
+Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+[ERROR] Command failed with exit code 1: /opt/hostedtoolcache/node/22.13.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
+
+pnpm: Command failed with exit code 1: /opt/hostedtoolcache/node/22.13.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
+    at getFinalError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:88127:14)
+    at makeError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:90434:21)
+    at getSyncResult (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92278:10)
+    at spawnSubprocessSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92238:14)
+    at execaCoreSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92168:23)
+    at callBoundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94696:23)
+    at boundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94673:49)
+    at sync2 (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94832:10)
+    at runPnpmCli (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:248744:5)
+    at runDepsStatusCheck (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:250510:7)
+exit=1
+===== pnpm test =====
+✓ Lockfile passes supply-chain policies (verified 5s ago)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: workerd@1.20260903.1
+
+Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+[ERROR] Command failed with exit code 1: /opt/hostedtoolcache/node/22.13.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
+
+pnpm: Command failed with exit code 1: /opt/hostedtoolcache/node/22.13.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
+    at getFinalError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:88127:14)
+    at makeError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:90434:21)
+    at getSyncResult (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92278:10)
+    at spawnSubprocessSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92238:14)
+    at execaCoreSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92168:23)
+    at callBoundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94696:23)
+    at boundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94673:49)
+    at sync2 (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94832:10)
+    at runPnpmCli (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:248744:5)
+    at runDepsStatusCheck (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:250510:7)
+exit=1
+===== pnpm build =====
+✓ Lockfile passes supply-chain policies (verified 7s ago)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: workerd@1.20260903.1
+
+Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+[ERROR] Command failed with exit code 1: /opt/hostedtoolcache/node/22.13.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
+
+pnpm: Command failed with exit code 1: /opt/hostedtoolcache/node/22.13.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
+    at getFinalError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:88127:14)
+    at makeError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:90434:21)
+    at getSyncResult (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92278:10)
+    at spawnSubprocessSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92238:14)
+    at execaCoreSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:92168:23)
+    at callBoundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94696:23)
+    at boundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94673:49)
+    at sync2 (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:94832:10)
+    at runPnpmCli (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:248744:5)
+    at runDepsStatusCheck (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.15.1/node_modules/pnpm/dist/pnpm.mjs:250510:7)
+exit=1
