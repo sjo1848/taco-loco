@@ -3,7 +3,7 @@ Updated: 2026-09-06
 Mode: DELIVERY
 Phase: VALIDATE
 Status: CRITIC_REVIEW_BLOCKED
-Active contract: TL-CV-MIG-01
+Active contract: TL-CF-MIG-01
 Technical candidate: `c385a7b31d26d9e27625982e49e0e0cc8a854604`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 
