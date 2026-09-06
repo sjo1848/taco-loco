@@ -1,7 +1,7 @@
 $ prisma generate --no-engine && vinext build
 Prisma schema loaded from prisma/schema.prisma
 
-✔ Generated Prisma Client (v6.19.3, engine=none) to ./node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client in 103ms
+✔ Generated Prisma Client (v6.19.3, engine=none) to ./node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client in 104ms
 
 Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
 
@@ -10,37 +10,37 @@ Tip: Need your database queries to be 1000x faster? Accelerate offers you that a
 
   vinext build  (Vite 8.2.2)
 
-(node:3803) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:3898) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-(node:3803) ExperimentalWarning: glob is an experimental feature and might change at any time
+(node:3898) ExperimentalWarning: glob is an experimental feature and might change at any time
 [34m[1/5] analyze client references...[39m
 transforming...
 ✓ 1261 modules transformed.
 rendering chunks...
-[32m✓ built in 2.48s[39m
+[32m✓ built in 2.43s[39m
 [34m[2/5] analyze server references...[39m
 transforming...
 ✓ 289 modules transformed.
 rendering chunks...
-[32m✓ built in 576ms[39m
+[32m✓ built in 553ms[39m
 [34m[3/5] build rsc environment...[39m
 transforming...
 ✓ 1375 modules transformed.
 rendering chunks...
 computing gzip size...
-[32m✓ built in 2.96s[39m
+[32m✓ built in 2.99s[39m
 [34m[4/5] build client environment...[39m
 transforming...
 ✓ 294 modules transformed.
 rendering chunks...
 computing gzip size...
-[32m✓ built in 657ms[39m
+[32m✓ built in 668ms[39m
 [34m[5/5] build ssr environment...[39m
 transforming...
 ✓ 287 modules transformed.
 rendering chunks...
 computing gzip size...
-[32m✓ built in 771ms[39m
+[32m✓ built in 766ms[39m
   Generated standalone output in dist/standalone/
   Start it with: node dist/standalone/server.js
 
