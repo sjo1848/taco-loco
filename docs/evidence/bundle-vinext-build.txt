@@ -1,36 +1,35 @@
-[WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.overrides". See https://pnpm.io/settings for the new home of each setting.
 $ prisma generate --no-engine && vinext build
 Prisma schema loaded from prisma/schema.prisma
 
-✔ Generated Prisma Client (v6.19.3, engine=none) to ./node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client in 105ms
+✔ Generated Prisma Client (v6.19.3, engine=none) to ./node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client in 110ms
 
 Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
 
-Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
 
 
   vinext build  (Vite 8.2.2)
 
-(node:3848) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:3818) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-(node:3848) ExperimentalWarning: glob is an experimental feature and might change at any time
+(node:3818) ExperimentalWarning: glob is an experimental feature and might change at any time
 [34m[1/5] analyze client references...[39m
 transforming...
 ✓ 1261 modules transformed.
 rendering chunks...
-[32m✓ built in 2.50s[39m
+[32m✓ built in 2.43s[39m
 [34m[2/5] analyze server references...[39m
 transforming...
 ✓ 289 modules transformed.
 rendering chunks...
-[32m✓ built in 602ms[39m
+[32m✓ built in 574ms[39m
 [34m[3/5] build rsc environment...[39m
 transforming...
 ✓ 1375 modules transformed.
 rendering chunks...
 computing gzip size...
-[32m✓ built in 3.02s[39m
-[33m[33m[PLUGIN_TIMINGS] [0mPlugin hooks ran for 2.8s of this 3.0s build (92%).
+[32m✓ built in 3.18s[39m
+[33m[33m[PLUGIN_TIMINGS] [0mPlugin hooks ran for 2.7s of this 3.2s build (87%).
 6 hooks are listed without a time. Their calls overlapped, so the time inside one call includes work from other calls. To find their cost, profile the build with `node --cpu-prof`:
   - rsc:virtual-client-package resolveId (3909 calls)
   - alias resolveId (4939 calls)
@@ -43,13 +42,13 @@ transforming...
 ✓ 294 modules transformed.
 rendering chunks...
 computing gzip size...
-[32m✓ built in 661ms[39m
+[32m✓ built in 679ms[39m
 [34m[5/5] build ssr environment...[39m
 transforming...
 ✓ 287 modules transformed.
 rendering chunks...
 computing gzip size...
-[32m✓ built in 765ms[39m
+[32m✓ built in 756ms[39m
   Generated standalone output in dist/standalone/
   Start it with: node dist/standalone/server.js
 

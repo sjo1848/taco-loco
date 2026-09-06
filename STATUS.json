@@ -7,7 +7,7 @@
   "stage": "INDEPENDENT_CRITIC",
   "baselineParity": "PASS",
   "functionalQa": "PASS",
-  "securityAudit": "REWORK_BLOCKING_INTEGRATION",
+  "securityAudit": "PASS",
   "vinextCheck": "PASS",
   "vinextInit": "PASS",
   "vinextBuild": "PASS",
