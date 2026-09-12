@@ -1,7 +1,7 @@
 # TL-CF-MIG-01 — Independent Critic Admission Packet
 
-Status: READY_FOR_INDEPENDENT_REVIEW / ASSURANCE_BLOCKED
-Technical candidate: `c385a7b31d26d9e27625982e49e0e0cc8a854604`
+Status: READY_FOR_INDEPENDENT_REVIEW
+Technical candidate: `ce36a2c81eba3f20aa7e4643a31771e8b85a23af`
 Governance contract: `TL-CF-MIG-01`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 
@@ -10,19 +10,18 @@ Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b4
 - `INVARIANTS.md`
 - `STATUS.json`
 - `docs/evidence/DICS-BUNDLE-latest.md`
-- `docs/evidence/bundle-functional-qa.txt`
-- `docs/evidence/bundle-security-audit.txt`
-- `docs/evidence/bundle-vinext-build.txt`
-- diff `41deb8f82b07fb08b2cdec9cc880b99382a35f41..c385a7b31d26d9e27625982e49e0e0cc8a854604`
+- `docs/evidence/TL-CF-MIG-01-ce36a2c.md`
+- diff `fd69a943aae82beb52e42aa9c0b316904bfa84fb..ce36a2c81eba3f20aa7e4643a31771e8b85a23af`
 
 ## Admission facts
 - Functional/Engineering QA failures: 0
-- Security audit exit: 0
+- Security audit high-threshold exit: 0; two moderate advisories remain
 - vinext build exit: 0
 - PostgreSQL remains transactional truth.
 - D1 is out of scope.
 - Media Workers path is isolated through Vite aliases to Images + R2 adapters.
 - DB Workers path is isolated through Vite alias to Prisma adapter-pg + Hyperdrive.
+- Candidate/evidence SHA is exact and converged at `ce36a2c81eba3f20aa7e4643a31771e8b85a23af`.
 - Realtime replacement is explicitly not closed by this contract.
 - No production deploy/cutover evidence is claimed.
 
