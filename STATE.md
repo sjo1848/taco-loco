@@ -2,7 +2,7 @@
 Updated: 2026-09-12
 Mode: DELIVERY
 Phase: VALIDATE
-Status: INTEGRATION_REVIEW_PENDING
+Status: TECHNICAL_PASS / OPERATIONAL_PREP
 Active contract: TL-CF-MIG-01
 Technical candidate: `ce36a2c81eba3f20aa7e4643a31771e8b85a23af`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
@@ -39,7 +39,7 @@ Implementation/Validation: PROVEN for the current increment.
 Release/Deployment and Maintenance/Operations: UNKNOWN.
 
 ## Next authorized action
-Invoke Integration Review against the complete candidate, evidence and Independent Critic PASS. Persist PASS / REWORK / HUMAN_GATE / CONTRACT_DEFECT. Do not begin realtime/Durable Objects until that verdict exists.
+Integration Review PASS is recorded. Next authorized action is read-only verification of Cloudflare authentication and actual resource state before any bounded provisioning/staging plan. Do not begin realtime/Durable Objects or production cutover under this contract.
 
 ## Stale check
 Before resume, verify branch HEAD, technical candidate identity, `STATUS.json`, contract and latest evidence. If product/code changes materially, rerun required evidence.
