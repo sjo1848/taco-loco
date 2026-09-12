@@ -25,6 +25,6 @@ Updated: 2026-09-12
 
 ## Next authorized objective
 
-After the blockers are resolved: prepare and validate staging only. The staging contract must map every required item as Requirement → Producer → Evidence → Consumer → Failure behavior, including Worker deployment, Hyperdrive PostgreSQL read/write, auth/admin, business operations, R2/media, Images where applicable, secrets/bindings, logs/runtime, and behavior parity.
+After the blockers are resolved: execute the prepared staging contract at `docs/contracts/TL-CF-STAGING-01.md`. It maps every required item as Requirement → Producer → Evidence → Consumer → Failure behavior, including Worker deployment, Hyperdrive PostgreSQL read/write, auth/admin, business operations, R2/media, Images where applicable, secrets/bindings, logs/runtime, and behavior parity.
 
 No production deployment, cutover, or Durable Objects/realtime work is authorized by this checkpoint.

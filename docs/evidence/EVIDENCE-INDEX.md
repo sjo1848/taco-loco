@@ -11,5 +11,6 @@ Last verified execution HEAD before this state update: `014ea6a4fb99291934f2f383
 - Maintenance/Operations: UNKNOWN — not operated in production
 - Judgment/Decisions: PARTIAL — `STATE.md`, contract, Human Gate history
 - Orchestration/Resume: PROVEN — `docs/orchestration/RESUME.md`
+- Staging contract: PROVEN — `docs/contracts/TL-CF-STAGING-01.md`; prepared but blocked on external resources
 
 Coverage is conservative; no historical process is fabricated.

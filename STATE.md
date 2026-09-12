@@ -42,7 +42,7 @@ Staging: UNKNOWN / NOT_READY.
 Production: NOT_AUTHORIZED.
 
 ## Next authorized action
-Integration Review PASS is recorded. Read-only verification found no KV or Hyperdrive resources and R2 is not enabled for the account. Continue only after the required human action/input for resource provisioning is available; then prepare and validate staging, not production. Do not begin realtime/Durable Objects or production cutover under this contract.
+Integration Review PASS is recorded. Read-only verification found no KV or Hyperdrive resources and R2 is not enabled for the account. The local staging contract is prepared at `docs/contracts/TL-CF-STAGING-01.md`; execute it only after the required human action/input for resource provisioning is available. Do not begin realtime/Durable Objects or production cutover under this contract.
 
 ## Stale check
 Before resume, verify branch HEAD, technical candidate identity, `STATUS.json`, contract and latest evidence. If product/code changes materially, rerun required evidence.
