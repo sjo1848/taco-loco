@@ -15,4 +15,6 @@ Implications:
 - Hyperdrive provisioning requires connection details/authorization for the PostgreSQL source, which are not present in the repository.
 - No staging or production eligibility is established.
 
-Stop classification: `HUMAN_ACTION` for R2 account enablement and `HUMAN_INPUT` for Hyperdrive/PostgreSQL connection provisioning data. This is not a technical rework or production authorization.
+Exact Hyperdrive missing input: a staging PostgreSQL connection string (host, port, database, username, password/credential source, and TLS requirements) or an already provisioned Hyperdrive config ID. The repository contains only the local development URL in `.env.example`; it does not contain staging connection data. The architectural decision to use Hyperdrive is already fixed and is not being reopened.
+
+Stop classification: `HUMAN_ACTION` for R2 account enablement and `HUMAN_INPUT` for the missing staging PostgreSQL connection data/credential source. If the human supplies the connection data and delegates the already-decided provisioning action, the subsequent operation is an ordinary `HUMAN_ACTION`, not a strategy gate. This is not a technical rework or production authorization.

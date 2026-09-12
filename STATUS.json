@@ -6,6 +6,7 @@
   "targetBranch": "migration/cloudflare-native",
   "technicalCandidate": "ce36a2c81eba3f20aa7e4643a31771e8b85a23af",
   "evidenceCandidate": "ce36a2c81eba3f20aa7e4643a31771e8b85a23af",
+  "lastVerifiedExecutionHead": "014ea6a4fb99291934f2f383b3e4b0575b119249",
   "stage": "OPERATIONAL_PREP_BLOCKED",
   "baselineParity": "PASS",
   "functionalQa": "PASS",
@@ -24,5 +25,9 @@
   "engineeringQa": "PASS",
   "independentCritic": "PASS",
   "integrationReview": "PASS",
+  "independentCriticCandidate": "ce36a2c81eba3f20aa7e4643a31771e8b85a23af",
+  "integrationReviewCandidate": "ce36a2c81eba3f20aa7e4643a31771e8b85a23af",
+  "staging": "UNKNOWN_NOT_READY",
+  "production": "NOT_AUTHORIZED",
   "humanGate": "NOT_REACHED"
 }
