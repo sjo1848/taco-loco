@@ -2,7 +2,7 @@
 Updated: 2026-09-12
 Mode: DELIVERY
 Phase: VALIDATE
-Status: CRITIC_REVIEW_BLOCKED
+Status: INTEGRATION_REVIEW_PENDING
 Active contract: TL-CF-MIG-01
 Technical candidate: `ce36a2c81eba3f20aa7e4643a31771e8b85a23af`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
@@ -32,14 +32,14 @@ Complete the Cloudflare-native migration without changing Taco Loco product beha
 Baseline parity remains PASS; Functional QA PASS; security audit passes the contract high-severity threshold (exit 0; two moderate advisories remain); lint/typecheck/tests/build:vinext PASS. Hyperdrive and Workers media adapters are present.
 
 ## Current blocker
-The prior independent critic returned REWORK because candidate/evidence identities diverged and the prior security evidence was stale. The dependency repair is now committed as the exact technical candidate; a fresh independent critic verdict is still required.
+Independent Critic PASS is recorded for the exact technical candidate. Integration Review remains required because this is a cross-cutting runtime/configuration migration.
 
 ## Engineering evidence
 Implementation/Validation: PROVEN for the current increment.
 Release/Deployment and Maintenance/Operations: UNKNOWN.
 
 ## Next authorized action
-Invoke a logically independent critic context against the reconciled critic packet. Persist PASS / REWORK / HUMAN_GATE / CONTRACT_DEFECT. Do not begin realtime/Durable Objects until that verdict exists.
+Invoke Integration Review against the complete candidate, evidence and Independent Critic PASS. Persist PASS / REWORK / HUMAN_GATE / CONTRACT_DEFECT. Do not begin realtime/Durable Objects until that verdict exists.
 
 ## Stale check
 Before resume, verify branch HEAD, technical candidate identity, `STATUS.json`, contract and latest evidence. If product/code changes materially, rerun required evidence.

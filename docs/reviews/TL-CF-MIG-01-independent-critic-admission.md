@@ -1,6 +1,6 @@
 # TL-CF-MIG-01 — Independent Critic Admission Packet
 
-Status: READY_FOR_INDEPENDENT_REVIEW
+Status: REVIEWED / PASS_RECORDED
 Technical candidate: `ce36a2c81eba3f20aa7e4643a31771e8b85a23af`
 Governance contract: `TL-CF-MIG-01`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
