@@ -13,6 +13,8 @@
   "vinextCheck": "PASS",
   "vinextInit": "PASS",
   "vinextBuild": "PASS",
+  "workerBuild": "PASS",
+  "wranglerDryRun": "PASS_NO_DEPLOY",
   "engineeringQa": "PASS",
   "independentCritic": "PENDING",
   "integrationReview": "PENDING",

@@ -4,6 +4,10 @@
 - Engineering QA failures: `0`
 - Security audit high-threshold exit: `0` (two moderate advisories remain)
 - vinext build exit: `0`
+- Worker artifact: `dist/server/index.js` and `dist/server/wrangler.json` present
+- Worker artifact SHA256: `101a6f26a49b15dbb8256a44e5b94e4f913ce1cf395303ee50415cbb50eb9397`
+- Generated wrangler config SHA256: `9bd7c9cb42442ec450a7b3b48be89707ae62178a8df769de450fca1692a92210`
+- `wrangler deploy --dry-run --config dist/server/wrangler.json`: exit `0`; no deployment
 - lint exit: `0`
 - typecheck exit: `0`
 - tests: `30 passed`
