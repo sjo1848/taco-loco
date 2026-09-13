@@ -79,8 +79,9 @@ session_status="$(curl --max-time 15 -sS -o /dev/null -w '%{http_code}' -c "$coo
 test "$session_status" = 401
 echo "catalog_settings_auth_session_assertions=PASS"
 
-pnpm exec wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to "$persist_dir" --command "SELECT COUNT(*) AS orders FROM \"Order\" WHERE clientReference LIKE 'd1-harness-%-${run_id}'; SELECT COUNT(*) AS lines FROM OrderLine WHERE orderId IN (SELECT id FROM \"Order\" WHERE clientReference LIKE 'd1-harness-%-${run_id}'); SELECT COUNT(*) AS events FROM OrderEvent WHERE orderId IN (SELECT id FROM \"Order\" WHERE clientReference LIKE 'd1-harness-%-${run_id}');" >/tmp/taco-loco-d1-proof-verify-${run_id}.log 2>&1
+pnpm exec wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to "$persist_dir" --command "SELECT COUNT(*) AS orders FROM \"Order\" WHERE clientReference IN ('$TACO_LOCO_SAME_REFERENCE','$TACO_LOCO_DISTINCT_A','$TACO_LOCO_DISTINCT_B'); SELECT COUNT(*) AS lines FROM OrderLine WHERE orderId IN (SELECT id FROM \"Order\" WHERE clientReference IN ('$TACO_LOCO_SAME_REFERENCE','$TACO_LOCO_DISTINCT_A','$TACO_LOCO_DISTINCT_B')); SELECT COUNT(*) AS events FROM OrderEvent WHERE orderId IN (SELECT id FROM \"Order\" WHERE clientReference IN ('$TACO_LOCO_SAME_REFERENCE','$TACO_LOCO_DISTINCT_A','$TACO_LOCO_DISTINCT_B')); SELECT orderId,COUNT(*) AS eventCount,GROUP_CONCAT(sequence) AS sequences FROM OrderEvent WHERE orderId = 'bdbdbdbd-bdbd-4bdb-8bdb-bdbdbdbdbdbd' GROUP BY orderId;" >/tmp/taco-loco-d1-proof-verify-${run_id}.log 2>&1
 grep -q '"orders": 3' /tmp/taco-loco-d1-proof-verify-${run_id}.log
 grep -q '"lines": 3' /tmp/taco-loco-d1-proof-verify-${run_id}.log
 grep -q '"events": 3' /tmp/taco-loco-d1-proof-verify-${run_id}.log
+grep -q '"eventCount": 2' /tmp/taco-loco-d1-proof-verify-${run_id}.log
 echo "D1_LOCAL_INTEGRATION_PROOF=PASS"

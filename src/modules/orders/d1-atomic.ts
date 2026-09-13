@@ -60,7 +60,7 @@ export type D1TransitionWrite = {
 export async function transitionD1OrderWith(db: D1Database, input: D1TransitionWrite) {
   const now = new Date().toISOString();
   const update = db.prepare(`UPDATE "Order" SET "status" = ?, "confirmedAt" = COALESCE(?, "confirmedAt"), "closedAt" = COALESCE(?, "closedAt"), "cancellationReason" = COALESCE(?, "cancellationReason"), "updatedById" = ?, "updatedAt" = ? WHERE "id" = ? AND "status" = ?`).bind(input.toStatus, input.confirmedAt, input.closedAt, input.cancellationReason, input.actorId, now, input.orderId, input.fromStatus);
-  const event = db.prepare(`INSERT INTO "OrderEvent" ("id", "sequence", "orderId", "fromStatus", "toStatus", "reason", "createdAt", "actorId") SELECT ?, COALESCE(MAX("sequence"), 0) + 1, ?, ?, ?, ?, ?, ? FROM "OrderEvent" WHERE changes() = 1`).bind(crypto.randomUUID(), input.orderId, input.fromStatus, input.toStatus, input.reason, now, input.actorId);
+  const event = db.prepare(`INSERT INTO "OrderEvent" ("id", "sequence", "orderId", "fromStatus", "toStatus", "reason", "createdAt", "actorId") SELECT ?, "nextSequence", ?, ?, ?, ?, ?, ? FROM (SELECT COALESCE(MAX("sequence"), 0) + 1 AS "nextSequence" FROM "OrderEvent") WHERE changes() = 1`).bind(crypto.randomUUID(), input.orderId, input.fromStatus, input.toStatus, input.reason, now, input.actorId);
   const results = await db.batch([update, event]);
   assertBatchSucceeded(results);
   const changed = Number(results[0]?.meta?.changes ?? 0);
