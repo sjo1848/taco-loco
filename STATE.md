@@ -2,10 +2,10 @@
 Updated: 2026-09-13
 Mode: DELIVERY
 Phase: VALIDATE / RELEASE_PREPARATION
-Status: REMOTE_STAGING_ACTIVE / STATIC_ASSETS
+Status: REMOTE_STAGING_REWORK_PENDING_ASSURANCE / STATIC_ASSETS
 Active contract: TL-CF-D1-REMOTE-STAGING-01
-Remote staging candidate: `4007a5810c998a7c4478dfb4b054c9c612860a1a`
-Current branch HEAD before this governance reactivation: `bf87b1dc968744e969b0687f074f454bb150eacc`
+Remote staging candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
+Current execution HEAD: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
 Prior validated D1 candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 
@@ -34,7 +34,7 @@ Active decisions:
 
 ## Assurance entering remote staging
 
-Exact candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a` has:
+The prior exact candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a` had:
 - Static Assets local TECHNICAL_PASS;
 - tests 31/31 PASS;
 - typecheck PASS;
@@ -46,6 +46,8 @@ Exact candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a` has:
 - Integration Review PASS.
 
 Prior D1 evidence from candidate `5d0a1bf` remains reusable for unchanged D1/auth/order/event semantics.
+
+Remote rework candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3` adds only D1-compatible health probing and BigInt-safe admin order serialization after bounded staging exposed those runtime defects. Tests 31/31, typecheck, lint and vinext build pass; final remote journey is documented in `docs/evidence/TL-CF-D1-REMOTE-STAGING-6eccc3a.md`. Independent assurance for this exact candidate is pending after the critic returned REWORK for stale governance/evidence synchronization.
 
 ## Current authorized work
 
@@ -92,8 +94,8 @@ If a substantive application change is required during staging, classify `REWORK
 ## Current classifications
 - Local implementation: PROVEN.
 - Static Assets assurance: PROVEN.
-- Remote integration: ACTIVE / NOT YET PROVEN.
+- Remote integration: REWORK / FINAL CANDIDATE ASSURANCE PENDING.
 - Production: NOT_AUTHORIZED.
 
 ## Next authorized action
-Execute `TL-CF-D1-REMOTE-STAGING-01` against exact candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a` using the minimum remote resources required by Workers + D1 + Static Assets. Persist evidence and stop at `REMOTE_INTEGRATION_PASS`, legitimate HUMAN_GATE/HUMAN_ACTION/HUMAN_INPUT, REWORK, EXTERNAL_BLOCKER or CONTRACT_DEFECT.
+Admit the synchronized final candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3` for fresh Independent Critic review using the remote evidence packet. If PASS, perform the required bounded Integration Review and then classify remote staging. Production remains NOT_AUTHORIZED.

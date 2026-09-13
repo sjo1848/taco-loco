@@ -7,10 +7,11 @@ Updated: 2026-09-13
 - Source-convergence baseline: `origin/migration/cloudflare-native@7a600439d7e2736c34ba9a8da63fd06ebf54c6b3`
 - Last verified GitHub checkpoint: `origin/migration/cloudflare-native@3671c839e805bcade6ec5ba9e72e5624b08e64ca`
 - Prior validated technical candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
-- Static-assets candidate: `4007a5810c998a7c4478dfb4b054c9c612860a1a`
+- Prior Static-assets candidate: `4007a5810c998a7c4478dfb4b054c9c612860a1a`
+- Remote final rework candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
 - Global mode: `DELIVERY`
 - Phase: `IMPLEMENT / VALIDATE`
-- State: `REMOTE_STAGING_ACTIVE / STATIC_ASSETS`
+- State: `REMOTE_STAGING_REWORK_PENDING_ASSURANCE / STATIC_ASSETS`
 - Active contract: `docs/contracts/TL-CF-D1-REMOTE-STAGING-01.md`
 - Production: `NOT_AUTHORIZED`
 
@@ -48,10 +49,10 @@ Local evidence: `docs/evidence/TL-CF-STATIC-ASSETS-4007a58.md` — PASS.
 
 ## Remote staging
 
-`TL-CF-D1-REMOTE-STAGING-01` is `REMOTE_STAGING_ACTIVE / STATIC_ASSETS`.
+`TL-CF-D1-REMOTE-STAGING-01` completed its bounded remote journey for candidate `6eccc3a` after two routine runtime REWORKs. D1 and Worker resources remain provisioned for evidence; no R2/Images resources exist.
 
 No R2 Dashboard action is required. Remote provisioning is authorized only for the minimum D1/Worker validation footprint.
 
 ## Next authorized objective
 
-Independent Critic PASS and Integration Review PASS are persisted for exact candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a`. Execute the bounded remote journey and persist every gate result. Production remains unauthorized.
+Admit exact candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3` for fresh Independent Critic review using `docs/evidence/TL-CF-D1-REMOTE-STAGING-6eccc3a.md`. If PASS, perform Integration Review and classify remote staging. Production remains unauthorized.

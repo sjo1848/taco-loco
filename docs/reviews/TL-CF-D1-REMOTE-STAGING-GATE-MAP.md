@@ -1,8 +1,9 @@
 # Remote Staging Gate Map — Taco Loco D1 + Static Assets
 
 Prior D1 candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`  
-Remote staging candidate: `4007a5810c998a7c4478dfb4b054c9c612860a1a`
-Status: `ACTIVE / STATIC_ASSETS_REMOTE_VALIDATION`
+Prior Static Assets candidate: `4007a5810c998a7c4478dfb4b054c9c612860a1a`  
+Remote staging candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
+Status: `REMOTE_VALIDATION_COMPLETE_PENDING_ASSURANCE`
 
 This artifact does not provision Cloudflare resources or authorize production.
 
@@ -32,4 +33,4 @@ This artifact does not provision Cloudflare resources or authorize production.
 
 ## Entry and exit
 
-Remote staging may resume only after the local Static Assets adaptation has a new candidate, affected validation PASS, Independent Critic PASS and Integration Review PASS. Exit requires each mandatory row to have inspectable evidence, with no mandatory `UNKNOWN` consumed as GREEN.
+Remote validation completed after two bounded routine REWORKs. Exit requires fresh assurance for `6eccc3a`, then each mandatory row to have inspectable evidence, with no mandatory `UNKNOWN` consumed as GREEN.

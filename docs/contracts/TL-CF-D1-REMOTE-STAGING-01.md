@@ -1,10 +1,10 @@
 # TL-CF-D1-REMOTE-STAGING-01 — bounded Cloudflare D1 validation
 
-Status: `REMOTE_STAGING_ACTIVE / STATIC_ASSETS`  
+Status: `REMOTE_STAGING_REWORK_PENDING_ASSURANCE / STATIC_ASSETS`  
 Mode: `DELIVERY`  
 Phase: `VALIDATE / RELEASE_PREPARATION`  
 Prior validated candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`  
-Remote staging candidate: `4007a5810c998a7c4478dfb4b054c9c612860a1a`
+Remote staging candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
 Scope: bounded remote validation only; production remains unauthorized.
 
 ## Superseding media decision
@@ -53,12 +53,12 @@ Every mandatory gate must resolve to PASS or contract-backed NOT_APPLICABLE. UNK
 
 ## Current stop condition
 
-Remote staging is active for the exact candidate; provision only the minimum D1/Worker validation footprint and stop at the contract classification.
+Remote execution completed for the exact candidate. Two routine runtime defects were corrected through bounded REWORK, with final evidence in `docs/evidence/TL-CF-D1-REMOTE-STAGING-6eccc3a.md`. The final candidate is admitted for fresh Independent Critic review; do not classify remote staging green before that assurance.
 
 Entry conditions are satisfied: exact candidate, affected QA/build/runtime PASS, Independent Critic PASS, Integration Review PASS and synchronized governance.
 
 ## Done when
 
-After reactivation, the bounded remote journey passes every mandatory gate in the canonical map and state advances to `REMOTE_INTEGRATION_PASS` without implying production authorization.
+After fresh assurance, if the bounded remote journey passes every mandatory gate in the canonical map, state may advance to `REMOTE_INTEGRATION_PASS` without implying production authorization.
 
 Production remains `NOT_AUTHORIZED`.
