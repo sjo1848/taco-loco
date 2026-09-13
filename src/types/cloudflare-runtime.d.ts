@@ -16,10 +16,9 @@ declare module "cloudflare:workers" {
     get(key: string): Promise<R2ObjectBody | null>;
     delete(key: string): Promise<void>;
   }
-  interface HyperdriveBinding { connectionString: string }
   export const env: {
+    DB: import("@cloudflare/workers-types").D1Database;
     IMAGES: ImagesBinding;
     MEDIA_BUCKET: R2Bucket;
-    HYPERDRIVE: HyperdriveBinding;
   };
 }

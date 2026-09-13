@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import vinext from "vinext";
 import { cloudflare } from "@cloudflare/vite-plugin";
-import { kvDataAdapter } from "@vinext/cloudflare/cache/kv-data-adapter";
 import { cdnAdapter } from "@vinext/cloudflare/cache/cdn-adapter";
 import { imagesOptimizer } from "@vinext/cloudflare/images/images-optimizer";
 import path from "node:path";
@@ -9,7 +8,7 @@ import path from "node:path";
 export default defineConfig({
   plugins: [
     vinext({
-      cache: { data: kvDataAdapter(), cdn: cdnAdapter() },
+      cache: { cdn: cdnAdapter() },
       images: { optimizer: imagesOptimizer() },
     }),
     cloudflare({
@@ -24,6 +23,10 @@ export default defineConfig({
       "@/lib/db": path.resolve(
         import.meta.dirname,
         "src/lib/db.worker.ts",
+      ),
+      "@/lib/runtime": path.resolve(
+        import.meta.dirname,
+        "src/lib/runtime.worker.ts",
       ),
       "@/modules/media/pipeline": path.resolve(
         import.meta.dirname,

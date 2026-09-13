@@ -1,9 +1,7 @@
 import { env } from "cloudflare:workers";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
+import { PrismaD1 } from "@prisma/adapter-d1";
+import { PrismaClient } from "@/generated/d1";
 
-const adapter = new PrismaPg({
-  connectionString: env.HYPERDRIVE.connectionString,
-});
+const adapter = new PrismaD1(env.DB);
 
 export const db = new PrismaClient({ adapter });

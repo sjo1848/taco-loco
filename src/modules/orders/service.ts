@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { assertValidTransition, orderFulfillmentSchema, orderStatusSchema, type OrderStatus } from "@/modules/orders/model";
 import { z } from "zod";
 import { publishOrderEvent } from "@/modules/orders/live-events";
+import { isD1Runtime } from "@/lib/runtime";
 
 export const transitionOrderInputSchema = z.object({
   orderId: z.uuid(),
@@ -72,18 +73,26 @@ function resolveModifiers(product: ManualProduct, modifiers: CreateManualOrderIn
 
 export async function createManualOrder(input: unknown, actorId: string | null, clientReference: string | null = null, reason = "Pedido registrado manualmente", source: "WHATSAPP" | "PUBLIC_MENU" = "WHATSAPP") {
   const parsed = createManualOrderInputSchema.parse(input);
+  const productIds = [...new Set(parsed.lines.map((line) => line.productId))];
+  const products = await db.product.findMany({ where: { id: { in: productIds }, archivedAt: null, published: true, available: true }, include: { modifierGroups: { include: { modifierGroup: { include: { options: true } } } } } }) as ManualProduct[];
+  const productsById = new Map(products.map((product) => [product.id, product]));
+  const resolvedLines = parsed.lines.map((line) => {
+    const product = productsById.get(line.productId);
+    if (!product) throw new AppError("PRODUCT_NOT_AVAILABLE", "Uno de los productos ya no está disponible.", 400);
+    return { productId: product.id, productName: product.name, unitPriceAmount: product.priceAmount, quantity: line.quantity, modifiersSnapshot: resolveModifiers(product, line.modifiers), note: line.note ?? null };
+  });
+  const subtotalAmount = resolvedLines.reduce((total, line) => total + line.unitPriceAmount * line.quantity, 0);
+  const totalAmount = subtotalAmount + parsed.adjustmentAmount;
+  if (totalAmount < 0) throw new AppError("INVALID_ORDER_TOTAL", "El total del pedido no puede ser negativo.", 400);
+  if (isD1Runtime) {
+    const { createD1Order } = await import("@/modules/orders/d1-atomic.worker");
+    const id = crypto.randomUUID();
+    await createD1Order({ id, source, fulfillment: parsed.fulfillment, customerName: parsed.customerName ?? null, customerPhone: parsed.customerPhone ?? null, tableLabel: parsed.tableLabel ?? null, notes: parsed.notes ?? null, subtotalAmount, adjustmentAmount: parsed.adjustmentAmount, totalAmount, clientReference, createdById: actorId, reason, lines: resolvedLines.map((line) => ({ ...line, id: crypto.randomUUID() })) });
+    const order = await db.order.findUniqueOrThrow({ where: { id }, include: { lines: true } });
+    const event = await db.orderEvent.findFirstOrThrow({ where: { orderId: id }, orderBy: { sequence: "desc" } });
+    return { order, event };
+  }
   return db.$transaction(async (tx: { product: typeof db.product; order: typeof db.order; orderEvent: typeof db.orderEvent; $executeRaw: typeof db.$executeRaw }) => {
-    const productIds = [...new Set(parsed.lines.map((line) => line.productId))];
-    const products = await tx.product.findMany({ where: { id: { in: productIds }, archivedAt: null, published: true, available: true }, include: { modifierGroups: { include: { modifierGroup: { include: { options: true } } } } } }) as ManualProduct[];
-    const productsById = new Map(products.map((product) => [product.id, product]));
-    const resolvedLines = parsed.lines.map((line) => {
-      const product = productsById.get(line.productId);
-      if (!product) throw new AppError("PRODUCT_NOT_AVAILABLE", "Uno de los productos ya no está disponible.", 400);
-      return { productId: product.id, productName: product.name, unitPriceAmount: product.priceAmount, quantity: line.quantity, modifiersSnapshot: resolveModifiers(product, line.modifiers), note: line.note ?? null };
-    });
-    const subtotalAmount = resolvedLines.reduce((total, line) => total + line.unitPriceAmount * line.quantity, 0);
-    const totalAmount = subtotalAmount + parsed.adjustmentAmount;
-    if (totalAmount < 0) throw new AppError("INVALID_ORDER_TOTAL", "El total del pedido no puede ser negativo.", 400);
     const order = await tx.order.create({
       data: {
         source,
@@ -114,7 +123,8 @@ export async function createPublicOrderIntent(input: unknown) {
   try {
     return await createManualOrder({ fulfillment: "PICKUP", customerName: null, customerPhone: null, tableLabel: null, notes: "Intención registrada desde el menú. Confirmar recepción por WhatsApp.", adjustmentAmount: 0, lines: parsed.lines }, null, parsed.clientReference, "Intención preparada desde el menú público", "PUBLIC_MENU");
   } catch (error) {
-    if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
+    const isClientReferenceConflict = error && typeof error === "object" && (("code" in error && error.code === "P2002") || ("message" in error && typeof error.message === "string" && error.message.includes("Order.clientReference")));
+    if (isClientReferenceConflict) {
       const concurrent = await db.order.findUniqueOrThrow({ where: { clientReference: parsed.clientReference }, include: { lines: true } });
       return { order: concurrent, event: null, reused: true };
     }
@@ -124,8 +134,7 @@ export async function createPublicOrderIntent(input: unknown) {
 
 export async function transitionOrder(input: unknown, actorId: string) {
   const parsed = transitionOrderInputSchema.parse(input);
-  return db.$transaction(async (tx: { order: typeof db.order; orderEvent: typeof db.orderEvent; $executeRaw: typeof db.$executeRaw }) => {
-    const current = await tx.order.findUnique({ where: { id: parsed.orderId } });
+  const current = await db.order.findUnique({ where: { id: parsed.orderId } });
     if (!current) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
 
     try {
@@ -134,13 +143,29 @@ export async function transitionOrder(input: unknown, actorId: string) {
       throw new AppError("INVALID_ORDER_TRANSITION", "El pedido no puede pasar a ese estado.", 409);
     }
 
+  if (isD1Runtime) {
+    const { transitionD1Order } = await import("@/modules/orders/d1-atomic.worker");
+    const data = transitionOrderData(parsed.toStatus, parsed.reason);
+    try {
+      await transitionD1Order({ orderId: parsed.orderId, fromStatus: current.status, toStatus: parsed.toStatus, reason: parsed.reason ?? null, actorId, cancellationReason: data.cancellationReason ?? null, confirmedAt: data.confirmedAt?.toISOString() ?? null, closedAt: data.closedAt?.toISOString() ?? null });
+    } catch (error) {
+      if (error instanceof Error && error.message === "D1_ORDER_CHANGED") throw new AppError("ORDER_CHANGED", "El pedido cambió mientras lo actualizabas. Recargá e intentá de nuevo.", 409);
+      throw error;
+    }
+    const order = await db.order.findUniqueOrThrow({ where: { id: parsed.orderId }, include: { lines: true, events: { orderBy: { createdAt: "asc" } } } });
+    const event = await db.orderEvent.findFirstOrThrow({ where: { orderId: parsed.orderId }, orderBy: { sequence: "desc" } });
+    return { order, event };
+  }
+  return db.$transaction(async (tx: { order: typeof db.order; orderEvent: typeof db.orderEvent; $executeRaw: typeof db.$executeRaw }) => {
+    const txCurrent = await tx.order.findUnique({ where: { id: parsed.orderId } });
+    if (!txCurrent) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
     const result = await tx.order.updateMany({
-      where: { id: parsed.orderId, status: current.status },
+      where: { id: parsed.orderId, status: txCurrent.status },
       data: { ...transitionOrderData(parsed.toStatus, parsed.reason), updatedById: actorId },
     });
     if (result.count !== 1) throw new AppError("ORDER_CHANGED", "El pedido cambió mientras lo actualizabas. Recargá e intentá de nuevo.", 409);
 
-    const event = await tx.orderEvent.create({ data: { orderId: parsed.orderId, fromStatus: current.status, toStatus: parsed.toStatus, reason: parsed.reason ?? null, actorId } });
+    const event = await tx.orderEvent.create({ data: { orderId: parsed.orderId, fromStatus: txCurrent.status, toStatus: parsed.toStatus, reason: parsed.reason ?? null, actorId } });
     await publishOrderEvent(tx, event);
     const order = await tx.order.findUniqueOrThrow({ where: { id: parsed.orderId }, include: { lines: true, events: { orderBy: { createdAt: "asc" } } } });
     return { order, event };
