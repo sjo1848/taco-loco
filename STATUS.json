@@ -34,7 +34,7 @@
   "staticAssetsEngineeringQa": "PASS",
   "staticAssetsFunctionalQa": "PASS_LOCAL",
   "staticAssetsSecurityReview": "PASS_LOCAL_UPLOAD_SURFACE_REMOVED",
-  "staticAssetsIndependentCritic": "REWORK_EVIDENCE_PACKET",
+  "staticAssetsIndependentCritic": "REWORK_EVIDENCE_PROVENANCE",
   "staticAssetsIntegrationReview": "PENDING",
   "staging": "PAUSED_PENDING_STATIC_ASSETS_ADAPTATION",
   "production": "NOT_AUTHORIZED",

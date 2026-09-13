@@ -3,7 +3,7 @@
 Status: `FROZEN_ADMITTED`
 Verdict being rechecked: prior `REWORK` was evidence-only.
 Substantive candidate: `4007a5810c998a7c4478dfb4b054c9c612860a1a`
-Evidence/governance descendant: `530b96373b8bfdad16cd5d74febbe0333592f3be`
+Evidence/governance descendant: `7c134d94c3855ea2299efe013e671c7eec8982b3`
 Contract: `docs/contracts/TL-CF-STATIC-ASSETS-01.md`
 
 Review the exact substantive candidate plus the corrected evidence carried by its governance descendant. Do not modify files or infer remote/production readiness.

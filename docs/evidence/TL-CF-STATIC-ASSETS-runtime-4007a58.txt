@@ -1,7 +1,7 @@
 # TL-CF-STATIC-ASSETS runtime evidence
 
 Substantive candidate: 4007a5810c998a7c4478dfb4b054c9c612860a1a
-Evidence recorded in governance descendant: 530b96373b8bfdad16cd5d74febbe0333592f3be
+Evidence recorded in governance descendant: 7c134d94c3855ea2299efe013e671c7eec8982b3
 Environment: local Wrangler Worker only; no remote resources.
 
 Commands and observed results:
