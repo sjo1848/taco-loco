@@ -51,7 +51,7 @@ That candidate is now the baseline for a bounded media adaptation, not the final
 ## Engineering evidence
 D1 implementation: PROVEN for prior candidate `5d0a1bf`.  
 Static Assets implementation: PROVEN for candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a`; local QA/build/runtime PASS.  
-Remote validation: UNKNOWN / PAUSED_PENDING_STATIC_ASSETS_ADAPTATION.  
+Remote validation: UNKNOWN / READY_TO_REACTIVATE_STATIC_ASSETS_REMOTE_GATE.  
 Release/Deployment: UNKNOWN.  
 Maintenance/Operations: UNKNOWN.  
 Production: NOT_AUTHORIZED.
@@ -64,6 +64,6 @@ Independent Critic `PASS` is persisted at `docs/reviews/TL-CF-STATIC-ASSETS-inde
 ## Next authorized action
 Synchronize durable state/evidence and Drive, then reactivate the bounded remote staging contract against Workers + D1 + Static Assets. No remote provisioning or deployment occurs in this local block.
 
-After local candidate PASS + Independent Critic PASS + Integration Review PASS, reactivate `TL-CF-D1-REMOTE-STAGING-01` against Workers + D1 + Static Assets.
+After durable synchronization, reactivate `TL-CF-D1-REMOTE-STAGING-01` against Workers + D1 + Static Assets.
 
 Production remains `NOT_AUTHORIZED`.

@@ -48,9 +48,9 @@ Local evidence: `docs/evidence/TL-CF-STATIC-ASSETS-4007a58.md` — PASS.
 
 ## Remote staging
 
-`TL-CF-D1-REMOTE-STAGING-01` is `PAUSED_PENDING_STATIC_ASSETS_ADAPTATION`.
+`TL-CF-D1-REMOTE-STAGING-01` is `READY_TO_REACTIVATE_STATIC_ASSETS`.
 
-No R2 Dashboard action is required. No remote provisioning/deployment is authorized until the local adaptation closes.
+No R2 Dashboard action is required. No remote provisioning/deployment has occurred; the next authorized action is bounded remote staging against Workers + D1 + Static Assets.
 
 ## Next authorized objective
 
