@@ -2,7 +2,7 @@
 Updated: 2026-09-13
 Mode: DELIVERY
 Phase: VALIDATE / RELEASE_PREPARATION
-Status: STAGING_CATALOG_PARITY_ACTIVE
+Status: STAGING_CATALOG_PARITY_PASS
 Active contract: TL-STAGING-CATALOG-PARITY-01
 Application candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
@@ -60,10 +60,10 @@ This block changes staging data, not application code. Candidate `6eccc3a` remai
 - Local implementation: PROVEN.
 - Static Assets assurance: PROVEN.
 - Remote integration: PROVEN PASS.
-- Catalog parity in realistic staging: ACTIVE / NOT YET PROVEN.
-- Production eligibility: DEFERRED_PENDING_STAGING_CATALOG_VALIDATION.
+- Catalog parity in realistic staging: PROVEN PASS.
+- Production eligibility: READY_TO_REOPEN_SEPARATE_HUMAN_GATE.
 - Production: NOT_AUTHORIZED.
 
 ## Next action
 
-Execute `TL-STAGING-CATALOG-PARITY-01` against the existing staging environment. On PASS, persist evidence and reopen production eligibility as a separate Human Gate. Do not deploy production during this contract.
+`TL-STAGING-CATALOG-PARITY-01` passed against the existing staging environment. Reopen production eligibility as a separate Human Gate; do not deploy production during this contract.

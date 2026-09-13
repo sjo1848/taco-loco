@@ -18,6 +18,7 @@ As of: 2026-09-13
 - Remote staging effective bindings: PROVEN — `docs/evidence/TL-CF-D1-REMOTE-STAGING-bindings-6eccc3.json`.
 - Remote staging Independent Critic: PROVEN PASS — `docs/reviews/TL-CF-D1-REMOTE-STAGING-independent-critic-6eccc3a.md`.
 - Remote staging Integration Review: PROVEN PASS — `docs/reviews/TL-CF-D1-REMOTE-STAGING-integration-review-6eccc3a.md`.
+- Staging catalog parity: PROVEN PASS — `docs/evidence/TL-STAGING-CATALOG-PARITY-2026-09-13.md`; frozen source `a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`, 7 active categories, 31 published products, zero missing/mismatched/duplicate public canonical products, realistic order and modifier journey PASS.
 - Static Assets Independent Critic: PROVEN PASS — `docs/reviews/TL-CF-STATIC-ASSETS-independent-critic-4007a58.md`; exact candidate and fresh independent context.
 - Static Assets Integration Review: PROVEN PASS — `docs/reviews/TL-CF-STATIC-ASSETS-integration-review-4007a58.md`; exact candidate and fresh independent context.
 

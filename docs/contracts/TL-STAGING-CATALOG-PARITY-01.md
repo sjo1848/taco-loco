@@ -1,6 +1,6 @@
 # TL-STAGING-CATALOG-PARITY-01 — Taco Loco staging catalog parity
 
-Status: `ACTIVE`
+Status: `STAGING_CATALOG_PARITY_PASS`
 Mode: `DELIVERY`
 Phase: `VALIDATE / RELEASE_PREPARATION`
 Application candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
@@ -90,8 +90,8 @@ A data-only staging reconciliation does not create a new technical candidate. If
 
 ## Exit
 
-PASS when the staging environment has canonical catalog parity and the representative business journey passes with inspectable evidence.
+PASS: the staging environment has canonical catalog parity and the representative business journey passes with inspectable evidence. Evidence: `docs/evidence/TL-STAGING-CATALOG-PARITY-2026-09-13.md`.
 
-Then persist a staging-catalog evidence artifact and reopen production eligibility as a separate Human Gate.
+Reopen production eligibility as a separate Human Gate. Keep staging available.
 
 Production remains `NOT_AUTHORIZED` throughout this contract.
