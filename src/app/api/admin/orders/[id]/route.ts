@@ -10,7 +10,8 @@ type Context = { params: Promise<{ id: string }> };
 export async function GET(_: Request, context: Context) {
   try {
     await requireAdmin();
-    return NextResponse.json(await orderRepository.findById((await context.params).id));
+    const order = await orderRepository.findById((await context.params).id);
+    return new NextResponse(JSON.stringify(order, (_key, value) => typeof value === "bigint" ? value.toString() : value), { headers: { "content-type": "application/json" } });
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") return NextResponse.json({ code: "UNAUTHORIZED" }, { status: 401 });
     if (error instanceof AppError) return NextResponse.json({ code: error.code, message: error.message }, { status: error.status });
