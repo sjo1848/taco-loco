@@ -1,15 +1,16 @@
 # Taco Loco — Current Authoritative Project State
 Updated: 2026-09-13
 Mode: DELIVERY
-Phase: RELEASE_PREPARATION
-Status: HUMAN_GATE / PRODUCTION_RELEASE_AUTHORIZATION
-Active contract: TL-CF-PRODUCTION-ELIGIBILITY-01
-Production candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
+Phase: VALIDATE / RELEASE_PREPARATION
+Status: STAGING_CATALOG_PARITY_ACTIVE
+Active contract: TL-STAGING-CATALOG-PARITY-01
+Application candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
+Production: `NOT_AUTHORIZED`
 
 ## Objective
 
-Decide whether to release the proven Cloudflare-native candidate to a separate production environment. No production provisioning, deployment or cutover is authorized until the Human Gate resolves.
+Keep the proven Cloudflare-native system in staging, restore the established Taco Loco catalog from the frozen source, validate the realistic menu/business journey, and only then reopen production authorization.
 
 ## Active architecture
 
@@ -20,64 +21,31 @@ Client
        -> Workers Static Assets
 ```
 
-Active decisions:
-- Workers/vinext is the application/API runtime.
-- D1 is the structured/transactional store.
-- `MEDIA_STATIC_ASSETS_INITIAL`: product images are Workers Static Assets versioned with application deployment.
-- `MEDIA_SELF_SERVICE_UPLOAD_DEFERRED`: no admin/customer self-service image upload in the initial release.
-- R2 is `SUPERSEDED_NOT_REQUIRED_INITIAL`.
-- Cloudflare Images is `DEFERRED_NOT_REQUIRED_INITIAL`.
-- Hyperdrive, external PostgreSQL, KV, Durable Objects, queues and VPS are not part of the initial target.
-- Production release requires the current Human Gate.
+R2, Cloudflare Images, Hyperdrive, external PostgreSQL, KV, Durable Objects, queues and VPS are not part of the initial target.
 
-## Proven release evidence
+## Proven technical checkpoint
 
-Exact candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3` reached `REMOTE_INTEGRATION_PASS` with:
-- real Cloudflare Worker + D1 + Static Assets validation;
-- D1 migration PASS;
-- Static Assets PASS;
-- auth/session/logout PASS;
-- orders/idempotency/transitions PASS;
-- persisted events/SSE replay PASS;
-- logs/runtime PASS;
-- Independent Critic PASS;
-- Integration Review PASS.
+Exact candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3` reached `REMOTE_INTEGRATION_PASS` with Worker + D1 + Static Assets, auth/session/logout, orders/idempotency/transitions, events/SSE, logs/runtime, Independent Critic PASS and Integration Review PASS.
 
-Two staging defects were corrected before the final candidate:
-- D1-compatible health probing;
-- BigInt-safe `OrderEvent.sequence` serialization.
+The existing staging resources remain the validation environment:
+- Worker: `taco-loco-staging-20260913`
+- D1: `taco-loco-staging-20260913`
 
-The final candidate was revalidated locally and remotely after those corrections.
+## Human decisions 2026-09-13
 
-## Current infrastructure
+- Production release is deferred; no production provisioning/deployment/cutover is authorized.
+- Continue in staging.
+- Before production, load and validate the established catalog from the former Taco Loco implementation.
+- `workers.dev` is accepted as the preferred initial zero-cost URL when production is eventually authorized.
+- Staging should remain available through this validation period and future initial release evaluation.
 
-Bounded staging remains provisioned and proven:
-- Worker: `taco-loco-staging-20260913`;
-- D1: `taco-loco-staging-20260913`.
+## Canonical catalog baseline
 
-R2, Images, Hyperdrive and KV were not provisioned.
+Source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48/prisma/seed.ts`
 
-## Production eligibility recommendation
+It defines 7 categories and 31 products plus modifier groups/options/associations. Catalog values must be copied from that source rather than invented.
 
-If authorized, use a separate production Worker and separate production D1 while preserving staging. Initial public URL should default to `workers.dev` to preserve COST-0 unless a later decision chooses a custom domain.
-
-Production data must be classified before release as either:
-- `FRESH_PRODUCTION_BOOTSTRAP`; or
-- `EXISTING_DATA_MIGRATION_REQUIRED`.
-
-Staging test data is not production data.
-
-## COST-0 posture
-
-The initial production target remains Workers Free + D1 Free + Workers Static Assets. A future capacity/paid-plan change requires a separate Human Gate.
-
-## Human Gate pending
-
-Resolve explicitly:
-1. authorize or reject production release of exact candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`;
-2. accept `workers.dev` as the initial zero-cost production URL or defer for another URL decision;
-3. choose fresh production bootstrap or declare that existing live data must be migrated;
-4. accept keeping staging available during the initial production period.
+This block changes staging data, not application code. Candidate `6eccc3a` remains the application candidate unless a real code/config defect requires REWORK.
 
 ## Source precedence
 1. FALDEO Project Method v1.0 + Harness v1.
@@ -92,9 +60,10 @@ Resolve explicitly:
 - Local implementation: PROVEN.
 - Static Assets assurance: PROVEN.
 - Remote integration: PROVEN PASS.
-- Production eligibility: PREPARED.
+- Catalog parity in realistic staging: ACTIVE / NOT YET PROVEN.
+- Production eligibility: DEFERRED_PENDING_STAGING_CATALOG_VALIDATION.
 - Production: NOT_AUTHORIZED.
 
 ## Next action
 
-Stop at `HUMAN_GATE / PRODUCTION_RELEASE_AUTHORIZATION` and obtain the explicit release decisions. Do not deploy or cut over production before approval.
+Execute `TL-STAGING-CATALOG-PARITY-01` against the existing staging environment. On PASS, persist evidence and reopen production eligibility as a separate Human Gate. Do not deploy production during this contract.
