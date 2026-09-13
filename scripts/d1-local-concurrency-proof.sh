@@ -46,5 +46,7 @@ assert len({item["payload"]["order"]["orderNumber"] for item in same}) == 1, sam
 distinct = [item for item in parsed if item["reference"] in {distinct_a, distinct_b}]
 assert [item["status"] for item in distinct] == [201, 201], distinct
 assert len({item["payload"]["order"]["orderNumber"] for item in distinct}) == 2, distinct
+all_created = [item["payload"]["order"]["orderNumber"] for item in same[:1] + distinct]
+assert sorted(all_created) == [101, 102, 103], all_created
 print(json.dumps({"assertions": "PASS", "duplicate_requests": 4, "distinct_requests": 2}))
 PY

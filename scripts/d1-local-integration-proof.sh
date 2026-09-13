@@ -63,8 +63,15 @@ print(json.dumps({"transition_race": "PASS", "statuses": statuses}))
 PY
 sse_output="$persist_dir/sse.txt"
 curl --max-time 3 -sS -N -b "$cookie_jar" "$TACO_LOCO_URL/api/admin/orders/events?after=99" >"$sse_output" 2>/dev/null || test "$?" = 28
-grep -q 'event: order' "$sse_output"
-grep -q '^id: ' "$sse_output"
+python3 - "$sse_output" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text()
+ids = [int(line.split(": ", 1)[1]) for line in text.splitlines() if line.startswith("id: ")]
+assert ids == [100, 101, 102, 103, 104], ids
+assert ids == sorted(set(ids)), ids
+assert text.count("event: order") == 5
+print({"sse_cursor_replay_assertions": "PASS", "ids": ids})
+PY
 echo "sse_cursor_replay_assertions=PASS"
 logout_status="$(curl --max-time 15 -sS -o /dev/null -w '%{http_code}' -c "$cookie_jar" -b "$cookie_jar" -X POST "$TACO_LOCO_URL/api/auth/logout" -H "origin: $TACO_LOCO_URL")"
 test "$logout_status" = 200
