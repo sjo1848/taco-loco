@@ -7,7 +7,7 @@ Updated: 2026-09-13
 - Application candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `STAGING_REVIEW_READY`
+- State: `STAGING_WHATSAPP_NUMBER_FIXED`
 - Active contract: `docs/contracts/TL-STAGING-CATALOG-PARITY-01.md`
 - Production: `NOT_AUTHORIZED`
 
@@ -37,6 +37,8 @@ Do not recreate the old demo order or default admin credential as part of catalo
 ## Manual review readiness
 
 The existing staging environment is ready for human review. Temporary `/products/taco-carne.jpg` coverage is present for all 31 published canonical products, staging-only admin access is verified, and public/admin/order/session/event regression remains healthy. Evidence: `docs/evidence/TL-STAGING-MANUAL-REVIEW-READY-2026-09-13.md`.
+
+The staging `MenuSettings.whatsappPhone` value is corrected to `5492615956912`; web/mobile order handoff and admin settings were revalidated. Evidence: `docs/evidence/TL-STAGING-WHATSAPP-NUMBER-FIXED-2026-09-13.md`.
 
 ## Next authorized objective
 

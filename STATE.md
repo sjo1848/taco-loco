@@ -2,7 +2,7 @@
 Updated: 2026-09-13
 Mode: DELIVERY
 Phase: VALIDATE
-Status: STAGING_REVIEW_READY
+Status: STAGING_WHATSAPP_NUMBER_FIXED
 Active contract: TL-STAGING-CATALOG-PARITY-01 (PASS; follow-up manual review preparation)
 Application candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
@@ -59,8 +59,9 @@ For staging manual review only, products without a dedicated asset may temporari
 - Remote integration: PROVEN PASS.
 - Catalog parity: PROVEN PASS.
 - Manual staging review readiness: PROVEN PASS — `docs/evidence/TL-STAGING-MANUAL-REVIEW-READY-2026-09-13.md`.
+- Staging WhatsApp number: PROVEN PASS — `docs/evidence/TL-STAGING-WHATSAPP-NUMBER-FIXED-2026-09-13.md`; `MenuSettings.whatsappPhone` corrected to `5492615956912`.
 - Production: NOT_AUTHORIZED_BY_EXPLICIT_HUMAN_HOLD.
 
 ## Next action
 
-The existing staging environment is ready for human manual review. Review the public menu and admin flows using the staging-only identity. Do not create, deploy or modify production resources. Production remains NOT_AUTHORIZED and may be reconsidered only after a future explicit human instruction.
+The existing staging environment is ready for human manual review with the corrected WhatsApp destination. Do not create, deploy or modify production resources. Production remains NOT_AUTHORIZED and may be reconsidered only after a future explicit human instruction.

@@ -5,7 +5,7 @@
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
   "targetBranch": "migration/cloudflare-native",
   "technicalCandidate": "6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3",
-  "stage": "STAGING_REVIEW_READY",
+  "stage": "STAGING_WHATSAPP_NUMBER_FIXED",
   "remoteIntegration": "PASS",
   "stagingWorker": "taco-loco-staging-20260913",
   "stagingD1": "taco-loco-staging-20260913",
@@ -37,5 +37,8 @@
   "manualReviewEvidence": "docs/evidence/TL-STAGING-MANUAL-REVIEW-READY-2026-09-13.md",
   "temporaryImageCoverage": "31_OF_31",
   "stagingAdminAccess": "STAGING_ADMIN_ACCESS_PASS",
-  "resumePoint": "Existing staging is ready for manual human review. Keep staging available and await human feedback. Production remains NOT_AUTHORIZED; do not reopen production eligibility automatically."
+  "stagingWhatsAppPhone": "5492615956912",
+  "stagingWhatsAppPreviousSanitized": "5491112345678",
+  "stagingWhatsAppEvidence": "docs/evidence/TL-STAGING-WHATSAPP-NUMBER-FIXED-2026-09-13.md",
+  "resumePoint": "Existing staging is ready for manual human review with the corrected WhatsApp destination. Keep staging available and await human feedback. Production remains NOT_AUTHORIZED; do not reopen production eligibility automatically."
 }
