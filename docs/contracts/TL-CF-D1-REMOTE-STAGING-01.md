@@ -1,56 +1,69 @@
 # TL-CF-D1-REMOTE-STAGING-01 — bounded Cloudflare D1 validation
 
-Status: `BLOCKED_HUMAN_ACTION_R2_ENABLEMENT`  
+Status: `PAUSED_PENDING_STATIC_ASSETS_ADAPTATION`  
 Mode: `DELIVERY`  
 Phase: `VALIDATE / RELEASE_PREPARATION`  
-Technical candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`  
+Prior validated candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`  
+Remote staging candidate: `PENDING_NEW_STATIC_ASSETS_CANDIDATE`  
 Scope: bounded remote validation only; production remains unauthorized.
 
-Source convergence: GitHub branch `origin/migration/cloudflare-native` verified at `3e4fb56d09a28f9e887b70bdec52e9cdcb10f68d`; technical candidate `5d0a1bf` is an ancestor.
+## Superseding media decision
 
-## Objective
+`MEDIA_STATIC_ASSETS_INITIAL` supersedes R2 as the initial media target.
 
-Prove the already locally validated D1 candidate in real Cloudflare infrastructure using the smallest remote footprint compatible with the Cloudflare-native / USD-0 constraint.
+- R2 enablement/checkout, bucket and `MEDIA_BUCKET` binding are not required.
+- Cloudflare Images is deferred/not required unless a separate current requirement justifies it.
+- Self-service image upload is deferred.
+- Product media is delivered as Workers Static Assets versioned with the application deployment.
+- `Product.imageKey` stores/resolves a public static asset path.
+
+The historical `R2_FREE_TIER_ACCEPTED` decision and API 10042 evidence remain preserved but no longer block this contract.
 
 ## Canonical inputs
 
-- Local implementation contract: `docs/contracts/TL-CF-D1-LOCAL-IMPLEMENTATION-01.md`
+- Active local adaptation contract: `docs/contracts/TL-CF-STATIC-ASSETS-01.md`
+- Decision: `docs/evidence/TL-MEDIA-STATIC-ASSETS-DECISION-2026-09-13.md`
 - Gate map: `docs/reviews/TL-CF-D1-REMOTE-STAGING-GATE-MAP.md`
-- Local evidence: `docs/evidence/TL-CF-D1-LOCAL-IMPLEMENTATION-0fe52c7.md`
-- Independent Critic PASS: `docs/reviews/TL-CF-D1-LOCAL-IMPLEMENTATION-independent-critic-5d0a1bf.md`
-- Integration Review PASS: `docs/reviews/TL-CF-D1-LOCAL-IMPLEMENTATION-integration-review-5d0a1bf.md`
+- Prior D1 local evidence for candidate `5d0a1bf`
 - Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 
-## Requirements and acceptance
+## Requirements and acceptance after reactivation
 
 Every mandatory gate must resolve to PASS or contract-backed NOT_APPLICABLE. UNKNOWN cannot be consumed as GREEN.
 
 | Requirement | Expected surface | Acceptance | Evidence |
 |---|---|---|---|
-| Account/cost guardrail | Workers, D1, R2, Images account state | Free allocation available; no mandatory paid plan or uncontrolled overage | sanitized account/plan/quota artifact |
+| Account/cost guardrail | Workers + D1 account state | initial target remains compatible with COST-0; no mandatory paid plan | sanitized account/plan/quota artifact |
 | Worker runtime | deployed candidate | real URL, version and health response | deployment identity and runtime logs |
 | D1 provider path | D1 binding/schema | exact migration succeeds and Worker reads/writes real D1 | database identity, migration output, queries |
 | Auth/admin/session | deployed routes/secrets | login, session, admin read/mutation, logout invalidation | redacted journey transcript |
 | Orders | public/admin routes | order intent, lines, numbering, idempotency, transition | persisted-row and HTTP evidence |
 | Events | D1 event path/SSE | no phantom event, ordered replay, bounded polling | event rows and cursor transcript |
-| Media | R2 and Images where required | upload/read/replacement/deletion and transformation path | object/binding evidence without secrets |
+| Static media | Workers Static Assets + D1 image reference | representative product image is deployed/reachable with correct reference/content; no R2 dependency | deployment asset evidence + public menu journey |
 | Observability | Worker logs | runtime requests and expected errors inspectable | sanitized logs/tail evidence |
-| Behavior parity | representative journey | no material drift from approved local/product baseline | parity report |
+| Behavior parity | representative journey | no material drift except explicitly deferred self-service upload | parity report |
 
 ## Constraints and non-goals
 
-- No production deployment, cutover, production data, paid plan, intentional billable usage, VPS, external PostgreSQL, Hyperdrive, KV, Durable Objects, realtime, queues, or unrelated product changes.
-- Use only disposable/bounded remote validation resources.
-- Freeze the substantive candidate; any code change creates a new candidate and reopens affected assurance.
+- No production deployment, cutover, production data, paid plan, intentional billable usage, VPS, external PostgreSQL, Hyperdrive, R2, Cloudflare Images unless independently re-authorized, KV, Durable Objects, realtime, queues or unrelated product changes.
+- Use only bounded remote validation resources after the local Static Assets contract passes.
+- A new substantive candidate is required after the media adaptation.
 - Never record secret values.
-- Local concurrency proof is sufficient; remote validation must prove provider integration, not stress the provider.
+- Local concurrency proof remains reusable for unchanged D1 surfaces; remote validation proves provider integration, not provider stress.
 
-## Current blocker and stop condition
+## Current stop condition
 
-`R2_FREE_TIER_ACCEPTED` is the resolved Human Gate decision: R2 is acceptable while expected Taco Loco workload remains materially inside the free allocation; paid-plan upgrades, mandatory recurring cost or expected material overage require a new Human Gate. `wrangler r2 bucket list` returned Cloudflare API code `10042`: R2 still must be enabled through the Cloudflare Dashboard. The runtime has no connected browser channel to perform that dashboard action. Classification: `HUMAN_ACTION`.
+Remote staging is PAUSED, not blocked by a Human Action.
 
-The account API also denied billing/subscription reads with `403`; account-specific entitlement and provider free-tier behavior remain UNKNOWN and must be rechecked after enablement. This is evidence work, not an unresolved architecture decision. Do not provision or deploy until the recheck is complete.
+Resume only after `TL-CF-STATIC-ASSETS-01` produces:
+- a new exact candidate;
+- affected QA/build/runtime PASS;
+- Independent Critic PASS;
+- Integration Review PASS;
+- synchronized durable state/evidence.
 
 ## Done when
 
-The bounded remote journey passes every mandatory gate in the canonical map, evidence is persisted, and state is advanced to `REMOTE_INTEGRATION_PASS` without implying production authorization. If R2 remains unavailable or account evidence cannot establish the accepted free-tier guardrail, stop at `HUMAN_ACTION`/`HUMAN_GATE`.
+After reactivation, the bounded remote journey passes every mandatory gate in the canonical map and state advances to `REMOTE_INTEGRATION_PASS` without implying production authorization.
+
+Production remains `NOT_AUTHORIZED`.

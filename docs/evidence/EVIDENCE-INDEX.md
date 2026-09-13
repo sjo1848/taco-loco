@@ -1,21 +1,18 @@
 # Evidence Index — Taco Loco
 As of: 2026-09-13
-Candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
-Current execution HEAD: `3bb63e7a7d0264cebbf696266a11cf88c81ff10a`
-GitHub source convergence: `PASS_NONDESTRUCTIVE_PUSH` — `origin/migration/cloudflare-native@3e4fb56d09a28f9e887b70bdec52e9cdcb10f68d`; candidate `5d0a1bf` reachable remotely
 
-- Problem: PROVEN — strategic Cloudflare-native/USD-0 decision and current product baseline in `docs/reviews/TL-CF-D1-FEASIBILITY.md`
-- Design: PROVEN — D1 feasibility review and contract
-- Implementation: PROVEN — repository candidate SHA
-- Validation: PROVEN/PARTIAL — bounded local D1 implementation and runtime journey passed; remote provider validation is blocked before provisioning
-- Release/Deployment: UNKNOWN — not deployed
-- Maintenance/Operations: UNKNOWN — not operated in production
-- Judgment/Decisions: PROVEN — strategic Human Gate, D1 contract and feasibility review
-- Orchestration/Resume: PROVEN — `docs/orchestration/RESUME.md`
-- D1 feasibility: PROVEN as design/judgment artifact
-- D1 Independent Critic: PROVEN — `docs/reviews/TL-CF-D1-MIG-01-independent-critic-2026-09-13.md`; exact candidate, fresh context, PASS
-- D1 local implementation: PROVEN — `docs/evidence/TL-CF-D1-LOCAL-IMPLEMENTATION-0fe52c7.md`; exact candidate `5d0a1bf`, Independent Critic PASS and Integration Review PASS
-- Remote D1 staging contract: PARTIAL — `docs/contracts/TL-CF-D1-REMOTE-STAGING-01.md`; blocked by R2 Dashboard enablement, with the R2 cost architecture decision now accepted
-- Remote account/cost guardrail: PARTIAL — `docs/evidence/TL-CF-D1-REMOTE-STAGING-ACCOUNT-2026-09-13.md`
+- Problem: PROVEN — Cloudflare-native/USD-0 objective and current product baseline.
+- Design: PROVEN for D1 target; initial media strategy updated by explicit Human Decision `MEDIA_STATIC_ASSETS_INITIAL`.
+- Prior D1 implementation: PROVEN — candidate `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`, Independent Critic PASS and Integration Review PASS.
+- Static Assets media implementation: UNKNOWN / NOT_STARTED — active contract `docs/contracts/TL-CF-STATIC-ASSETS-01.md`.
+- Validation: PARTIAL — D1/runtime evidence is proven for the prior candidate; affected media/config/UI surfaces require revalidation on a new candidate.
+- Release/Deployment: UNKNOWN — not deployed.
+- Maintenance/Operations: UNKNOWN — not operated in production.
+- Judgment/Decisions: PROVEN — D1 decision, COST-0 constraint, `R2_FREE_TIER_ACCEPTED` historical decision, and later `MEDIA_STATIC_ASSETS_INITIAL` supersession for initial media.
+- Orchestration/Resume: PROVEN — `docs/orchestration/RESUME.md`.
+- Static Assets decision: PROVEN — `docs/evidence/TL-MEDIA-STATIC-ASSETS-DECISION-2026-09-13.md`.
+- Self-service upload: DEFERRED by Human Decision for the initial release.
+- R2 enablement: NOT_REQUIRED_INITIAL; previous API 10042/account evidence remains historical and inspectable.
+- Remote D1 staging contract: PAUSED — `docs/contracts/TL-CF-D1-REMOTE-STAGING-01.md`; resume only after a new Static Assets candidate passes local assurance.
 
-Coverage is conservative; no historical process is fabricated.
+Coverage is conservative; no historical process or PASS state is fabricated.
