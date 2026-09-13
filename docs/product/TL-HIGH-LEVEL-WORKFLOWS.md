@@ -1,408 +1,444 @@
-# Taco Loco — Flujos de trabajo de alto nivel
+# TL-HLD-001 — Taco Loco Order Flow & Abuse-Resistance Architecture
 
-Estado: `PRODUCT_FLOW_BASELINE / HUMAN_REVIEW`
+**Artifact type:** High-Level Design (HLD)  
+**Method:** FALDEO Project Method v1.0 + Project Harness Minimum v1.0  
+**Status:** `HUMAN_REVIEW / DESIGN_BASELINE`  
+**Environment:** staging  
+**Production:** `NOT_AUTHORIZED`  
+**Scope:** customer order journey, verification, operational lifecycle, anti-abuse controls, observability and evolution path.
 
-Producción: `NOT_AUTHORIZED`
+---
 
-## 1. Propósito
+## 1. Executive summary
 
-Este documento define el flujo operativo de Taco Loco desde que una persona entra al menú hasta que el pedido se entrega o cancela. También identifica mejoras posibles y separa dos problemas distintos:
+Taco Loco already proves the technical path `menu -> persisted order -> WhatsApp -> admin -> state transitions`, but the current flow has one material product risk: the system can persist a seemingly real order before it knows whether the customer actually sent the WhatsApp message or intends to buy.
 
-- proteger el sistema contra spam, duplicados y automatización abusiva;
-- evitar que un pedido falso o hecho "en joda" llegue a cocina como si fuera un pedido real.
+The recommended high-level design separates **purchase intent** from **operational order admission**.
 
-No autoriza implementación ni producción. Sirve como baseline de producto para discutir y priorizar cambios en staging.
+A click on **Continuar pedido** should mean:
 
-## 2. Baseline actualmente probado
+> The system captured a valid purchase intent and generated a correlation reference.
 
-El staging actual ya demuestra:
+It should not mean:
 
-- menú público con categorías, productos, precios, imágenes y modificadores;
-- persistencia del pedido antes del handoff a WhatsApp;
-- numeración `TL-xxxx`;
-- idempotencia mediante `clientReference`;
-- estados operativos persistidos;
-- historial de eventos y replay;
-- autenticación y panel administrativo;
-- handoff a WhatsApp con número de pedido;
-- flujo de estados actual:
+> Kitchen has a real order to prepare.
 
-```text
-RECEIVED
-  -> CONFIRMED
-      -> IN_PREPARATION
-          -> READY
-              -> DELIVERED
-```
+The recommended MVP control is therefore **manual WhatsApp verification before operational admission**, with expiration for abandoned intents and progressive controls for higher-risk cases.
 
-Con cancelación permitida desde los estados operativos previos a cierre.
+### Architectural decision
 
-El punto débil principal es que el backend puede persistir el pedido antes de saber si el usuario efectivamente envió el mensaje de WhatsApp. Por lo tanto, hoy un usuario puede generar un pedido aparentemente real y abandonar el flujo antes de contactar al negocio.
-
-## 3. Principio de diseño recomendado
-
-La intención de compra y el pedido operativo no deben tratarse como la misma cosa.
-
-Un click en "Confirmar pedido" significa:
-
-> El cliente manifestó una intención y el sistema generó una referencia.
-
-No debería significar automáticamente:
-
-> Cocina tiene un pedido real para preparar.
-
-Por eso conviene introducir una etapa explícita de verificación previa a la cola operativa.
-
-## 4. Flujo objetivo de cliente
-
-### 4.1 Descubrimiento
+Keep two independent lifecycle dimensions:
 
 ```text
-QR / link
-  -> menú
-  -> categorías
-  -> productos
-  -> detalle / modificadores
+verificationStatus = PENDING | VERIFIED | EXPIRED | REJECTED
+orderStatus        = RECEIVED | CONFIRMED | IN_PREPARATION | READY | DELIVERED | CANCELLED
 ```
 
-Objetivo: mínima fricción. No pedir datos personales antes de que el cliente haya decidido comprar.
+Only `VERIFIED` intents may enter the operational queue.
 
-### 4.2 Selección
+---
+
+## 2. Engineering principles
+
+1. **Intent is not operation.** A browser action is not sufficient evidence to start preparing food.
+2. **Taco Loco is the system of record.** WhatsApp is a communication/verification channel, not the database.
+3. **Risk controls are progressive.** Normal customers should face minimal friction; stronger controls activate only when justified.
+4. **No silent destructive transitions.** Cancellation, rejection and operational state changes must remain auditable.
+5. **Operational UX is primary.** The admin should behave like a foodtruck control console, not primarily like a CRUD.
+6. **Evidence before complexity.** Payment automation, WhatsApp API and stronger fraud controls are introduced only when measured need justifies them.
+7. **Production remains a separate Human Gate.** This HLD does not authorize implementation or release.
+
+---
+
+## 3. System context — C4-lite
+
+```mermaid
+flowchart LR
+    C[Cliente\nQR / menú web] -->|selecciona y confirma| WEB[Taco Loco Web\nMenú + carrito + checkout]
+    WEB -->|persiste intención / snapshots| D1[(Cloudflare D1\nIntenciones, pedidos, eventos)]
+    WEB -->|abre TL-xxxx| WA[WhatsApp\nCanal de confirmación]
+    C -->|envía mensaje| WA
+    WA -->|evidencia humana| OPS[Consola operativa\nRecepción + estados]
+    OPS -->|verifica / cambia estado| D1
+    D1 -->|cola + historial| OPS
+    OPS -->|sólo pedidos verificados| K[Cocina / despacho]
+    K -->|listo / entregado| OPS
+```
+
+### Boundary rules
+
+- The browser cannot directly place work into kitchen.
+- WhatsApp confirmation is evidence of intent, not the system of record.
+- The operator controls admission to the operational lifecycle.
+- D1 preserves intent/order/event history.
+- Production resources are outside the scope of this document.
+
+---
+
+## 4. Baseline currently proven in staging
+
+The current staging environment already proves:
+
+- public menu with 7 categories and 31 canonical products;
+- prices, modifiers and static product media;
+- server-side order persistence;
+- `clientReference` idempotency;
+- `TL-xxxx` numbering;
+- order lines and snapshots;
+- operational state transitions;
+- `OrderEvent` history and SSE replay;
+- admin authentication/session/logout;
+- WhatsApp handoff with the correct Taco Loco number;
+- staging operator review flow.
+
+### Current operational state model
+
+```mermaid
+stateDiagram-v2
+    [*] --> RECEIVED
+    RECEIVED --> CONFIRMED
+    RECEIVED --> CANCELLED
+    CONFIRMED --> IN_PREPARATION
+    CONFIRMED --> CANCELLED
+    IN_PREPARATION --> READY
+    IN_PREPARATION --> CANCELLED
+    READY --> DELIVERED
+    READY --> CANCELLED
+    DELIVERED --> [*]
+    CANCELLED --> [*]
+```
+
+### Current material gap
+
+The order may be persisted before the customer actually sends WhatsApp. Therefore an abandoned or intentionally false browser action can currently look too similar to a genuine order.
+
+---
+
+## 5. Target business flow
+
+```mermaid
+flowchart TD
+    A[QR / link] --> B[Browse menu]
+    B --> C[Select products + modifiers]
+    C --> D[Cart + total]
+    D --> E{Business accepting orders?}
+    E -- No --> Q[WhatsApp only for inquiry / closed-state UX]
+    E -- Yes --> F[Revalidate availability + price]
+    F --> G[Create PENDING intent\nfreeze snapshots + correlation reference]
+    G --> H[Open WhatsApp with TL-xxxx]
+    H --> I{Customer sends message?}
+    I -- No --> X[Expire intent]
+    I -- Yes --> J[Operator matches TL-xxxx]
+    J --> K{Accept / reject?}
+    K -- Reject --> R[REJECTED + reason]
+    K -- Accept --> V[VERIFIED]
+    V --> N[RECEIVED / NUEVO]
+    N --> O[CONFIRMED]
+    O --> P[IN_PREPARATION]
+    P --> L[READY]
+    L --> M[DELIVERED]
+```
+
+### Design intent
+
+The system should allow abandoned intents to exist briefly without polluting kitchen operations. The operational board starts only after verification.
+
+---
+
+## 6. Swimlane / responsibility model
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Customer as Cliente
+    participant Web as Taco Loco Web
+    participant DB as D1
+    participant WA as WhatsApp
+    actor Operator as Operador
+    actor Kitchen as Cocina
+
+    Customer->>Web: Build cart and continue
+    Web->>Web: Revalidate price / stock / modifiers
+    Web->>DB: Create PENDING intent + immutable snapshots
+    DB-->>Web: Correlation reference TL-xxxx
+    Web-->>Customer: Open WhatsApp with prepared message
+    Customer->>WA: Send TL-xxxx confirmation
+    WA-->>Operator: Message received
+    Operator->>DB: Match TL-xxxx and mark VERIFIED
+    Operator->>DB: CONFIRM order
+    Operator->>Kitchen: Admit order to preparation
+    Kitchen-->>Operator: READY
+    Operator->>DB: Mark READY
+    Operator-->>Customer: Ready-for-pickup message
+    Customer->>Operator: Pickup
+    Operator->>DB: Mark DELIVERED
+
+    alt Customer never sends WhatsApp
+        DB->>DB: Expire PENDING intent after timeout
+    end
+```
+
+### Responsibility boundary
+
+| Actor | Owns | Must not own |
+|---|---|---|
+| Customer | selection, explicit confirmation action | operational state |
+| Web | validation, snapshots, intent creation, handoff | deciding that a customer is genuine |
+| WhatsApp | communication evidence | canonical order data |
+| Operator | verification, acceptance, state changes | silent data deletion |
+| Kitchen | preparation execution | identity/verification logic |
+| D1 | durable truth, history, correlation | human business judgment |
+
+---
+
+## 7. Recommended state architecture
+
+### Verification lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING
+    PENDING --> VERIFIED: WhatsApp received + TL match
+    PENDING --> EXPIRED: timeout
+    PENDING --> REJECTED: suspected abuse / manual rejection
+    VERIFIED --> [*]
+    EXPIRED --> [*]
+    REJECTED --> [*]
+```
+
+### Operational lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> RECEIVED: only after VERIFIED
+    RECEIVED --> CONFIRMED
+    RECEIVED --> CANCELLED
+    CONFIRMED --> IN_PREPARATION
+    CONFIRMED --> CANCELLED
+    IN_PREPARATION --> READY
+    IN_PREPARATION --> CANCELLED
+    READY --> DELIVERED
+    READY --> CANCELLED
+    DELIVERED --> [*]
+    CANCELLED --> [*]
+```
+
+### Why two dimensions
+
+Using one giant state machine would mix commercial verification, anti-abuse logic and kitchen operations. Separate dimensions keep the model understandable and allow future payment verification without destabilizing the operational lifecycle.
+
+---
+
+## 8. High-level information model
+
+The following is a logical model, not yet an implementation contract.
+
+```mermaid
+classDiagram
+    class OrderIntent {
+      +id
+      +reference
+      +verificationStatus
+      +expiresAt
+      +createdAt
+      +riskSignals
+    }
+    class Order {
+      +id
+      +orderNumber
+      +orderStatus
+      +subtotalAmount
+      +totalAmount
+      +customerName?
+      +customerPhone?
+    }
+    class OrderLine {
+      +productId
+      +productNameSnapshot
+      +unitPriceSnapshot
+      +quantity
+      +modifiersSnapshot
+    }
+    class OrderEvent {
+      +sequence
+      +fromStatus
+      +toStatus
+      +reason
+      +createdAt
+    }
+    class PaymentEvidence {
+      +status
+      +method
+      +amount
+      +reference
+    }
+
+    OrderIntent "1" --> "0..1" Order : admits
+    Order "1" --> "1..*" OrderLine
+    Order "1" --> "1..*" OrderEvent
+    Order "1" --> "0..1" PaymentEvidence : future / conditional
+```
+
+### Key modeling rule
+
+A future implementation may choose a separate `OrderIntent` entity or an equivalent normalized structure, but it must preserve the semantic boundary **PENDING intent != operational order**.
+
+---
+
+## 9. Abuse / false-order threat model
+
+| Threat | Example | Business impact | MVP control | Future escalation |
+|---|---|---:|---|---|
+| Accidental duplicate | double tap / retry | low | idempotency | none if metrics healthy |
+| Normal abandonment | customer opens WhatsApp but never sends | low | PENDING + expiry | UX tuning |
+| Joke/fake order | person intentionally submits without buying | medium | WhatsApp verification before kitchen | risk history / payment rule |
+| Automated spam | bot creates many intents | medium/high | rate limit + expiry | distributed rate limit / challenge |
+| High-value fake order | large order with no pickup | high | manual review | deposit / prepayment |
+| Repeat no-show | same customer repeatedly does not collect | high | cancellation reason + history | deposit / denylist policy |
+| Forged phone entry | fake number entered manually | medium | do not treat typed phone as proof | verified channel / API integration |
+
+### Important distinction
+
+**Anti-spam is not identity verification.** The current public rate limiter is a useful soft control, but because it is process-local/in-memory it must not be treated as durable distributed abuse protection or proof of customer intent.
+
+---
+
+## 10. Defense-in-depth model
+
+```mermaid
+flowchart TD
+    L1[1. Idempotency\nPrevent accidental duplicates]
+    L2[2. Rate limiting\nReduce volumetric abuse]
+    L3[3. WhatsApp verification\nRequire an extra human action]
+    L4[4. Expiration\nRemove abandoned intents from active work]
+    L5[5. Risk-adaptive controls\nPhone / challenge / manual review]
+    L6[6. Deposit or prepayment\nHigh amount / repeat risk only]
+
+    L1 --> L2 --> L3 --> L4 --> L5 --> L6
+```
+
+### Policy principle
+
+Do not impose the strongest control on every customer. The control level should increase with observed risk and order value.
+
+---
+
+## 11. Risk-adaptive policy
+
+### Normal risk
 
 ```text
-producto
-  -> cantidad
-  -> modificadores requeridos
-  -> carrito
-  -> subtotal / total estimado
+Cart -> PENDING -> WhatsApp -> VERIFIED -> operational queue
 ```
 
-El sistema debe impedir continuar cuando falta una selección obligatoria.
+No mandatory prepayment.
 
-### 4.3 Confirmación inicial
+### Medium risk
 
-El cliente revisa el pedido y pulsa una acción equivalente a "Continuar pedido".
+Possible signals:
 
-En ese momento el sistema debe:
+- several recent abandoned intents;
+- repeated requests from the same source;
+- unusually large basket;
+- previous no-show;
+- suspicious request frequency.
 
-- congelar productos, precios, cantidades y modificadores;
-- generar una referencia única;
-- impedir duplicados por reintentos;
-- registrar una intención pendiente de verificación;
-- abrir WhatsApp con el detalle y la referencia.
+Response:
 
-## 5. Verificación de intención
+- explicit operator review;
+- optional phone capture/validation;
+- do not enter preparation immediately;
+- optionally request deposit.
 
-### 5.1 Recomendación MVP
+### High risk
 
-Introducir un concepto previo a la operación, por ejemplo:
+Possible signals:
 
-```text
-PENDING_CONTACT / PENDING_VERIFICATION
+- exceptional amount;
+- repeat no-show behavior;
+- obvious automation;
+- coordinated repeated fake attempts.
+
+Response:
+
+- mandatory deposit or full payment;
+- manual rejection;
+- temporary abuse block;
+- stronger challenge if automation is proven.
+
+---
+
+## 12. Operational console — target UX model
+
+The primary admin surface should become a control board rather than a product CRUD.
+
+```mermaid
+flowchart LR
+    PV[PENDIENTES DE VERIFICAR\nTL-0015 · 2 min\n$24.000] -->|verificar| NEW[NUEVOS\nTL-0015]
+    NEW -->|confirmar| PREP[PREPARANDO\nTL-0015 · 5 min]
+    PREP -->|listo| READY[LISTOS\nTL-0015 · 12 min]
+    READY -->|entregar| DONE[ENTREGADOS]
+    PV -->|rechazar / expirar| CLOSED[RECHAZADOS / EXPIRADOS]
 ```
 
-Ese estado o dimensión de verificación no debe aparecer en la misma cola que los pedidos que cocina tiene que preparar.
+Each card should expose at minimum:
 
-Flujo:
+- `TL-xxxx` reference;
+- age since intent/order creation;
+- key products/modifiers;
+- total;
+- verification state;
+- operational state;
+- one-touch next action;
+- exception/reason when blocked.
 
-```text
-Cliente confirma carrito
-  -> intención persistida
-  -> WhatsApp se abre con TL-xxxx
-  -> cliente envía mensaje
-  -> Taco Loco recibe TL-xxxx
-  -> operador verifica contacto
-  -> pedido entra a la cola operativa
+Catalog/settings remain secondary navigation.
+
+---
+
+## 13. Exception flows
+
+| Scenario | Expected behavior | Classification |
+|---|---|---|
+| Business closed | prevent operational intent; allow inquiry UX | normal business rule |
+| Product becomes unavailable during checkout | revalidate before intent persistence | recoverable conflict |
+| WhatsApp app does not open | preserve PENDING intent and provide fallback | UX fallback |
+| WhatsApp arrives after expiry | operator may reactivate if still valid | manual exception |
+| Customer changes confirmed order | record explicit change/history | auditable mutation |
+| Customer cancels | CANCELLED + reason + event | operational exception |
+| Customer does not collect | close with specific no-show reason | risk evidence |
+| Suspicious fake attempt | REJECTED + reason; never send to kitchen | abuse handling |
+
+---
+
+## 14. Payment evolution
+
+Payment is an optional future verification dimension, not a prerequisite for the first improved flow.
+
+```mermaid
+flowchart LR
+    V[VERIFIED] --> R{Risk / amount threshold?}
+    R -- No --> C[CONFIRMED]
+    R -- Yes --> PP[PAYMENT_PENDING]
+    PP --> PC[PAYMENT_CONFIRMED]
+    PC --> C
+    PP -->|timeout / reject| X[CANCELLED / REJECTED]
 ```
 
-Si nunca llega el mensaje de WhatsApp, la intención permanece fuera de cocina y expira.
+Initial implementation may use transfer/alias with manual confirmation. API automation should be justified by volume or operational burden.
 
-### 5.2 Separar verificación y operación
+---
 
-Hay dos alternativas de diseño.
+## 15. WhatsApp role and message contract
 
-#### Alternativa A — Nuevo estado previo
+WhatsApp should remain a **human communication channel**, while Taco Loco keeps canonical data.
 
-```text
-PENDING_VERIFICATION
-  -> RECEIVED
-  -> CONFIRMED
-  -> IN_PREPARATION
-  -> READY
-  -> DELIVERED
-```
-
-Ventaja: simple de entender.
-
-Desventaja: mezcla verificación comercial con estado operativo.
-
-#### Alternativa B — Dimensión de verificación separada
-
-```text
-verificationStatus:
-PENDING | VERIFIED | EXPIRED | REJECTED
-
-orderStatus:
-RECEIVED | CONFIRMED | IN_PREPARATION | READY | DELIVERED | CANCELLED
-```
-
-Recomendación: **Alternativa B**.
-
-Permite mantener limpio el lifecycle operativo actual y distinguir claramente:
-
-- intención abandonada;
-- intento sospechoso;
-- pedido verificado;
-- pedido operativo.
-
-## 6. Flujo operativo del foodtruck
-
-Una vez verificado, el pedido entra al circuito real.
-
-```text
-VERIFIED
-  -> RECEIVED / NUEVO
-  -> CONFIRMED / CONFIRMADO
-  -> IN_PREPARATION / PREPARANDO
-  -> READY / LISTO
-  -> DELIVERED / ENTREGADO
-```
-
-La interfaz debería priorizar operación y no CRUD.
-
-Vista recomendada:
-
-```text
-PENDIENTES DE VERIFICAR
-
-NUEVOS        PREPARANDO       LISTOS
-TL-0012       TL-0010          TL-0008
-3 min         8 min            14 min
-$20.000       $17.000          $13.000
-```
-
-Productos, categorías y settings siguen siendo funciones administrativas secundarias.
-
-## 7. Flujo de cancelación
-
-El pedido nunca debe borrarse para ocultar un problema.
-
-```text
-pedido activo
-  -> CANCELLED
-  -> motivo obligatorio
-  -> evento persistido
-```
-
-Motivos sugeridos:
-
-- cliente canceló;
-- producto sin stock;
-- no se pudo verificar al cliente;
-- pago no confirmado;
-- pedido sospechoso / falso;
-- problema operativo.
-
-Esto permite medir dónde se pierden pedidos y distinguir fraude de problemas reales del negocio.
-
-## 8. Riesgos de pedidos falsos
-
-Se deben tratar escenarios diferentes.
-
-### 8.1 Abandono normal
-
-El cliente arma el pedido, toca continuar y luego no envía WhatsApp.
-
-No necesariamente es fraude. Debe terminar como intención expirada, no como cancelación operativa.
-
-### 8.2 Pedido "en joda"
-
-Una persona genera uno o varios pedidos deliberadamente sin intención de compra.
-
-### 8.3 Spam automatizado
-
-Un bot intenta generar muchas intenciones.
-
-### 8.4 Duplicado accidental
-
-El cliente pulsa varias veces o reintenta por mala conexión.
-
-### 8.5 Cliente real que no retira
-
-El pedido fue confirmado, preparado y luego abandonado. Este riesgo es más costoso que una simple intención falsa porque ya consumió materia prima y tiempo.
-
-## 9. Defensa por capas
-
-No conviene resolver todo con una sola barrera porque cada control agrega fricción.
-
-### Capa 1 — Idempotencia
-
-Objetivo: evitar duplicados técnicos.
-
-Estado actual: ya existe y debe mantenerse.
-
-No evita pedidos falsos, pero impide multiplicarlos por reintentos involuntarios.
-
-### Capa 2 — Rate limiting
-
-Objetivo: frenar abuso volumétrico.
-
-Estado actual: existe protección básica.
-
-Limitación: el mecanismo actual es una protección blanda y no debe considerarse una prueba de identidad ni de intención real.
-
-Mejora futura:
-
-- límite por IP / fingerprint razonable;
-- ventana temporal;
-- escalamiento ante patrones anómalos;
-- no bloquear clientes legítimos por una única señal.
-
-### Capa 3 — Verificación por WhatsApp
-
-Objetivo: que un pedido sólo llegue a operación si existe una acción humana adicional.
-
-MVP recomendado:
-
-- sistema genera la referencia;
-- abre WhatsApp;
-- el cliente envía el mensaje;
-- el operador ve la referencia recibida;
-- operador marca la intención como verificada.
-
-Ventaja: usa el canal que Taco Loco ya necesita, sin introducir un login obligatorio para clientes.
-
-### Capa 4 — Expiración automática
-
-Las intenciones no verificadas deben vencer después de un tiempo configurable.
-
-Ejemplo conceptual:
-
-```text
-PENDING
-  -> VERIFIED
-  -> EXPIRED
-  -> REJECTED
-```
-
-Una expiración de aproximadamente 10–15 minutos es un punto inicial razonable para probar, no una regla definitiva.
-
-### Capa 5 — Captura de teléfono
-
-Opción futura: pedir nombre y teléfono antes de abrir WhatsApp.
-
-Ventajas:
-
-- facilita matching entre intención y conversación;
-- permite contactar ante dudas;
-- mejora trazabilidad.
-
-Desventajas:
-
-- aumenta fricción;
-- el teléfono escrito no prueba por sí solo que el usuario sea dueño del número.
-
-Recomendación: no volverlo obligatorio en el primer ajuste salvo que la operación demuestre que el matching por referencia no alcanza.
-
-### Capa 6 — Challenge anti-bot
-
-Si aparece abuso automatizado real, agregar una barrera invisible o progresiva para requests sospechosos.
-
-Debe activarse por riesgo, no necesariamente mostrarse a cada cliente desde el inicio.
-
-### Capa 7 — Pago o anticipo
-
-Es la defensa más fuerte contra pedidos falsos de alto costo.
-
-Opciones:
-
-- sin pago previo para pedidos normales;
-- anticipo para pedidos que superen determinado monto;
-- pago completo previo;
-- pago previo obligatorio sólo para clientes o patrones de riesgo.
-
-El pago no debería introducirse sólo por miedo al fraude si reduce demasiado la conversión. Conviene medir primero cuántos pedidos problemáticos existen realmente.
-
-## 10. Propuesta de política anti-pedidos-falsos
-
-### Nivel normal
-
-```text
-Carrito
-  -> intención
-  -> WhatsApp
-  -> verificación manual
-  -> operación
-```
-
-Sin pago anticipado.
-
-### Nivel de riesgo medio
-
-Señales posibles:
-
-- repetición rápida de intenciones;
-- varios abandonos desde la misma fuente;
-- monto alto;
-- historial previo de no retiro.
-
-Respuesta:
-
-- pedir confirmación adicional;
-- confirmar teléfono;
-- no pasar a preparación inmediatamente.
-
-### Nivel de riesgo alto
-
-Ejemplos:
-
-- pedido de importe excepcional;
-- reincidencia de no retiro;
-- actividad automatizada evidente.
-
-Respuesta posible:
-
-- anticipo o pago previo;
-- rechazo manual;
-- bloqueo temporal de abuso.
-
-## 11. Pago dentro del flujo futuro
-
-Una evolución posible:
-
-```text
-PENDING_VERIFICATION
-  -> VERIFIED
-  -> PAYMENT_PENDING
-  -> PAID / PAYMENT_CONFIRMED
-  -> CONFIRMED
-  -> IN_PREPARATION
-```
-
-No todos los pedidos necesitan obligatoriamente esta etapa.
-
-Para la primera versión comercial se puede mantener transferencia/alias con confirmación manual y medir la necesidad de automatizar.
-
-## 12. Mensajería de WhatsApp
-
-WhatsApp debe seguir siendo un canal de comunicación, no la base de datos principal.
-
-El mensaje inicial debería incluir:
-
-- nombre Taco Loco;
-- referencia `TL-xxxx`;
-- productos y cantidades;
-- modificadores;
-- total estimado;
-- instrucción clara para enviar el mensaje y validar el pedido.
-
-Ejemplo conceptual:
+Minimum initial message:
 
 ```text
 Hola Taco Loco, quiero confirmar el pedido TL-0012.
 
-2 x Taco x2 común
-  Salsa: Guacamole
+2 x Taco x2 común — Salsa: Guacamole
 1 x Gaseosa 1,5 L
 
 Total: $25.000
@@ -410,174 +446,152 @@ Total: $25.000
 Envío este mensaje para confirmar mi pedido.
 ```
 
-La frase final hace explícita la acción de validación.
-
-## 13. Flujo de preparación y retiro
-
-### Confirmación
-
-El operador revisa disponibilidad y acepta.
-
-### Preparación
-
-El pedido pasa a cocina.
-
-### Listo
-
-El operador puede generar un mensaje:
+Ready-for-pickup message:
 
 ```text
 Tu pedido TL-0012 está listo para retirar.
 ```
 
-Inicialmente puede ser "copiar mensaje / abrir WhatsApp" sin automatización completa.
+Future WhatsApp Business API/webhooks may automate matching and outbound status notifications, but are not required for the MVP verification architecture.
 
-### Entrega
+---
 
-El operador marca `DELIVERED`.
+## 16. Metrics and observability
 
-Este evento cierra el ciclo y sirve para métricas.
+The design should make these metrics derivable without reconstructing them from logs:
 
-## 14. Casos excepcionales que deben estar definidos
+| Metric | Why it matters |
+|---|---|
+| intents created | demand / funnel entry |
+| verified intents | genuine contact rate |
+| expired intents | abandonment rate |
+| rejected intents | abuse/manual rejection rate |
+| intent -> verified time | verification friction |
+| verified -> confirmed time | operator response |
+| confirmed -> ready time | kitchen cycle time |
+| ready -> delivered time | pickup delay |
+| cancellation reason distribution | operational losses |
+| no-show count/rate | strongest business-risk signal |
+| average order amount | economics / risk threshold |
+| manual intervention rate | automation opportunity |
 
-### Negocio cerrado
+No stronger anti-fraud mechanism should be introduced without evidence from these metrics unless an immediate material incident requires it.
 
-No permitir crear una intención operativa si el negocio no acepta pedidos. Puede ofrecerse WhatsApp sólo como consulta.
+---
 
-### Producto quedó sin stock durante el checkout
+## 17. Decision register
 
-Revalidar disponibilidad antes de persistir el pedido.
+| ID | Decision | Status |
+|---|---|---|
+| D-001 | Separate verification lifecycle from operational lifecycle | **RECOMMENDED** |
+| D-002 | WhatsApp manual verification is sufficient for MVP | **RECOMMENDED** |
+| D-003 | Keep customer phone optional initially | **RECOMMENDED** |
+| D-004 | Use expiry for non-verified intents | **RECOMMENDED** |
+| D-005 | Start with ~10–15 min expiry window | **HYPOTHESIS / VALIDATE** |
+| D-006 | Deposit/payment only by amount/risk, not globally | **RECOMMENDED** |
+| D-007 | Admin becomes an operational board | **RECOMMENDED** |
+| D-008 | Exact correlation/reference numbering semantics | **OPEN** |
+| D-009 | Exact risk thresholds / no-show policy | **OPEN** |
+| D-010 | WhatsApp API automation | **DEFERRED** |
 
-### WhatsApp no abre
+---
 
-Mantener la intención pendiente y ofrecer fallback claro.
+## 18. Delivery roadmap and gates
 
-### Cliente manda WhatsApp pero el pedido expiró
-
-Permitir al operador reactivar/verificar manualmente si todavía tiene sentido.
-
-### Pedido confirmado pero cliente cambia algo
-
-Registrar el cambio; no sobrescribir silenciosamente el pedido original sin trazabilidad.
-
-### Cliente no retira
-
-Cerrar con motivo específico y conservar historial para futura política de riesgo.
-
-## 15. Métricas mínimas recomendadas
-
-Para decidir futuras mejoras se debería medir:
-
-- intenciones creadas;
-- intenciones verificadas;
-- intenciones expiradas;
-- intenciones rechazadas por sospecha;
-- tasa intención -> verificación;
-- pedidos confirmados;
-- pedidos cancelados;
-- no-retirados;
-- tiempo intención -> verificación;
-- tiempo confirmación -> preparación;
-- tiempo preparación -> listo;
-- tiempo listo -> entregado;
-- monto promedio;
-- porcentaje de pedidos que requieren intervención manual.
-
-Sin estas métricas sería fácil agregar fricción contra un problema que quizás ocurra poco.
-
-## 16. Roadmap de mejora de flujo
-
-### Etapa A — Verificación previa
-
-Prioridad alta.
-
-- separar intención de pedido operativo;
-- cola "Pendientes de verificar";
-- confirmar manualmente cuando llega WhatsApp;
-- expiración automática;
-- registrar motivo de rechazo.
-
-### Etapa B — Consola operativa
-
-Prioridad alta.
-
-- columnas Nuevos / Preparando / Listos;
-- edad del pedido;
-- acciones de estado de un toque;
-- alertas por pedidos demorados;
-- separar gestión de catálogo de operación diaria.
-
-### Etapa C — Riesgo y antifraude progresivo
-
-Prioridad media.
-
-- patrones de abuso;
-- mejora de rate limiting;
-- challenge anti-bot sólo cuando corresponda;
-- historial de no-retiro;
-- reglas para pedidos grandes.
-
-### Etapa D — Pago
-
-Prioridad condicionada a necesidad real.
-
-- alias / transferencia;
-- confirmación manual;
-- anticipo por monto o riesgo;
-- luego evaluar automatización.
-
-### Etapa E — WhatsApp automatizado
-
-Prioridad futura.
-
-Con WhatsApp Business API/webhooks se podría:
-
-- detectar automáticamente la llegada de la confirmación;
-- asociar número de teléfono real con la intención;
-- actualizar la verificación sin intervención manual;
-- enviar estados automáticamente.
-
-Esto no es necesario para validar el MVP operativo.
-
-## 17. Decisiones de producto todavía abiertas
-
-Antes de implementar el nuevo flujo conviene resolver explícitamente:
-
-1. ¿La referencia `TL-xxxx` se asigna al crear la intención o sólo después de verificarla?
-2. ¿Las intenciones pendientes aparecen en una bandeja separada del panel principal?
-3. ¿Cuánto tiempo debe vivir una intención sin verificar?
-4. ¿Se pide nombre antes de WhatsApp?
-5. ¿Se pide teléfono antes de WhatsApp o se evita esa fricción?
-6. ¿A partir de qué monto tendría sentido pedir anticipo?
-7. ¿Cómo se clasifica un pedido no retirado?
-8. ¿Qué señales justifican challenge/bloqueo y cuáles sólo generan una alerta?
-
-## 18. Recomendación inicial
-
-Para Taco Loco la siguiente mejora de mayor valor no es agregar más infraestructura ni automatizar pagos inmediatamente.
-
-La recomendación es:
-
-```text
-MENU
-  -> CARRITO
-  -> INTENCION PENDIENTE
-  -> WHATSAPP CON TL-xxxx
-  -> VERIFICACION HUMANA
-  -> NUEVO
-  -> CONFIRMADO
-  -> PREPARANDO
-  -> LISTO
-  -> ENTREGADO
+```mermaid
+flowchart LR
+    A[Stage A\nVerification model] --> G1{Design Gate}
+    G1 --> B[Stage B\nStaging implementation]
+    B --> G2{QA + Critic + Integration}
+    G2 --> C[Stage C\nOperational board]
+    C --> G3{Human workflow review}
+    G3 --> D[Stage D\nRisk controls based on evidence]
+    D --> G4{Need for payment?}
+    G4 --> E[Stage E\nPayment / WhatsApp automation if justified]
 ```
 
-Con:
+### Stage A — verification architecture
 
-- idempotencia para duplicados;
-- rate limiting para abuso básico;
-- expiración para abandonos;
-- verificación por mensaje de WhatsApp antes de entrar a cocina;
-- pago/anticipo sólo cuando monto o riesgo lo justifiquen;
-- métricas para decidir cuándo hace falta endurecer el sistema.
+- define intent semantics;
+- choose reference strategy;
+- define expiry/rejection rules;
+- define operator verification UX;
+- define evidence/metrics.
 
-Este enfoque reduce pedidos falsos sin convertir el checkout en un proceso pesado para el cliente legítimo.
+### Stage B — bounded staging implementation
+
+- data model / service changes;
+- pending-verification queue;
+- expiry handling;
+- WhatsApp matching workflow;
+- regression and abuse-path QA.
+
+### Stage C — operational console
+
+- Nuevos / Preparando / Listos;
+- order age and SLA cues;
+- one-touch transitions;
+- exception reasons;
+- mobile/tablet usability.
+
+### Stage D — evidence-driven abuse controls
+
+- strengthen rate limiting only if needed;
+- no-show history;
+- suspicious-pattern review;
+- risk rules.
+
+### Stage E — conditional automation
+
+- deposit/payment workflow;
+- WhatsApp API/webhooks;
+- automatic matching/status messaging.
+
+---
+
+## 19. Acceptance criteria for a future implementation contract
+
+A future implementation should not be considered complete until staging proves:
+
+- PENDING intents do not enter the kitchen queue;
+- WhatsApp/TL correlation can be verified reliably by the operator;
+- unverified intents expire cleanly;
+- duplicate browser retries remain idempotent;
+- rejection and cancellation reasons remain auditable;
+- verified orders preserve the existing state/event guarantees;
+- the operational board separates verification from preparation;
+- existing catalog/order functionality does not regress;
+- metrics can distinguish abandonment, rejection, cancellation and no-show;
+- abuse controls do not block a normal customer journey;
+- production remains blocked until a separate Human Gate.
+
+---
+
+## 20. Open questions for Human Review
+
+1. Should the visible `TL-xxxx` be assigned at intent creation even if some numbers later expire?
+2. Should pending intents live on the same admin screen or in a dedicated verification inbox?
+3. Is 10–15 minutes the right initial expiry window for this foodtruck operation?
+4. Should customer name be requested before WhatsApp?
+5. Under what evidence should phone capture become mandatory?
+6. What amount should trigger optional/mandatory deposit?
+7. How many no-shows should escalate a customer to higher risk?
+8. What should the operator see when a previously expired TL reference arrives late?
+9. Which flow should be optimized first: customer friction, operator speed, or fake-order resistance?
+
+---
+
+## 21. Authorization boundary
+
+This HLD is a **design baseline for Human Review**. It does not authorize:
+
+- production provisioning;
+- production deployment or cutover;
+- payment integration;
+- WhatsApp Business API integration;
+- stronger identity collection;
+- irreversible schema changes.
+
+All implementation must begin in staging under a bounded Task Contract and follow the normal FALDEO assurance path.
+
+**Production remains `NOT_AUTHORIZED`.**
