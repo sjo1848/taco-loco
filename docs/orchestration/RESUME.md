@@ -4,27 +4,36 @@ Updated: 2026-09-13
 
 - Repository: `sjo1848/taco-loco`
 - Branch: `migration/cloudflare-native`
-- Exact candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
+- Application candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
 - Mode: `DELIVERY`
-- Phase: `RELEASE_PREPARATION`
-- State: `HUMAN_GATE / PRODUCTION_RELEASE_AUTHORIZATION`
-- Active contract: `docs/contracts/TL-CF-PRODUCTION-ELIGIBILITY-01.md`
+- Phase: `VALIDATE / RELEASE_PREPARATION`
+- State: `STAGING_CATALOG_PARITY_ACTIVE`
+- Active contract: `docs/contracts/TL-STAGING-CATALOG-PARITY-01.md`
 - Production: `NOT_AUTHORIZED`
 
 ## Proven checkpoint
 
-Remote staging is `REMOTE_INTEGRATION_PASS` for the exact candidate above. Independent Critic and Integration Review are PASS. The validated initial architecture is Workers + D1 + Workers Static Assets. R2, Images, Hyperdrive and KV are not required.
+Remote staging already reached `REMOTE_INTEGRATION_PASS` for the application candidate. Worker + D1 + Static Assets, auth/session, orders/idempotency/transitions, events/SSE, logs/runtime, Independent Critic and Integration Review are PASS.
 
-## Production eligibility
+## Current human decision
 
-Production eligibility has been prepared. Current recommendation is separate production resources from staging, initial `workers.dev` URL for COST-0, and an explicit data-path decision before release.
+Do not release production yet. Continue in the existing staging environment, restore the established Taco Loco catalog from the frozen former implementation, validate realistic behavior, then reopen the production gate.
 
-## Human Gate pending
+`workers.dev` is accepted as the preferred future initial zero-cost public URL. Staging remains available.
 
-The human must decide:
-1. authorize or reject production release of the exact candidate;
-2. accept `workers.dev` as the initial URL or defer for another URL decision;
-3. choose `FRESH_PRODUCTION_BOOTSTRAP` or declare `EXISTING_DATA_MIGRATION_REQUIRED`;
-4. accept retaining staging during the initial production period.
+## Catalog source
 
-No production action is authorized until this gate resolves.
+Canonical source:
+`sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48/prisma/seed.ts`
+
+Expected public catalog:
+- 7 categories;
+- 31 products;
+- exact source names/descriptions/prices/sort order;
+- source modifier groups/options/associations.
+
+Do not recreate the old demo order or default admin credential as part of catalog parity.
+
+## Next authorized objective
+
+Execute `TL-STAGING-CATALOG-PARITY-01` against existing staging, preserve staging order/event evidence, prove full catalog parity and representative ordering/admin behavior, persist evidence, and only then reopen production eligibility.
