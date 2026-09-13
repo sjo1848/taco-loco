@@ -4,8 +4,8 @@ Date: 2026-09-13
 Repository: `sjo1848/taco-loco`  
 Branch: `migration/cloudflare-native`  
 Implementation candidate: `0fe52c73b69756a2d65bc7cab013690ba0a2d60f`
-Verification candidate: `7dfd9716efe05531f3b7627bbb07fec07136f06d`
-Execution HEAD at evidence capture: `7dfd9716efe05531f3b7627bbb07fec07136f06d`
+Verification candidate: `8291547f15b3ee40a7c231c5dbedcb9b2cacf1d7`
+Execution HEAD at evidence capture: `8291547f15b3ee40a7c231c5dbedcb9b2cacf1d7`
 
 This is the exact rework evidence packet. The prior candidate `fa76141` received Independent Critic `REWORK`; the rework is described in `docs/reviews/TL-CF-D1-LOCAL-IMPLEMENTATION-independent-critic-2026-09-13-rework.md`. The verification candidate contains the self-contained harnesses used for the proofs below.
 
@@ -65,6 +65,8 @@ Database verification using the same local D1 persistence directory returned exa
 
 The integrated harness reads `/menu`, seeds an admin and valid seven-day settings schedule, logs in through `/api/auth/login`, verifies `/api/auth/session`, reads and patches `/api/admin/settings`, logs out, and verifies session invalidation with HTTP 401. It reports `catalog_settings_auth_session_assertions=PASS`.
 
+The same authenticated harness races two `PATCH /api/admin/orders/:id` status transitions and asserts one `200` and one `409`, then reads `/api/admin/orders/events?after=99` and asserts persisted SSE order events with cursor ids. It reports `transition_race: PASS` and `sse_cursor_replay_assertions=PASS`.
+
 ## Full local checks
 
 - `prisma validate --schema prisma/schema.d1.prisma`: PASS.
@@ -91,14 +93,14 @@ The integrated harness reads `/menu`, seeds an admin and valid seven-day setting
 - Problem: `PROVEN`.
 - Design: `PROVEN` for the bounded local D1 adaptation.
 - Implementation: `PROVEN` for the exercised Worker/D1 order path; full product migration remains incomplete.
-- Validation: `PARTIAL`; bounded runtime, rollback, concurrency and regression checks pass, while full catalog/settings/auth/session journey remains pending.
+- Validation: `PARTIAL`; bounded runtime, rollback, concurrency, catalog/settings/auth/session, transition-race, SSE replay and regression checks pass; full product migration and independent assurance remain pending.
 - Release/Deployment: `UNKNOWN`; dry-run only, no remote deployment.
 - Maintenance/Operations: `UNKNOWN`.
 - Judgment/Material Decisions: `PROVEN`; D1 target, no Hyperdrive/KV, and no product semantic weakening are persisted.
 
 ## Not proven / not authorized
 
-- Admin order status-transition race and SSE replay journey remain unproven in the harness; the route implementation is bounded and local unit/regression checks pass.
+- Full product migration remains incomplete; the bounded admin transition-race and SSE cursor-replay journeys are proven by the integrated local Worker harness, but remote bindings and deployment are not.
 - Remote D1/R2/Images resources, secrets, bindings, logs and free-tier account state.
 - Staging or production deployment.
 - Production cutover; production remains `NOT_AUTHORIZED`.
