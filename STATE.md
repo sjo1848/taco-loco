@@ -7,6 +7,7 @@ Active contract: TL-CF-STATIC-ASSETS-01
 Prior validated technical candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
 Static-assets candidate: `4007a5810c998a7c4478dfb4b054c9c612860a1a`
 GitHub source convergence baseline: `origin/migration/cloudflare-native@7a600439d7e2736c34ba9a8da63fd06ebf54c6b3`; candidate `5d0a1bf` is an ancestor.
+Last verified GitHub execution checkpoint: `origin/migration/cloudflare-native@3671c839e805bcade6ec5ba9e72e5624b08e64ca`.
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 
 ## Objective

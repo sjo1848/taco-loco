@@ -5,6 +5,7 @@ Updated: 2026-09-13
 - Repository: `sjo1848/taco-loco`
 - Branch: `migration/cloudflare-native`
 - Source-convergence baseline: `origin/migration/cloudflare-native@7a600439d7e2736c34ba9a8da63fd06ebf54c6b3`
+- Last verified GitHub checkpoint: `origin/migration/cloudflare-native@3671c839e805bcade6ec5ba9e72e5624b08e64ca`
 - Prior validated technical candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
 - Static-assets candidate: `4007a5810c998a7c4478dfb4b054c9c612860a1a`
 - Global mode: `DELIVERY`
