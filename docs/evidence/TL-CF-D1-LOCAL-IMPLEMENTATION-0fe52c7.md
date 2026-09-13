@@ -4,8 +4,8 @@ Date: 2026-09-13
 Repository: `sjo1848/taco-loco`  
 Branch: `migration/cloudflare-native`  
 Implementation candidate: `0fe52c73b69756a2d65bc7cab013690ba0a2d60f`
-Verification candidate: `79b3f7681ae313cffd9c8f3ee0665886c3b0b032`
-Execution HEAD at evidence capture: `79b3f7681ae313cffd9c8f3ee0665886c3b0b032`
+Verification candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
+Execution HEAD at evidence capture: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
 
 This is the exact rework evidence packet. The prior candidate `fa76141` received Independent Critic `REWORK`; the rework is described in `docs/reviews/TL-CF-D1-LOCAL-IMPLEMENTATION-independent-critic-2026-09-13-rework.md`. The verification candidate contains the self-contained harnesses used for the proofs below.
 
@@ -53,7 +53,7 @@ sse_cursor_replay_assertions: PASS, ids: [100, 101, 102, 103, 104]
 D1_LOCAL_INTEGRATION_PROOF=PASS
 ```
 
-Database verification using the same local D1 persistence directory returned exactly three matching orders, three lines and three events. The seeded order number is 100; the three newly created orders received exactly 101, 102 and 103, and the duplicate reference appeared once. The harness asserts these relative numbering and uniqueness invariants, then removes the temporary persistence directory and both Worker process groups on exit.
+Database verification using the same local D1 persistence directory returned exactly three intent orders, three lines and three intent events. The seeded order number is 100; the three newly created orders received exactly 101, 102 and 103, and the duplicate reference appeared once. The seed transition order separately retained exactly two events with sequences `100,104` (seed plus the one successful transition); the losing transition emitted no event. The harness asserts these isolation, numbering, uniqueness and event-accounting invariants, then removes the temporary persistence directory and both Worker process groups on exit.
 
 ### Worker/Prisma WASM runtime
 
@@ -75,7 +75,7 @@ The same authenticated harness races two `PATCH /api/admin/orders/:id` status tr
 - Local D1 migration: PASS; 22 commands.
 - Atomic proof, unique client reference, FK restriction, cascade deletion and JSON modifier snapshot: PASS.
 - `pnpm run typecheck`: PASS.
-- `pnpm run lint`: PASS.
+- changed-file ESLint (`src/modules/orders/d1-atomic.ts`, proof Worker): PASS. A full post-build `pnpm run lint` is currently noisy/fails on generated `dist` output and the pre-existing `src/types/wasm.d.ts` `module` naming rule; this is tooling-surface noise, not a changed-file error.
 - `pnpm test -- --run`: PASS; 13 files / 33 tests.
 - `pnpm audit --audit-level=high`: exit 0; two moderate advisories remain.
 - `pnpm run build:vinext`: PASS.
@@ -102,7 +102,7 @@ The same authenticated harness races two `PATCH /api/admin/orders/:id` status tr
 
 ## Not proven / not authorized
 
-- Full product migration remains incomplete; the bounded admin transition-race and SSE cursor-replay journeys are proven by the integrated local Worker harness, but remote bindings and deployment are not.
+- Full product migration remains incomplete; the bounded admin transition-race and SSE cursor-replay journeys are proven by the integrated local Worker harness, including no phantom event on the losing transition, but remote bindings and deployment are not.
 - Remote D1/R2/Images resources, secrets, bindings, logs and free-tier account state.
 - Staging or production deployment.
 - Production cutover; production remains `NOT_AUTHORIZED`.
