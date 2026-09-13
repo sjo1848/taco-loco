@@ -3,7 +3,8 @@
 Date: 2026-09-13  
 Classification: `STAGING_REVIEW_READY`  
 Application candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`  
-Execution HEAD: `907803cd9ec59ee7019f19fb930ae965a5c0d4c7`  
+Validation execution HEAD: `907803cd9ec59ee7019f19fb930ae965a5c0d4c7`  
+Governance persistence HEAD: `13139334714c4e1a34636276c6aac11921c0f2de`  
 Environment: existing staging only
 
 ## Environment
