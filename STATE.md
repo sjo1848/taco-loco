@@ -1,11 +1,11 @@
 # Taco Loco — Current Authoritative Project State
-Updated: 2026-09-12
+Updated: 2026-09-13
 Mode: DELIVERY
-Phase: VALIDATE
-Status: TECHNICAL_PASS / OPERATIONAL_PREP_BLOCKED
-Active contract: TL-CF-MIG-01
-Technical candidate: `ce36a2c81eba3f20aa7e4643a31771e8b85a23af`
-Last verified execution HEAD before this state update: `014ea6a4fb99291934f2f383b3e4b0575b119249`; resolve the current HEAD dynamically with `git rev-parse HEAD`.
+Phase: IMPLEMENT / VALIDATE
+Status: D1_LOCAL_IMPLEMENTATION_PASS / CRITIC_PENDING
+Active contract: TL-CF-D1-LOCAL-IMPLEMENTATION-01
+Technical candidate: `fa76141928bf60f9259ba24a462468e0834b6b3a`
+Current execution HEAD resolved dynamically: `fa76141928bf60f9259ba24a462468e0834b6b3a`.
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 
 ## Objective
@@ -13,10 +13,11 @@ Complete the Cloudflare-native migration without changing Taco Loco product beha
 
 ## Active decisions
 - Source repo remains read-only.
-- PostgreSQL remains transactional truth; D1 is out of scope.
+- The Cloudflare-native / USD-0 Human Gate makes D1 the candidate target; PostgreSQL/Hyperdrive remains historical evidence for `TL-CF-MIG-01`.
 - Workers/vinext is target runtime.
-- Prisma Workers path uses adapter-pg + Hyperdrive.
-- Media Workers path uses Images + R2.
+- D1 transactional feasibility must preserve current semantics before implementation.
+- Media target remains R2; Images is conditional on material current benefit.
+- Hyperdrive, external PostgreSQL and KV are removal/defer candidates; no resource provisioning is authorized in this feasibility block.
 - No product features during migration.
 - Production cutover requires a future Human Gate.
 
@@ -32,17 +33,25 @@ Complete the Cloudflare-native migration without changing Taco Loco product beha
 ## Validated at current migration line
 Baseline parity remains PASS; Functional QA PASS; security audit passes the contract high-severity threshold (exit 0; two moderate advisories remain); lint/typecheck/tests/build:vinext PASS. Hyperdrive and Workers media adapters are present.
 
-## Current blocker
+## Prior migration assurance
 Independent Critic PASS and Integration Review PASS are recorded for the exact technical candidate. Both reviewers were fresh contexts independent of the correction context; governance descendants changed documentation/state only.
 
+## Current D1 feasibility state
+The feasibility review is persisted at `docs/reviews/TL-CF-D1-FEASIBILITY.md` with recommendation `PASS_FOR_LOCAL_MIGRATION`. Independent Critic PASS is persisted at `docs/reviews/TL-CF-D1-MIG-01-independent-critic-2026-09-13.md` for the feasibility candidate. Local D1 implementation candidate `fa76141` is implemented and deterministic QA passes; its new Independent Critic is pending. Staging/deployment remains UNKNOWN and production remains NOT_AUTHORIZED.
+
+## Current blockers and classifications
+- R2 account enablement: `HUMAN_ACTION` only for a later remote validation, if Cloudflare Dashboard enablement is required.
+- Hyperdrive: not a D1 dependency. The old contract's connection string/config-ID requirement is superseded by the D1 target; no architecture decision is reopened.
+- D1 implementation: local atomic writes, order/event sequences, replay, FK behavior and LISTEN/NOTIFY replacement have deterministic evidence; true concurrent invocation and full D1 auth/catalog journey remain pending critic acceptance.
+
 ## Engineering evidence
-Implementation/Validation: PROVEN for the current increment.
+Implementation: PROVEN for bounded local D1 path. Validation: PARTIAL pending concurrency/full runtime evidence.
 Release/Deployment and Maintenance/Operations: UNKNOWN.
 Staging: UNKNOWN / NOT_READY.
 Production: NOT_AUTHORIZED.
 
 ## Next authorized action
-Integration Review PASS is recorded. Read-only verification found no KV or Hyperdrive resources and R2 is not enabled for the account. The local staging contract is prepared at `docs/contracts/TL-CF-STAGING-01.md`; execute it only after the required human action/input for resource provisioning is available. Do not begin realtime/Durable Objects or production cutover under this contract.
+Admit a fresh Independent Critic packet for substantive candidate `fa76141` and its evidence. Do not begin remote staging or production cutover.
 
 ## Stale check
 Before resume, verify branch HEAD, technical candidate identity, `STATUS.json`, contract and latest evidence. If product/code changes materially, rerun required evidence.
