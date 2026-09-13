@@ -12,3 +12,4 @@
 11. Functional QA and security audit are independent gates; either may block integration/cutover.
 12. Implementation, Independent Critic and Integration Review are separate gates.
 13. Production cutover requires a Human Gate.
+14. `R2_FREE_TIER_ACCEPTED`: R2 is permitted under COST-0 while expected workload remains materially inside the free allocation; paid-plan upgrades, mandatory recurring cost or expected material overage require a new Human Gate.

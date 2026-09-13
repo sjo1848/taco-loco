@@ -22,7 +22,7 @@ This is a local gate-satisfiability artifact. It does not provision Cloudflare r
 
 ## Known external classifications
 
-- R2 account enablement: `HUMAN_ACTION` only if Cloudflare Dashboard enablement is required for the later remote validation.
+- R2 account enablement: `HUMAN_ACTION` through the Cloudflare Dashboard. The architecture decision is resolved as `R2_FREE_TIER_ACCEPTED`; entitlement and provider behavior remain UNKNOWN until authenticated recheck.
 - D1 account/binding/secrets/preview authorization: `UNKNOWN` until authenticated remote evidence exists; a missing already-decided permission is `HUMAN_ACTION`.
 - Hyperdrive/external PostgreSQL: superseded historical architecture, not a staging dependency for this D1 target.
 - Production: `NOT_AUTHORIZED`; this map does not grant a production gate.

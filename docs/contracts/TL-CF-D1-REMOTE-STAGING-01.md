@@ -45,10 +45,10 @@ Every mandatory gate must resolve to PASS or contract-backed NOT_APPLICABLE. UNK
 
 ## Current blocker and stop condition
 
-`wrangler r2 bucket list` returned Cloudflare API code `10042`: R2 must be enabled through the Cloudflare Dashboard. The runtime has no connected browser channel to perform that dashboard action. Classification: `HUMAN_ACTION`.
+`R2_FREE_TIER_ACCEPTED` is the resolved Human Gate decision: R2 is acceptable while expected Taco Loco workload remains materially inside the free allocation; paid-plan upgrades, mandatory recurring cost or expected material overage require a new Human Gate. `wrangler r2 bucket list` returned Cloudflare API code `10042`: R2 still must be enabled through the Cloudflare Dashboard. The runtime has no connected browser channel to perform that dashboard action. Classification: `HUMAN_ACTION`.
 
-The account API also denied billing/subscription reads with `403`; plan/billing state is therefore not yet proven. Do not provision or deploy until R2 is enabled and the account cost evidence can be completed.
+The account API also denied billing/subscription reads with `403`; account-specific entitlement and provider free-tier behavior remain UNKNOWN and must be rechecked after enablement. This is evidence work, not an unresolved architecture decision. Do not provision or deploy until the recheck is complete.
 
 ## Done when
 
-The bounded remote journey passes every mandatory gate in the canonical map, evidence is persisted, and state is advanced to `REMOTE_INTEGRATION_PASS` without implying production authorization. If R2 remains unavailable or cost state requires a material decision, stop at `HUMAN_ACTION`/`HUMAN_GATE`.
+The bounded remote journey passes every mandatory gate in the canonical map, evidence is persisted, and state is advanced to `REMOTE_INTEGRATION_PASS` without implying production authorization. If R2 remains unavailable or account evidence cannot establish the accepted free-tier guardrail, stop at `HUMAN_ACTION`/`HUMAN_GATE`.

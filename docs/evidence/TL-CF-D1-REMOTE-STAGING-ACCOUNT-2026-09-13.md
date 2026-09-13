@@ -29,6 +29,10 @@ Reference limits used for the gate map, not as account proof:
 - R2 free allocation: 10 GB-month storage, 1 million Class A and 10 million Class B operations/month; R2 is not currently enabled in this account — [R2 pricing](https://developers.cloudflare.com/r2/pricing/).
 - Images Free transformations: 5,000 unique transformations/month; excess new transformations fail without charge, while Images storage/delivery is paid-only — [Images pricing](https://developers.cloudflare.com/images/pricing/).
 
+## Persisted Human Gate
+
+`R2_FREE_TIER_ACCEPTED`: R2 is accepted under COST-0 while expected Taco Loco workload remains materially inside the free allocation. Potential overage capability is accepted; paid-plan upgrades, mandatory recurring cost or expected material overage require a new Human Gate.
+
 ## Classification
 
-`HUMAN_ACTION`: enable R2 through the Cloudflare Dashboard, then provide/enable a runtime channel that can re-run the authenticated account checks. Billing/plan state remains an unresolved mandatory cost gate and must be classified before provisioning.
+`HUMAN_ACTION`: enable R2 through the Cloudflare Dashboard, then recheck account entitlement, billing/plan state and provider behavior through an authenticated runtime channel before provisioning. No remote resource is PASS before that evidence exists.

@@ -5,7 +5,7 @@ Phase: VALIDATE / RELEASE_PREPARATION
 Status: REMOTE_STAGING HUMAN_ACTION / R2_ENABLEMENT
 Active contract: TL-CF-D1-REMOTE-STAGING-01
 Technical candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
-Current execution HEAD resolved dynamically: `3a10ee809589995ddabb9042bcdf3c5711ac8064`.
+Current execution HEAD resolved dynamically at recovery: `3bb63e7a7d0264cebbf696266a11cf88c81ff10a`.
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 
 ## Objective
@@ -20,6 +20,7 @@ Complete the Cloudflare-native migration without changing Taco Loco product beha
 - Hyperdrive, external PostgreSQL and KV are removal/defer candidates; no resource provisioning is authorized in this feasibility block.
 - No product features during migration.
 - Production cutover requires a future Human Gate.
+- `R2_FREE_TIER_ACCEPTED`: R2 is acceptable under the COST-0 architecture while expected Taco Loco workload remains materially inside the free allocation. Paid-plan upgrades, mandatory recurring cost or expected material overage require a new Human Gate.
 
 ## Source precedence
 1. FALDEO Project Method v1.0 + Harness v1 define operating semantics.
@@ -40,9 +41,9 @@ Independent Critic PASS and Integration Review PASS are recorded for the exact t
 The feasibility review is persisted at `docs/reviews/TL-CF-D1-FEASIBILITY.md` with recommendation `PASS_FOR_LOCAL_MIGRATION`. Independent Critic PASS is persisted at `docs/reviews/TL-CF-D1-MIG-01-independent-critic-2026-09-13.md` for the feasibility candidate. Verification candidate `5d0a1bf` packages bounded Worker/D1 concurrency, rollback, relative numbering, event persistence, catalog/settings/auth/session, transition-race, complete SSE cursor replay and no-phantom-transition-event evidence after the prior candidate's REWORK. Its fresh Independent Critic is `PASS`, persisted at `docs/reviews/TL-CF-D1-LOCAL-IMPLEMENTATION-independent-critic-5d0a1bf.md`; Integration Review is `PASS`, persisted at `docs/reviews/TL-CF-D1-LOCAL-IMPLEMENTATION-integration-review-5d0a1bf.md`. Staging/deployment remains UNKNOWN and production remains NOT_AUTHORIZED.
 
 ## Current blockers and classifications
-- R2 account enablement: `HUMAN_ACTION` only for a later remote validation, if Cloudflare Dashboard enablement is required.
+- R2 account enablement: `HUMAN_ACTION` through the Cloudflare Dashboard; the architecture decision is resolved as `R2_FREE_TIER_ACCEPTED`, while account entitlement and provider behavior remain UNKNOWN until rechecked.
 - Hyperdrive: not a D1 dependency. The old contract's connection string/config-ID requirement is superseded by the D1 target; no architecture decision is reopened.
-- D1 implementation: local atomic writes, relative order/event sequences, complete cursor replay, FK behavior, bounded LISTEN/NOTIFY replacement, concurrent Worker invocation, auth/catalog/settings/session and transition race have evidence; critic acceptance remains pending.
+- D1 implementation: local atomic writes, relative order/event sequences, complete cursor replay, FK behavior, bounded LISTEN/NOTIFY replacement, concurrent Worker invocation, auth/catalog/settings/session, transition race and failed-transition event suppression have evidence; Independent Critic and Integration Review both PASS.
 
 ## Engineering evidence
 Implementation: PROVEN for bounded local D1 path. Validation: PARTIAL; bounded Worker concurrency/runtime proof is present, full product journey and critic acceptance remain pending.

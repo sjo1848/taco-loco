@@ -6,7 +6,7 @@
   "targetBranch": "migration/cloudflare-native",
   "technicalCandidate": "5d0a1bf582a5bd9f061b7c6121a03d757397fcb4",
   "evidenceCandidate": "5d0a1bf582a5bd9f061b7c6121a03d757397fcb4",
-  "lastVerifiedExecutionHead": "3a10ee809589995ddabb9042bcdf3c5711ac8064",
+  "lastVerifiedExecutionHead": "3bb63e7a7d0264cebbf696266a11cf88c81ff10a",
   "stage": "REMOTE_STAGING_HUMAN_ACTION_R2_ENABLEMENT",
   "baselineParity": "PASS",
   "functionalQa": "PASS",
@@ -22,6 +22,7 @@
   "r2Resource": "UNKNOWN_REMOTE_NOT_REQUIRED_FOR_LOCAL_REVIEW",
   "imagesResource": "UNKNOWN",
   "humanAction": "R2_ENABLEMENT_REQUIRED_THROUGH_CLOUDFLARE_DASHBOARD",
+  "r2FreeTierDecision": "R2_FREE_TIER_ACCEPTED",
   "engineeringQa": "PASS",
   "independentCritic": "PASS",
   "integrationReview": "PASS",
@@ -37,5 +38,5 @@
   "d1RuntimeJourney": "PASS_LOCAL_WORKER_BOUNDED_FULL_JOURNEY_PENDING_CRITIC",
   "d1LocalEvidence": "docs/evidence/TL-CF-D1-LOCAL-IMPLEMENTATION-0fe52c7.md",
   "feasibilityReview": "docs/reviews/TL-CF-D1-FEASIBILITY.md",
-  "resumePoint": "HUMAN_ACTION: enable R2 in Cloudflare Dashboard and provide a runtime channel for the account/cost recheck; do not provision or deploy before that."
+  "resumePoint": "HUMAN_ACTION: enable R2 in Cloudflare Dashboard; then recheck account entitlement/cost evidence before any provisioning or deployment."
 }
