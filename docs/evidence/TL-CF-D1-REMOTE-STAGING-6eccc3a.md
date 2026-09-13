@@ -1,7 +1,7 @@
 # Taco Loco — bounded remote D1 + Static Assets staging evidence
 
 Date: 2026-09-13  
-Classification under review: `REWORK_PENDING_INDEPENDENT_ASSURANCE`  
+Classification under review: `INTEGRATION_REVIEW_PENDING`  
 Repository: `sjo1848/taco-loco`  
 Branch: `migration/cloudflare-native`  
 Technical candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`  

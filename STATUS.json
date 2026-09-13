@@ -47,7 +47,7 @@
   "staticAssetsIntegrationReview": "PASS",
   "staticAssetsIntegrationReviewCandidate": "4007a5810c998a7c4478dfb4b054c9c612860a1a",
   "staticAssetsIntegrationReviewArtifact": "docs/reviews/TL-CF-STATIC-ASSETS-integration-review-4007a58.md",
-  "staging": "REMOTE_VALIDATION_COMPLETE_PENDING_INDEPENDENT_CRITIC",
+  "staging": "REMOTE_VALIDATION_COMPLETE_PENDING_INTEGRATION_REVIEW",
   "production": "NOT_AUTHORIZED",
   "humanGate": "RESOLVED_STATIC_ASSETS_INITIAL_MEDIA",
   "activeDecisionArtifact": "docs/evidence/TL-MEDIA-STATIC-ASSETS-DECISION-2026-09-13.md",
@@ -56,5 +56,5 @@
   "remoteIndependentCritic": "PASS",
   "remoteIndependentCriticCandidate": "6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3",
   "remoteIndependentCriticArtifact": "docs/reviews/TL-CF-D1-REMOTE-STAGING-independent-critic-6eccc3a.md",
-  "resumePoint": "Remote journey completed for 6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3; synchronize durable evidence and admit exact candidate for fresh Independent Critic, then Integration Review if PASS. Production remains NOT_AUTHORIZED."
+  "resumePoint": "Independent Critic PASS is persisted for 6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3; complete Integration Review over the remote Worker+D1+Static Assets composition, then classify REMOTE_INTEGRATION_PASS. Production remains NOT_AUTHORIZED."
 }
