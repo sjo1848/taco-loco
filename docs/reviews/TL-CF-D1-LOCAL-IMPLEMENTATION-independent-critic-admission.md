@@ -1,6 +1,6 @@
 # Independent Critic Admission — TL-CF-D1-LOCAL-IMPLEMENTATION-01
 
-Status: `ADMITTED / PENDING`  
+Status: `SUPERSEDED BY REWORK`
 Candidate: `fa76141928bf60f9259ba24a462468e0834b6b3a`  
 Contract: `docs/contracts/TL-CF-D1-LOCAL-IMPLEMENTATION-01.md`  
 Evidence: `docs/evidence/TL-CF-D1-LOCAL-IMPLEMENTATION-fa76141.md`  
@@ -14,6 +14,8 @@ Critic context: fresh, read-only, no implementer private reasoning
 - Worker target: `wrangler.jsonc`, `src/lib/db.worker.ts`, `vite.config.ts`.
 - Event adaptation: `src/app/api/admin/orders/events/route.ts`, `src/modules/orders/live-events.ts`.
 - Exact local evidence and command results in `docs/evidence/TL-CF-D1-LOCAL-IMPLEMENTATION-fa76141.md`.
+
+The candidate was reviewed and received `REWORK`; this packet is retained as the historical admission record.
 
 ## Review question
 

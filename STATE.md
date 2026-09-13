@@ -2,10 +2,10 @@
 Updated: 2026-09-13
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: D1_LOCAL_IMPLEMENTATION_PASS / CRITIC_PENDING
+Status: D1_LOCAL_IMPLEMENTATION_REWORK / CRITIC_PENDING
 Active contract: TL-CF-D1-LOCAL-IMPLEMENTATION-01
-Technical candidate: `fa76141928bf60f9259ba24a462468e0834b6b3a`
-Current execution HEAD resolved dynamically: `fa76141928bf60f9259ba24a462468e0834b6b3a`.
+Technical candidate: `0fe52c73b69756a2d65bc7cab013690ba0a2d60f`
+Current execution HEAD resolved dynamically: `0fe52c73b69756a2d65bc7cab013690ba0a2d60f`.
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 
 ## Objective
@@ -37,21 +37,21 @@ Baseline parity remains PASS; Functional QA PASS; security audit passes the cont
 Independent Critic PASS and Integration Review PASS are recorded for the exact technical candidate. Both reviewers were fresh contexts independent of the correction context; governance descendants changed documentation/state only.
 
 ## Current D1 feasibility state
-The feasibility review is persisted at `docs/reviews/TL-CF-D1-FEASIBILITY.md` with recommendation `PASS_FOR_LOCAL_MIGRATION`. Independent Critic PASS is persisted at `docs/reviews/TL-CF-D1-MIG-01-independent-critic-2026-09-13.md` for the feasibility candidate. Local D1 implementation candidate `fa76141` is implemented and deterministic QA passes; its new Independent Critic is pending. Staging/deployment remains UNKNOWN and production remains NOT_AUTHORIZED.
+The feasibility review is persisted at `docs/reviews/TL-CF-D1-FEASIBILITY.md` with recommendation `PASS_FOR_LOCAL_MIGRATION`. Independent Critic PASS is persisted at `docs/reviews/TL-CF-D1-MIG-01-independent-critic-2026-09-13.md` for the feasibility candidate. Local D1 rework candidate `0fe52c7` adds bounded Worker/D1 concurrency, rollback and runtime evidence after the prior candidate's REWORK. Its fresh Independent Critic is pending. Staging/deployment remains UNKNOWN and production remains NOT_AUTHORIZED.
 
 ## Current blockers and classifications
 - R2 account enablement: `HUMAN_ACTION` only for a later remote validation, if Cloudflare Dashboard enablement is required.
 - Hyperdrive: not a D1 dependency. The old contract's connection string/config-ID requirement is superseded by the D1 target; no architecture decision is reopened.
-- D1 implementation: local atomic writes, order/event sequences, replay, FK behavior and LISTEN/NOTIFY replacement have deterministic evidence; true concurrent invocation and full D1 auth/catalog journey remain pending critic acceptance.
+- D1 implementation: local atomic writes, order/event sequences, replay, FK behavior, bounded LISTEN/NOTIFY replacement and bounded concurrent Worker invocation have evidence; full D1 auth/catalog/settings/session journey remains pending.
 
 ## Engineering evidence
-Implementation: PROVEN for bounded local D1 path. Validation: PARTIAL pending concurrency/full runtime evidence.
+Implementation: PROVEN for bounded local D1 path. Validation: PARTIAL; bounded Worker concurrency/runtime proof is present, full product journey and critic acceptance remain pending.
 Release/Deployment and Maintenance/Operations: UNKNOWN.
 Staging: UNKNOWN / NOT_READY.
 Production: NOT_AUTHORIZED.
 
 ## Next authorized action
-Admit a fresh Independent Critic packet for substantive candidate `fa76141` and its evidence. Do not begin remote staging or production cutover.
+Admit a fresh Independent Critic packet for substantive candidate `0fe52c7` and its exact rework evidence. Do not begin remote staging or production cutover.
 
 ## Stale check
 Before resume, verify branch HEAD, technical candidate identity, `STATUS.json`, contract and latest evidence. If product/code changes materially, rerun required evidence.
