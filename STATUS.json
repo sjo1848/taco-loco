@@ -6,7 +6,7 @@
   "targetBranch": "migration/cloudflare-native",
   "technicalCandidate": "8291547f15b3ee40a7c231c5dbedcb9b2cacf1d7",
   "evidenceCandidate": "8291547f15b3ee40a7c231c5dbedcb9b2cacf1d7",
-  "lastVerifiedExecutionHead": "8291547f15b3ee40a7c231c5dbedcb9b2cacf1d7",
+  "lastVerifiedExecutionHead": "4a57c1b98bd94c67640875d0447c3fbacfc91e1d",
   "stage": "D1_LOCAL_IMPLEMENTATION_REWORK_CRITIC_PENDING",
   "baselineParity": "PASS",
   "functionalQa": "PASS",

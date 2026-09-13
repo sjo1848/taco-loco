@@ -4,7 +4,7 @@ Updated: 2026-09-13
 
 - Repository: `sjo1848/taco-loco`
 - Branch: `migration/cloudflare-native`
-- Current execution HEAD resolved on recovery: `8291547f15b3ee40a7c231c5dbedcb9b2cacf1d7`
+- Current execution HEAD resolved on recovery: `4a57c1b98bd94c67640875d0447c3fbacfc91e1d`
 - Technical candidate: `8291547f15b3ee40a7c231c5dbedcb9b2cacf1d7`
 - Global mode: `DELIVERY`
 - Phase: `DESIGN / VALIDATE`
