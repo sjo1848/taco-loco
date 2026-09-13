@@ -6,7 +6,7 @@
   "targetBranch": "migration/cloudflare-native",
   "githubRemoteBranch": "origin/migration/cloudflare-native",
   "githubRemoteHeadBaseline": "7a600439d7e2736c34ba9a8da63fd06ebf54c6b3",
-  "githubRemoteHeadLastVerified": "436cb57849b4b681890123724696b5a01fdde98b",
+  "githubRemoteHeadLastVerified": "8d741dede83344a99cd0e8572b07c597cf00b6ea",
   "sourceConvergence": "PASS_NONDESTRUCTIVE_PUSH",
   "technicalCandidate": "6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3",
   "technicalCandidateRole": "REMOTE_VALIDATION_FINAL_REWORK_CANDIDATE",
