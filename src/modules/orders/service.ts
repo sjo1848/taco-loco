@@ -149,7 +149,7 @@ export async function transitionOrder(input: unknown, actorId: string) {
     try {
       await transitionD1Order({ orderId: parsed.orderId, fromStatus: current.status, toStatus: parsed.toStatus, reason: parsed.reason ?? null, actorId, cancellationReason: data.cancellationReason ?? null, confirmedAt: data.confirmedAt?.toISOString() ?? null, closedAt: data.closedAt?.toISOString() ?? null });
     } catch (error) {
-      if (error instanceof Error && error.message === "D1_ORDER_CHANGED") throw new AppError("ORDER_CHANGED", "El pedido cambió mientras lo actualizabas. Recargá e intentá de nuevo.", 409);
+      if (error instanceof Error && (["D1_ORDER_CHANGED", "D1_BATCH_FAILED"].includes(error.message) || /OrderEvent\.sequence|SQLITE_BUSY|database is locked/i.test(error.message))) throw new AppError("ORDER_CHANGED", "El pedido cambió mientras lo actualizabas. Recargá e intentá de nuevo.", 409);
       throw error;
     }
     const order = await db.order.findUniqueOrThrow({ where: { id: parsed.orderId }, include: { lines: true, events: { orderBy: { createdAt: "asc" } } } });

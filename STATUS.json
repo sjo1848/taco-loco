@@ -25,7 +25,7 @@
   "engineeringQa": "PASS",
   "independentCritic": "REWORK_PRIOR_CANDIDATE_PENDING_RESUBMISSION",
   "integrationReview": "NOT_REQUIRED_PENDING_IMPLEMENTATION_CRITIC",
-  "independentCriticCandidate": "fa76141928bf60f9259ba24a462468e0834b6b3a",
+  "independentCriticCandidate": "7dfd9716efe05531f3b7627bbb07fec07136f06d",
   "integrationReviewCandidate": "7dfd9716efe05531f3b7627bbb07fec07136f06d",
   "staging": "UNKNOWN_NOT_READY",
   "production": "NOT_AUTHORIZED",
