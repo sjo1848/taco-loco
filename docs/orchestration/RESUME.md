@@ -53,4 +53,4 @@ No R2 Dashboard action is required. No remote provisioning/deployment is authori
 
 ## Next authorized objective
 
-Prepare and execute the Independent Critic for exact candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a`, then Integration Review. Remote staging remains paused.
+Independent Critic PASS is persisted for exact candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a`; execute mandatory Integration Review next. Remote staging remains paused.

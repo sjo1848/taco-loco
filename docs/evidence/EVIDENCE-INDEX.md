@@ -14,7 +14,7 @@ As of: 2026-09-13
 - Self-service upload: DEFERRED by Human Decision for the initial release.
 - R2 enablement: NOT_REQUIRED_INITIAL; previous API 10042/account evidence remains historical and inspectable.
 - Remote D1 staging contract: PAUSED — `docs/contracts/TL-CF-D1-REMOTE-STAGING-01.md`; resume only after a new Static Assets candidate passes local assurance.
-- Static Assets Independent Critic: REWORK — evidence provenance mismatch; substantive candidate unchanged. Corrected descendant identity is `7c134d94c3855ea2299efe013e671c7eec8982b3`; fresh review queued.
+- Static Assets Independent Critic: PROVEN PASS — `docs/reviews/TL-CF-STATIC-ASSETS-independent-critic-4007a58.md`; exact candidate and fresh independent context.
 - Static Assets Integration Review: UNKNOWN — required for exact candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a`.
 
 Coverage is conservative; no historical process or PASS state is fabricated.
