@@ -6,6 +6,7 @@ Status: REMOTE_STAGING HUMAN_ACTION / R2_ENABLEMENT
 Active contract: TL-CF-D1-REMOTE-STAGING-01
 Technical candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
 Current execution HEAD resolved dynamically at recovery: `3bb63e7a7d0264cebbf696266a11cf88c81ff10a`.
+GitHub source convergence verified: `origin/migration/cloudflare-native` at `098513c499211fae57866fff0ba888f21f0fda95`; candidate `5d0a1bf` is reachable remotely.
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 
 ## Objective
@@ -52,7 +53,7 @@ Staging: UNKNOWN / NOT_READY.
 Production: NOT_AUTHORIZED.
 
 ## Next authorized action
-Remote-staging gate map is prepared at `docs/reviews/TL-CF-D1-REMOTE-STAGING-GATE-MAP.md`. `wrangler r2 bucket list` returned API code `10042`, requiring Dashboard enablement; the browser channel was unavailable. Billing/plan reads also returned `403`, so no remote resource has been provisioned. Classification: `HUMAN_ACTION`.
+Remote-staging gate map is prepared at `docs/reviews/TL-CF-D1-REMOTE-STAGING-GATE-MAP.md`. Source convergence is `PASS_NONDESTRUCTIVE_PUSH`. `wrangler r2 bucket list` returned API code `10042`, requiring Dashboard enablement; the browser channel was unavailable. Billing/plan reads also returned `403`, so no remote resource has been provisioned. Classification: `HUMAN_ACTION`.
 
 ## Stale check
 Before resume, verify branch HEAD, technical candidate identity, `STATUS.json`, contract and latest evidence. If product/code changes materially, rerun required evidence.
