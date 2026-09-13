@@ -24,7 +24,7 @@ export const productInputSchema = z.object({
   name: text.max(160),
   description: z.string().trim().max(1000).nullable().optional(),
   priceAmount: z.number().int().nonnegative(),
-  imageKey: z.string().trim().max(500).nullable().optional(),
+  imageKey: z.string().trim().max(500).regex(/^\/products\/[a-z0-9][a-z0-9._-]*\.(?:avif|jpeg|jpg|png|webp)$/i, "La imagen debe ser un asset estático bajo /products.").nullable().optional(),
   imageAlt: z.string().trim().max(160).nullable().optional(),
   available: z.boolean().default(true),
   published: z.boolean().default(true),

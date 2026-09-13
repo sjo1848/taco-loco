@@ -31,15 +31,6 @@
       "migrations_dir": "d1/migrations"
     }
   ],
-  "images": {
-    "binding": "IMAGES"
-  },
-  "r2_buckets": [
-    {
-      "binding": "MEDIA_BUCKET",
-      "bucket_name": "taco-loco-media"
-    }
-  ],
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1

@@ -19,17 +19,3 @@ export function getEnv() {
 export function getOptionalEnv(name: string) {
   return process.env[name];
 }
-
-export function getMediaEnv() {
-  return z.object({
-    R2_ENDPOINT: z.url(),
-    R2_BUCKET: z.string().min(1),
-    R2_ACCESS_KEY_ID: z.string().min(1),
-    R2_SECRET_ACCESS_KEY: z.string().min(1),
-  }).parse({
-    R2_ENDPOINT: process.env.R2_ENDPOINT,
-    R2_BUCKET: process.env.R2_BUCKET,
-    R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
-    R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
-  });
-}
