@@ -5,7 +5,7 @@ Updated: 2026-09-13
 - Repository: `sjo1848/taco-loco`
 - Branch: `migration/cloudflare-native`
 - Current execution HEAD resolved on recovery: `581254f5f229bf941835e601cb5a66f58cb0c53a`
-- Technical candidate: `0fe52c73b69756a2d65bc7cab013690ba0a2d60f`
+- Technical candidate: `6dfb2c4f811f53ce04b603d772c9b7b0f063b967`
 - Global mode: `DELIVERY`
 - Phase: `DESIGN / VALIDATE`
 - State: `D1_LOCAL_IMPLEMENTATION_REWORK / CRITIC_PENDING`
@@ -22,7 +22,7 @@ Updated: 2026-09-13
 - Recommendation: `PASS_FOR_LOCAL_MIGRATION`
 - Feasibility Independent Critic: `PASS` — `docs/reviews/TL-CF-D1-MIG-01-independent-critic-2026-09-13.md`
 - Prior local implementation candidate: `fa76141928bf60f9259ba24a462468e0834b6b3a` (`REWORK`)
-- Local implementation candidate: `0fe52c73b69756a2d65bc7cab013690ba0a2d60f`
+- Verification candidate: `6dfb2c4f811f53ce04b603d772c9b7b0f063b967`
 - Local implementation evidence: `docs/evidence/TL-CF-D1-LOCAL-IMPLEMENTATION-0fe52c7.md`
 - Local D1 implementation: `REWORK_READY_FOR_CRITIC`
 - Fresh Independent Critic: `PENDING`
@@ -39,6 +39,6 @@ Updated: 2026-09-13
 
 ## Next authorized objective
 
-Next: admit a fresh Independent Critic for `0fe52c7` and its exact evidence. Remote staging comes later and must map Requirement → Producer → Evidence → Consumer → Failure behavior for Worker, D1, R2/media, Images if applicable, auth/admin, business operations, secrets/bindings, logs/runtime and behavior parity.
+Next: admit a fresh Independent Critic for `6dfb2c4` and its exact evidence. Remote staging comes later and must map Requirement → Producer → Evidence → Consumer → Failure behavior for Worker, D1, R2/media, Images if applicable, auth/admin, business operations, secrets/bindings, logs/runtime and behavior parity.
 
 No production deployment, cutover, or Durable Objects/realtime work is authorized by this checkpoint.

@@ -3,16 +3,17 @@
 Date: 2026-09-13  
 Repository: `sjo1848/taco-loco`  
 Branch: `migration/cloudflare-native`  
-Substantive candidate: `0fe52c73b69756a2d65bc7cab013690ba0a2d60f`  
-Execution HEAD at evidence capture: `77fd996d21a58531ce952a03b2d00685f95f30c4`
+Implementation candidate: `0fe52c73b69756a2d65bc7cab013690ba0a2d60f`
+Verification candidate: `6dfb2c4f811f53ce04b603d772c9b7b0f063b967`
+Execution HEAD at evidence capture: `6dfb2c4f811f53ce04b603d772c9b7b0f063b967`
 
-This is the exact rework evidence packet. The prior candidate `fa76141` received Independent Critic `REWORK`; the rework is described in `docs/reviews/TL-CF-D1-LOCAL-IMPLEMENTATION-independent-critic-2026-09-13-rework.md`.
+This is the exact rework evidence packet. The prior candidate `fa76141` received Independent Critic `REWORK`; the rework is described in `docs/reviews/TL-CF-D1-LOCAL-IMPLEMENTATION-independent-critic-2026-09-13-rework.md`. The verification candidate contains the self-contained harnesses used for the proofs below.
 
 ## Rework evidence
 
 ### Actual D1.batch rollback
 
-Harness: `d1/verification/proof-worker.ts`, `d1/verification/proof-wrangler.jsonc`, `scripts/d1-local-runtime-proof.sh`.
+Harness: `d1/verification/proof-worker.ts`, `d1/verification/proof-wrangler.jsonc`, `scripts/d1-local-runtime-proof.sh`, and the integrated runner `scripts/d1-local-integration-proof.sh`.
 
 Commands:
 
@@ -31,20 +32,23 @@ The proof Worker uses the real local D1 binding and `env.DB.batch([...])`; the f
 
 ### Actual concurrent Worker requests
 
-Harness: `scripts/d1-local-concurrency-proof.sh`. It sends four concurrent requests with one `clientReference` and two concurrent requests with distinct references to the locally running built Worker.
+Harness: `scripts/d1-local-concurrency-proof.sh`, invoked by `scripts/d1-local-integration-proof.sh`. The integrated runner builds the Worker, creates a disposable local D1 persistence directory, applies migrations, seeds fixtures, starts the real Worker, sends four concurrent requests with one `clientReference` and two concurrent requests with distinct references, verifies SQL counts and tears down both Worker processes and the database directory.
 
 Command:
 
 ```text
-./scripts/d1-local-concurrency-proof.sh
+./scripts/d1-local-integration-proof.sh
 ```
 
 Representative output from the exact run:
 
 ```text
+rollback_assertions: PASS, remaining: 0
 same-reference: one HTTP 201, three HTTP 200 with the same order id/orderNumber 1
 distinct-a: HTTP 201, orderNumber 3
 distinct-b: HTTP 201, orderNumber 2
+assertions: PASS, duplicate_requests: 4, distinct_requests: 2
+D1_LOCAL_INTEGRATION_PROOF=PASS
 ```
 
 Database verification using the same local D1 persistence directory returned exactly three matching orders, three lines and three events. The distinct order numbers were 1, 2 and 3; the duplicate reference appeared once.
