@@ -1,0 +1,17 @@
+{
+  "candidate": "6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3",
+  "worker": "taco-loco-staging-20260913",
+  "version": "5b251804-6d2f-4bde-b547-7e4d560a7b71",
+  "url": "https://taco-loco-staging-20260913.sjo1848.workers.dev",
+  "bindings": {
+    "DB": {
+      "type": "d1",
+      "database_name": "taco-loco-staging-20260913",
+      "database_id": "266d23b2-4056-41c0-82d9-4f063ba48d78"
+    },
+    "ASSETS": { "type": "workers_static_assets" },
+    "CF_VERSION_METADATA": { "type": "version_metadata" }
+  },
+  "absent_bindings": ["MEDIA_BUCKET", "IMAGES", "HYPERDRIVE", "KV"],
+  "production": "NOT_AUTHORIZED"
+}

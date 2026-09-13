@@ -5,7 +5,7 @@ Phase: VALIDATE / RELEASE_PREPARATION
 Status: REMOTE_STAGING_INTEGRATION_REVIEW / STATIC_ASSETS
 Active contract: TL-CF-D1-REMOTE-STAGING-01
 Remote staging candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
-Current execution HEAD: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
+Current execution HEAD: `436cb57849b4b681890123724696b5a01fdde98b`
 Prior validated D1 candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 

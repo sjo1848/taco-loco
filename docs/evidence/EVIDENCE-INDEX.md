@@ -15,6 +15,7 @@ As of: 2026-09-13
 - R2 enablement: NOT_REQUIRED_INITIAL; previous API 10042/account evidence remains historical and inspectable.
 - Remote D1 staging contract: INTEGRATION_REVIEW — `docs/contracts/TL-CF-D1-REMOTE-STAGING-01.md`; exact final candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`.
 - Remote staging evidence: PROVEN pending composition review — `docs/evidence/TL-CF-D1-REMOTE-STAGING-6eccc3a.md`.
+- Remote staging effective bindings: PROVEN — `docs/evidence/TL-CF-D1-REMOTE-STAGING-bindings-6eccc3.json`.
 - Remote staging Independent Critic: PROVEN PASS — `docs/reviews/TL-CF-D1-REMOTE-STAGING-independent-critic-6eccc3a.md`.
 - Static Assets Independent Critic: PROVEN PASS — `docs/reviews/TL-CF-STATIC-ASSETS-independent-critic-4007a58.md`; exact candidate and fresh independent context.
 - Static Assets Integration Review: PROVEN PASS — `docs/reviews/TL-CF-STATIC-ASSETS-integration-review-4007a58.md`; exact candidate and fresh independent context.

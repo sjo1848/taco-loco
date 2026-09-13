@@ -55,7 +55,7 @@ Every mandatory gate must resolve to PASS or contract-backed NOT_APPLICABLE. UNK
 
 Remote execution completed for the exact candidate. Two routine runtime defects were corrected through bounded REWORK, with final evidence in `docs/evidence/TL-CF-D1-REMOTE-STAGING-6eccc3a.md`. Fresh Independent Critic PASS is persisted in `docs/reviews/TL-CF-D1-REMOTE-STAGING-independent-critic-6eccc3a.md`; the remaining gate is Integration Review.
 
-Entry conditions are satisfied: exact candidate, affected QA/build/runtime PASS, Independent Critic PASS, Integration Review PASS and synchronized governance.
+Entry conditions now satisfied: exact candidate, affected QA/build/runtime PASS, Independent Critic PASS and synchronized governance. Integration Review is the remaining assurance gate for the cross-surface composition.
 
 ## Done when
 

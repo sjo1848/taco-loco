@@ -21,6 +21,7 @@ The initial remote deploy exposed two runtime serialization/probe defects. They 
 - Final version: `5b251804-6d2f-4bde-b547-7e4d560a7b71`
 - Final deploy message identified candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`.
 - Bindings in final deploy: `DB` (D1), `ASSETS` (Workers Static Assets), `CF_VERSION_METADATA`.
+- Effective sanitized binding artifact: `docs/evidence/TL-CF-D1-REMOTE-STAGING-bindings-6eccc3.json`.
 - No `MEDIA_BUCKET` or `IMAGES` binding was present.
 - Worker observability was enabled in the generated deploy configuration. Wrangler tail connected and captured a successful `GET /api/health` invocation.
 
