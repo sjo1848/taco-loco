@@ -35,7 +35,7 @@
   "d1ImplementationCandidate": "0fe52c73b69756a2d65bc7cab013690ba0a2d60f",
   "d1Concurrency": "PASS_LOCAL_WORKER_BOUNDED_PENDING_CRITIC",
   "d1RuntimeJourney": "PARTIAL_WASM_AND_ORDER_PATH_PENDING_FULL_JOURNEY",
-  "d1LocalEvidence": "docs/evidence/TL-CF-D1-LOCAL-IMPLEMENTATION-fa76141.md",
+  "d1LocalEvidence": "docs/evidence/TL-CF-D1-LOCAL-IMPLEMENTATION-0fe52c7.md",
   "feasibilityReview": "docs/reviews/TL-CF-D1-FEASIBILITY.md",
   "resumePoint": "Admit fresh Independent Critic for 0fe52c7; no remote validation before critic/integration gates."
 }

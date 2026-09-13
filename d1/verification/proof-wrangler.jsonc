@@ -1,0 +1,14 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "taco-loco-d1-proof",
+  "main": "./proof-worker.ts",
+  "compatibility_date": "2026-09-05",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "taco-loco-local",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "../migrations"
+    }
+  ]
+}

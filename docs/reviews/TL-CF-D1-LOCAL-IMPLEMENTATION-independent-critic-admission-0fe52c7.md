@@ -3,7 +3,7 @@
 Status: `ADMITTED / PENDING`  
 Candidate: `0fe52c73b69756a2d65bc7cab013690ba0a2d60f`  
 Contract: `docs/contracts/TL-CF-D1-LOCAL-IMPLEMENTATION-01.md`  
-Evidence: `docs/evidence/TL-CF-D1-LOCAL-IMPLEMENTATION-fa76141.md`  
+Evidence: `docs/evidence/TL-CF-D1-LOCAL-IMPLEMENTATION-0fe52c7.md`
 Prior critic: `REWORK` for `fa76141928bf60f9259ba24a462468e0834b6b3a`  
 Critic context: fresh, read-only, no implementer private reasoning
 
@@ -13,7 +13,7 @@ Critic context: fresh, read-only, no implementer private reasoning
 - D1 schema/migration and Prisma Worker runtime: `prisma/schema.d1.prisma`, `d1/migrations/0001_initial.sql`, `src/lib/db.worker.ts`, `wrangler.jsonc`.
 - Atomic order path: `src/modules/orders/d1-atomic.ts`, `src/modules/orders/service.ts`.
 - Event adaptation: `src/app/api/admin/orders/events/route.ts`, `src/modules/orders/repository.ts`, `src/modules/orders/live-events.ts`.
-- Exact local Worker concurrency, rollback, build and test evidence in `docs/evidence/TL-CF-D1-LOCAL-IMPLEMENTATION-fa76141.md`.
+- Exact local Worker concurrency, rollback, build and test evidence in `docs/evidence/TL-CF-D1-LOCAL-IMPLEMENTATION-0fe52c7.md`.
 
 ## Review question
 

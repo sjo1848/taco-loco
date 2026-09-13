@@ -23,7 +23,7 @@ Updated: 2026-09-13
 - Feasibility Independent Critic: `PASS` — `docs/reviews/TL-CF-D1-MIG-01-independent-critic-2026-09-13.md`
 - Prior local implementation candidate: `fa76141928bf60f9259ba24a462468e0834b6b3a` (`REWORK`)
 - Local implementation candidate: `0fe52c73b69756a2d65bc7cab013690ba0a2d60f`
-- Local implementation evidence: `docs/evidence/TL-CF-D1-LOCAL-IMPLEMENTATION-fa76141.md`
+- Local implementation evidence: `docs/evidence/TL-CF-D1-LOCAL-IMPLEMENTATION-0fe52c7.md`
 - Local D1 implementation: `REWORK_READY_FOR_CRITIC`
 - Fresh Independent Critic: `PENDING`
 - D1 implementation: `UNKNOWN / NOT_STARTED`
