@@ -5,7 +5,7 @@
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
   "targetBranch": "migration/cloudflare-native",
   "technicalCandidate": "6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3",
-  "stage": "STAGING_CATALOG_PARITY_PASS",
+  "stage": "STAGING_REVIEW_READY",
   "remoteIntegration": "PASS",
   "stagingWorker": "taco-loco-staging-20260913",
   "stagingD1": "taco-loco-staging-20260913",
@@ -29,9 +29,13 @@
   "kvResource": "DEFERRED_NOT_REQUIRED",
   "costPosture": "COST_0_FREE_TIER_TARGET",
   "production": "NOT_AUTHORIZED",
-  "productionEligibility": "READY_TO_REOPEN_SEPARATE_HUMAN_GATE",
+  "productionEligibility": "HUMAN_HOLD_NOT_AUTHORIZED",
   "productionUrlDecision": "WORKERS_DEV_ACCEPTED_FOR_FUTURE_INITIAL_RELEASE",
   "keepStaging": "YES",
-  "humanGate": "REOPEN_PRODUCTION_ELIGIBILITY_AS_SEPARATE_GATE",
-  "resumePoint": "STAGING_CATALOG_PARITY_PASS is proven for the existing staging environment. Reopen production eligibility as a separate Human Gate. Keep staging available; no production action is authorized."
+  "humanGate": "EXPLICIT_HUMAN_HOLD_NO_PRODUCTION_REOPEN",
+  "manualReview": "STAGING_REVIEW_READY",
+  "manualReviewEvidence": "docs/evidence/TL-STAGING-MANUAL-REVIEW-READY-2026-09-13.md",
+  "temporaryImageCoverage": "31_OF_31",
+  "stagingAdminAccess": "STAGING_ADMIN_ACCESS_PASS",
+  "resumePoint": "Existing staging is ready for manual human review. Keep staging available and await human feedback. Production remains NOT_AUTHORIZED; do not reopen production eligibility automatically."
 }

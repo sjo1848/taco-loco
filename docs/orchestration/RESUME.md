@@ -7,7 +7,7 @@ Updated: 2026-09-13
 - Application candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `STAGING_CATALOG_PARITY_PASS`
+- State: `STAGING_REVIEW_READY`
 - Active contract: `docs/contracts/TL-STAGING-CATALOG-PARITY-01.md`
 - Production: `NOT_AUTHORIZED`
 
@@ -34,6 +34,10 @@ Expected public catalog:
 
 Do not recreate the old demo order or default admin credential as part of catalog parity.
 
+## Manual review readiness
+
+The existing staging environment is ready for human review. Temporary `/products/taco-carne.jpg` coverage is present for all 31 published canonical products, staging-only admin access is verified, and public/admin/order/session/event regression remains healthy. Evidence: `docs/evidence/TL-STAGING-MANUAL-REVIEW-READY-2026-09-13.md`.
+
 ## Next authorized objective
 
-`TL-STAGING-CATALOG-PARITY-01` passed: exact frozen-source catalog parity and realistic staging menu/order/admin behavior are proven. Reopen production eligibility as a separate Human Gate; keep staging available and do not deploy production.
+Human manually reviews the existing staging URL. Keep staging available. Production remains `NOT_AUTHORIZED`; do not reopen production eligibility or perform production actions without a future explicit human instruction.
