@@ -4,8 +4,8 @@ Date: 2026-09-13
 Repository: `sjo1848/taco-loco`  
 Branch: `migration/cloudflare-native`  
 Implementation candidate: `0fe52c73b69756a2d65bc7cab013690ba0a2d60f`
-Verification candidate: `8291547f15b3ee40a7c231c5dbedcb9b2cacf1d7`
-Execution HEAD at evidence capture: `8291547f15b3ee40a7c231c5dbedcb9b2cacf1d7`
+Verification candidate: `79b3f7681ae313cffd9c8f3ee0665886c3b0b032`
+Execution HEAD at evidence capture: `79b3f7681ae313cffd9c8f3ee0665886c3b0b032`
 
 This is the exact rework evidence packet. The prior candidate `fa76141` received Independent Critic `REWORK`; the rework is described in `docs/reviews/TL-CF-D1-LOCAL-IMPLEMENTATION-independent-critic-2026-09-13-rework.md`. The verification candidate contains the self-contained harnesses used for the proofs below.
 
@@ -44,14 +44,16 @@ Representative output from the exact run:
 
 ```text
 rollback_assertions: PASS, remaining: 0
-same-reference: one HTTP 201, three HTTP 200 with the same order id/orderNumber 1
-distinct-a: HTTP 201, orderNumber 3
-distinct-b: HTTP 201, orderNumber 2
+same-reference: one HTTP 201, three HTTP 200 with the same order id/orderNumber 101
+distinct-a: HTTP 201, orderNumber 102
+distinct-b: HTTP 201, orderNumber 103
 assertions: PASS, duplicate_requests: 4, distinct_requests: 2
+transition_race: PASS, statuses: [200, 409]
+sse_cursor_replay_assertions: PASS, ids: [100, 101, 102, 103, 104]
 D1_LOCAL_INTEGRATION_PROOF=PASS
 ```
 
-Database verification using the same local D1 persistence directory returned exactly three matching orders, three lines and three events. The distinct order numbers were 1, 2 and 3; the duplicate reference appeared once. The harness asserts these counts and removes the temporary persistence directory and both Worker process groups on exit.
+Database verification using the same local D1 persistence directory returned exactly three matching orders, three lines and three events. The seeded order number is 100; the three newly created orders received exactly 101, 102 and 103, and the duplicate reference appeared once. The harness asserts these relative numbering and uniqueness invariants, then removes the temporary persistence directory and both Worker process groups on exit.
 
 ### Worker/Prisma WASM runtime
 
@@ -65,7 +67,7 @@ Database verification using the same local D1 persistence directory returned exa
 
 The integrated harness reads `/menu`, seeds an admin and valid seven-day settings schedule, logs in through `/api/auth/login`, verifies `/api/auth/session`, reads and patches `/api/admin/settings`, logs out, and verifies session invalidation with HTTP 401. It reports `catalog_settings_auth_session_assertions=PASS`.
 
-The same authenticated harness races two `PATCH /api/admin/orders/:id` status transitions and asserts one `200` and one `409`, then reads `/api/admin/orders/events?after=99` and asserts persisted SSE order events with cursor ids. It reports `transition_race: PASS` and `sse_cursor_replay_assertions=PASS`.
+The same authenticated harness races two `PATCH /api/admin/orders/:id` status transitions and asserts one `200` and one `409`, then reads `/api/admin/orders/events?after=99` and asserts exactly five persisted SSE events with strictly ascending cursor ids `100,101,102,103,104` (seed, three order creations, and the successful transition). It reports `transition_race: PASS` and `sse_cursor_replay_assertions=PASS`.
 
 ## Full local checks
 
@@ -84,7 +86,7 @@ The same authenticated harness races two `PATCH /api/admin/orders/:id` status tr
 - D1 atomic multi-write order path → `d1-atomic.ts` uses one D1 batch → order/line/event all persist or none → Worker duplicate/distinct harness plus rollback proof.
 - `clientReference` idempotency → unique D1 column plus conflict reread → one persisted order for concurrent duplicates → concurrency harness and SQL count.
 - Meaningful order numbering → serialized D1 batch allocation plus unique constraint → distinct concurrent requests receive unique numbers → concurrency harness and SQL result.
-- Event replay ordering → unique sequence allocation and cursor polling → persisted events are replayable in ascending sequence → atomic proof and bounded route/repository.
+- Event replay ordering → unique sequence allocation and cursor polling → the local Worker replay returns the complete expected cursor set in ascending order without duplicates → integrated SSE assertion and bounded route/repository.
 - PostgreSQL LISTEN/NOTIFY removal → persisted OrderEvent polling → Worker-compatible bounded stream → route/repository implementation and type/test/build checks.
 - Worker Prisma runtime → D1 adapter plus compiled query compiler WASM → local Worker executes real D1 reads/writes → Wrangler local HTTP run and dry-run bundle validation.
 
