@@ -6,7 +6,7 @@ Phase: `VALIDATE / RELEASE_PREPARATION`
 Technical candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`  
 Scope: bounded remote validation only; production remains unauthorized.
 
-Source convergence: GitHub branch `origin/migration/cloudflare-native` verified at `098513c499211fae57866fff0ba888f21f0fda95`; technical candidate `5d0a1bf` is an ancestor.
+Source convergence: GitHub branch `origin/migration/cloudflare-native` verified at `3e4fb56d09a28f9e887b70bdec52e9cdcb10f68d`; technical candidate `5d0a1bf` is an ancestor.
 
 ## Objective
 

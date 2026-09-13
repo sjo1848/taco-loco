@@ -2,7 +2,7 @@
 As of: 2026-09-13
 Candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
 Current execution HEAD: `3bb63e7a7d0264cebbf696266a11cf88c81ff10a`
-GitHub source convergence: `PASS_NONDESTRUCTIVE_PUSH` — `origin/migration/cloudflare-native@098513c499211fae57866fff0ba888f21f0fda95`; candidate `5d0a1bf` reachable remotely
+GitHub source convergence: `PASS_NONDESTRUCTIVE_PUSH` — `origin/migration/cloudflare-native@3e4fb56d09a28f9e887b70bdec52e9cdcb10f68d`; candidate `5d0a1bf` reachable remotely
 
 - Problem: PROVEN — strategic Cloudflare-native/USD-0 decision and current product baseline in `docs/reviews/TL-CF-D1-FEASIBILITY.md`
 - Design: PROVEN — D1 feasibility review and contract

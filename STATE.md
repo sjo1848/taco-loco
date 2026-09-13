@@ -6,7 +6,7 @@ Status: REMOTE_STAGING HUMAN_ACTION / R2_ENABLEMENT
 Active contract: TL-CF-D1-REMOTE-STAGING-01
 Technical candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
 Current execution HEAD resolved dynamically at recovery: `3bb63e7a7d0264cebbf696266a11cf88c81ff10a`.
-GitHub source convergence verified: `origin/migration/cloudflare-native` at `098513c499211fae57866fff0ba888f21f0fda95`; candidate `5d0a1bf` is reachable remotely.
+GitHub source convergence verified: `origin/migration/cloudflare-native` at `3e4fb56d09a28f9e887b70bdec52e9cdcb10f68d`; candidate `5d0a1bf` is reachable remotely.
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 
 ## Objective
