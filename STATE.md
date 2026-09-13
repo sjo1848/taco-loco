@@ -1,16 +1,15 @@
 # Taco Loco — Current Authoritative Project State
 Updated: 2026-09-13
 Mode: DELIVERY
-Phase: VALIDATE / RELEASE_PREPARATION
-Status: REMOTE_INTEGRATION_PASS / STATIC_ASSETS
-Active contract: TL-CF-D1-REMOTE-STAGING-01
-Remote staging candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
-Current execution HEAD: `8d741dede83344a99cd0e8572b07c597cf00b6ea`
-Prior validated D1 candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
+Phase: RELEASE_PREPARATION
+Status: HUMAN_GATE / PRODUCTION_RELEASE_AUTHORIZATION
+Active contract: TL-CF-PRODUCTION-ELIGIBILITY-01
+Production candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 
 ## Objective
-Complete bounded real-provider staging validation for the Cloudflare-native migration while preserving Taco Loco behavior and the COST-0 initial architecture.
+
+Decide whether to release the proven Cloudflare-native candidate to a separate production environment. No production provisioning, deployment or cutover is authorized until the Human Gate resolves.
 
 ## Active architecture
 
@@ -23,64 +22,62 @@ Client
 
 Active decisions:
 - Workers/vinext is the application/API runtime.
-- D1 is the target structured/transactional store.
-- `MEDIA_STATIC_ASSETS_INITIAL`: product images are Workers Static Assets versioned with the application deployment.
-- `Product.imageKey` stores/resolves a public static asset path.
+- D1 is the structured/transactional store.
+- `MEDIA_STATIC_ASSETS_INITIAL`: product images are Workers Static Assets versioned with application deployment.
 - `MEDIA_SELF_SERVICE_UPLOAD_DEFERRED`: no admin/customer self-service image upload in the initial release.
-- R2 is `SUPERSEDED_NOT_REQUIRED_INITIAL`; no R2 enablement, bucket or binding is required.
+- R2 is `SUPERSEDED_NOT_REQUIRED_INITIAL`.
 - Cloudflare Images is `DEFERRED_NOT_REQUIRED_INITIAL`.
 - Hyperdrive, external PostgreSQL, KV, Durable Objects, queues and VPS are not part of the initial target.
-- Production cutover requires a future Human Gate.
+- Production release requires the current Human Gate.
 
-## Assurance entering remote staging
+## Proven release evidence
 
-The prior exact candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a` had:
-- Static Assets local TECHNICAL_PASS;
-- tests 31/31 PASS;
-- typecheck PASS;
-- changed-file ESLint PASS;
-- vinext build PASS;
-- Wrangler dry-run PASS;
-- local runtime proof for representative asset and removal of legacy media routes;
+Exact candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3` reached `REMOTE_INTEGRATION_PASS` with:
+- real Cloudflare Worker + D1 + Static Assets validation;
+- D1 migration PASS;
+- Static Assets PASS;
+- auth/session/logout PASS;
+- orders/idempotency/transitions PASS;
+- persisted events/SSE replay PASS;
+- logs/runtime PASS;
 - Independent Critic PASS;
 - Integration Review PASS.
 
-Prior D1 evidence from candidate `5d0a1bf` remains reusable for unchanged D1/auth/order/event semantics.
+Two staging defects were corrected before the final candidate:
+- D1-compatible health probing;
+- BigInt-safe `OrderEvent.sequence` serialization.
 
-Remote rework candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3` adds only D1-compatible health probing and BigInt-safe admin order serialization after bounded staging exposed those runtime defects. Tests 31/31, typecheck, lint and vinext build pass; final remote journey is documented in `docs/evidence/TL-CF-D1-REMOTE-STAGING-6eccc3a.md`. Fresh Independent Critic verdict for this exact candidate is PASS; Integration Review is now required because the final remote composition spans Worker runtime, D1 and Static Assets.
+The final candidate was revalidated locally and remotely after those corrections.
 
-## Current authorized work
+## Current infrastructure
 
-Reactivate and execute bounded remote staging against Workers + D1 + Workers Static Assets.
+Bounded staging remains provisioned and proven:
+- Worker: `taco-loco-staging-20260913`;
+- D1: `taco-loco-staging-20260913`.
 
-Remote validation must resolve the mandatory gate map rows with real provider evidence for:
-- Worker deployment/runtime;
-- D1 binding/schema/reads/writes;
-- auth/admin/session;
-- orders/idempotency/transitions;
-- persisted events/replay;
-- Static Assets delivery and D1 image reference;
-- required secrets/bindings;
-- observability;
-- behavior parity;
-- COST-0/free-tier guardrail.
+R2, Images, Hyperdrive and KV were not provisioned.
 
-No remote stress testing is required where local evidence already proves the property.
+## Production eligibility recommendation
 
-## Constraints
+If authorized, use a separate production Worker and separate production D1 while preserving staging. Initial public URL should default to `workers.dev` to preserve COST-0 unless a later decision chooses a custom domain.
 
-Not authorized:
-- production deployment/cutover;
-- paid plan or intentional billable usage;
-- R2;
-- Cloudflare Images;
-- Hyperdrive/external PostgreSQL;
-- KV;
-- Durable Objects;
-- queues;
-- unrelated product changes.
+Production data must be classified before release as either:
+- `FRESH_PRODUCTION_BOOTSTRAP`; or
+- `EXISTING_DATA_MIGRATION_REQUIRED`.
 
-If a substantive application change is required during staging, classify `REWORK`, create a new exact candidate and rerun affected local assurance before resuming remote validation.
+Staging test data is not production data.
+
+## COST-0 posture
+
+The initial production target remains Workers Free + D1 Free + Workers Static Assets. A future capacity/paid-plan change requires a separate Human Gate.
+
+## Human Gate pending
+
+Resolve explicitly:
+1. authorize or reject production release of exact candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`;
+2. accept `workers.dev` as the initial zero-cost production URL or defer for another URL decision;
+3. choose fresh production bootstrap or declare that existing live data must be migrated;
+4. accept keeping staging available during the initial production period.
 
 ## Source precedence
 1. FALDEO Project Method v1.0 + Harness v1.
@@ -94,8 +91,10 @@ If a substantive application change is required during staging, classify `REWORK
 ## Current classifications
 - Local implementation: PROVEN.
 - Static Assets assurance: PROVEN.
-- Remote integration: PROVEN PASS; Independent Critic PASS; Integration Review PASS.
+- Remote integration: PROVEN PASS.
+- Production eligibility: PREPARED.
 - Production: NOT_AUTHORIZED.
 
-## Next authorized action
-Remote staging is `REMOTE_INTEGRATION_PASS` for `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`. Next authorized action is production-eligibility preparation and a separate Human Gate; do not deploy or cut over production.
+## Next action
+
+Stop at `HUMAN_GATE / PRODUCTION_RELEASE_AUTHORIZATION` and obtain the explicit release decisions. Do not deploy or cut over production before approval.
