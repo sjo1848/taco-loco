@@ -1,0 +1,4 @@
+-- Run after the base migration. The second statement violates a foreign key.
+-- The first order must not remain if the D1 multi-statement batch is atomic.
+INSERT INTO "Order" ("id", "orderNumber", "status", "fulfillment", "source", "subtotalAmount", "adjustmentAmount", "totalAmount", "clientReference", "createdAt", "updatedAt") VALUES ('12121212-1212-4121-8121-121212121212', 11, 'RECEIVED', 'PICKUP', 'PUBLIC_MENU', 1, 0, 1, 'd1-proof-rollback-reference', '2026-09-13T00:00:00.000Z', '2026-09-13T00:00:00.000Z');
+INSERT INTO "OrderLine" ("id", "orderId", "productId", "productName", "unitPriceAmount", "quantity", "createdAt") VALUES ('13131313-1313-4131-8131-131313131313', '12121212-1212-4121-8121-121212121212', 'deadbeef-dead-4eef-8eef-deadbeefdead', 'Invalid', 1, 1, '2026-09-13T00:00:00.000Z');

@@ -6,6 +6,12 @@
     "nodejs_compat"
   ],
   "main": "vinext/server/fetch-handler",
+  "rules": [
+    {
+      "type": "CompiledWasm",
+      "globs": ["**/*.wasm"]
+    }
+  ],
   "assets": {
     "directory": "dist/client",
     "not_found_handling": "none",

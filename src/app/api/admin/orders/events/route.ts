@@ -4,6 +4,9 @@ import { orderRepository } from "@/modules/orders/repository";
 
 export const dynamic = "force-dynamic";
 
+const MAX_STREAM_MS = 50_000;
+const POLL_INTERVAL_MS = 1_000;
+
 type OrderSnapshot = {
   id: string;
   orderNumber: number;
@@ -57,6 +60,7 @@ export async function GET(request: Request) {
     async start(controller) {
       let closed = false;
       let lastSent = cursor;
+      const deadline = Date.now() + MAX_STREAM_MS;
       const heartbeat = setInterval(() => {
         if (!closed) controller.enqueue(encoder.encode(": heartbeat\n\n"));
       }, 15000);
@@ -86,11 +90,12 @@ export async function GET(request: Request) {
         controller.enqueue(encoder.encode("retry: 3000\n\n"));
         const replay = await orderRepository.eventsAfter(cursor);
         for (const event of replay) await sendNotification(event);
-        while (!closed) {
-          const events = await orderRepository.eventsAfter(lastSent);
+        while (!closed && Date.now() < deadline) {
+          const events = await orderRepository.eventsAfter(lastSent, 100);
           for (const event of events) await sendNotification(event);
-          await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+          await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
         }
+        close();
       } catch (error) {
         close(error);
       }

@@ -14,6 +14,7 @@ export async function POST(request: Request) {
     const result = await createPublicOrderIntent(await request.json());
     return NextResponse.json({ order: { id: result.order.id, orderNumber: result.order.orderNumber, totalAmount: result.order.totalAmount }, reused: result.reused }, { status: result.reused ? 200 : 201 });
   } catch (error) {
+    console.error("[orders.intent] request failed", error instanceof Error ? error.message : error);
     if (error instanceof AppError) return NextResponse.json({ code: error.code, message: error.message }, { status: error.status });
     if (error instanceof z.ZodError) return NextResponse.json({ code: "INVALID_INPUT", message: "No pudimos preparar el pedido." }, { status: 400 });
     return NextResponse.json({ code: "INTERNAL_ERROR", message: "No pudimos preparar el pedido." }, { status: 500 });

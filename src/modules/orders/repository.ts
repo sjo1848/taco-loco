@@ -16,8 +16,8 @@ export const orderRepository = {
     return event?.sequence ?? BigInt(0);
   },
 
-  async eventsAfter(sequence: bigint) {
-    return db.orderEvent.findMany({ where: { sequence: { gt: sequence } }, orderBy: { sequence: "asc" }, select: { sequence: true, orderId: true } });
+  async eventsAfter(sequence: bigint, take = 100) {
+    return db.orderEvent.findMany({ where: { sequence: { gt: sequence } }, orderBy: { sequence: "asc" }, take, select: { sequence: true, orderId: true } });
   },
 
   async list(filter: OrderListFilter = {}) {
