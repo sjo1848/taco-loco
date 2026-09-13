@@ -37,10 +37,12 @@
   "staticAssetsIndependentCritic": "PASS",
   "staticAssetsIndependentCriticCandidate": "4007a5810c998a7c4478dfb4b054c9c612860a1a",
   "staticAssetsIndependentCriticArtifact": "docs/reviews/TL-CF-STATIC-ASSETS-independent-critic-4007a58.md",
-  "staticAssetsIntegrationReview": "PENDING",
-  "staging": "PAUSED_PENDING_STATIC_ASSETS_ADAPTATION",
+  "staticAssetsIntegrationReview": "PASS",
+  "staticAssetsIntegrationReviewCandidate": "4007a5810c998a7c4478dfb4b054c9c612860a1a",
+  "staticAssetsIntegrationReviewArtifact": "docs/reviews/TL-CF-STATIC-ASSETS-integration-review-4007a58.md",
+  "staging": "READY_TO_REACTIVATE_STATIC_ASSETS_REMOTE_GATE",
   "production": "NOT_AUTHORIZED",
   "humanGate": "RESOLVED_STATIC_ASSETS_INITIAL_MEDIA",
   "activeDecisionArtifact": "docs/evidence/TL-MEDIA-STATIC-ASSETS-DECISION-2026-09-13.md",
-  "resumePoint": "Independent Critic PASS for exact Static Assets candidate 4007a5810c998a7c4478dfb4b054c9c612860a1a. Execute mandatory Integration Review, then synchronize durable state and Drive before reactivating remote staging."
+  "resumePoint": "Static Assets candidate 4007a5810c998a7c4478dfb4b054c9c612860a1a has Independent Critic PASS and Integration Review PASS. Synchronize durable state/evidence and Drive; next authorized action is reactivate bounded remote staging against Workers + D1 + Static Assets."
 }

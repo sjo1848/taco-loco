@@ -53,4 +53,4 @@ No R2 Dashboard action is required. No remote provisioning/deployment is authori
 
 ## Next authorized objective
 
-Independent Critic PASS is persisted for exact candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a`; execute mandatory Integration Review next. Remote staging remains paused.
+Independent Critic PASS and Integration Review PASS are persisted for exact candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a`. Remote staging is ready to reactivate against Workers + D1 + Static Assets; no deployment has occurred.

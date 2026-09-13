@@ -1,10 +1,10 @@
 # TL-CF-D1-REMOTE-STAGING-01 — bounded Cloudflare D1 validation
 
-Status: `PAUSED_PENDING_STATIC_ASSETS_ADAPTATION`  
+Status: `READY_TO_REACTIVATE_STATIC_ASSETS`  
 Mode: `DELIVERY`  
 Phase: `VALIDATE / RELEASE_PREPARATION`  
 Prior validated candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`  
-Remote staging candidate: `PENDING_ASSURANCE_FOR_4007A58`
+Remote staging candidate: `4007a5810c998a7c4478dfb4b054c9c612860a1a`
 Scope: bounded remote validation only; production remains unauthorized.
 
 ## Superseding media decision
@@ -53,7 +53,7 @@ Every mandatory gate must resolve to PASS or contract-backed NOT_APPLICABLE. UNK
 
 ## Current stop condition
 
-Remote staging is PAUSED, not blocked by a Human Action.
+Remote staging is ready to reactivate after durable synchronization; no remote resource or deployment is authorized by this local block.
 
 Resume only after `TL-CF-STATIC-ASSETS-01` produces:
 - a new exact candidate;

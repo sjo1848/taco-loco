@@ -2,7 +2,7 @@
 Updated: 2026-09-13
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: LOCAL_ADAPTATION / STATIC_ASSETS_ASSURANCE_PENDING
+Status: TECHNICAL_PASS / STATIC_ASSETS_REMOTE_ADMISSION_READY
 Active contract: TL-CF-STATIC-ASSETS-01
 Prior validated technical candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
 Static-assets candidate: `4007a5810c998a7c4478dfb4b054c9c612860a1a`
@@ -61,7 +61,7 @@ There is no longer an R2 Human Action. R2 Dashboard enablement is cancelled/not 
 Independent Critic `PASS` is persisted at `docs/reviews/TL-CF-STATIC-ASSETS-independent-critic-4007a58.md` for exact candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a`, using a fresh independent context. Earlier evidence-only REWORKs were corrected without changing the substantive candidate.
 
 ## Next authorized action
-Perform the mandatory Integration Review for the exact candidate, then synchronize durable state/evidence and Drive. No remote provisioning or deployment is authorized in this block.
+Synchronize durable state/evidence and Drive, then reactivate the bounded remote staging contract against Workers + D1 + Static Assets. No remote provisioning or deployment occurs in this local block.
 
 After local candidate PASS + Independent Critic PASS + Integration Review PASS, reactivate `TL-CF-D1-REMOTE-STAGING-01` against Workers + D1 + Static Assets.
 
