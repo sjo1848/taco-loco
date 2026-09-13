@@ -1,5 +1,5 @@
 {
-  "contract": "TL-CF-STATIC-ASSETS-01",
+  "contract": "TL-CF-D1-REMOTE-STAGING-01",
   "status": "ACTIVE",
   "sourceRepo": "sjo1848/taco-loco-foodtrack",
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
@@ -11,7 +11,7 @@
   "technicalCandidate": "5d0a1bf582a5bd9f061b7c6121a03d757397fcb4",
   "technicalCandidateRole": "PRIOR_VALIDATED_BASELINE_FOR_STATIC_ASSETS_ADAPTATION",
   "staticAssetsCandidate": "4007a5810c998a7c4478dfb4b054c9c612860a1a",
-  "stage": "LOCAL_STATIC_ASSETS_REMOTE_ADMISSION_READY",
+  "stage": "REMOTE_STAGING_ACTIVE_STATIC_ASSETS",
   "baselineParity": "PASS",
   "functionalQa": "PASS_PRIOR_CANDIDATE_REVALIDATE_AFFECTED_SURFACES",
   "securityAudit": "PASS_HIGH_THRESHOLD_MODERATE_REMAIN_PRIOR_CANDIDATE",
@@ -41,9 +41,9 @@
   "staticAssetsIntegrationReview": "PASS",
   "staticAssetsIntegrationReviewCandidate": "4007a5810c998a7c4478dfb4b054c9c612860a1a",
   "staticAssetsIntegrationReviewArtifact": "docs/reviews/TL-CF-STATIC-ASSETS-integration-review-4007a58.md",
-  "staging": "READY_TO_REACTIVATE_STATIC_ASSETS_REMOTE_GATE",
+  "staging": "ACTIVE_NOT_YET_PROVEN",
   "production": "NOT_AUTHORIZED",
   "humanGate": "RESOLVED_STATIC_ASSETS_INITIAL_MEDIA",
   "activeDecisionArtifact": "docs/evidence/TL-MEDIA-STATIC-ASSETS-DECISION-2026-09-13.md",
-  "resumePoint": "Static Assets candidate 4007a5810c998a7c4478dfb4b054c9c612860a1a has Independent Critic PASS and Integration Review PASS. Synchronize durable state/evidence and Drive; next authorized action is reactivate bounded remote staging against Workers + D1 + Static Assets."
+  "resumePoint": "Remote staging ACTIVE for exact candidate 4007a5810c998a7c4478dfb4b054c9c612860a1a. Verify cost guardrail, provision minimum D1/Worker resources, execute bounded journey, persist gate evidence, and classify REMOTE_INTEGRATION_PASS or blocker."
 }

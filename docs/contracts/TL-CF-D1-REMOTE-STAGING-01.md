@@ -1,6 +1,6 @@
 # TL-CF-D1-REMOTE-STAGING-01 — bounded Cloudflare D1 validation
 
-Status: `READY_TO_REACTIVATE_STATIC_ASSETS`  
+Status: `REMOTE_STAGING_ACTIVE / STATIC_ASSETS`  
 Mode: `DELIVERY`  
 Phase: `VALIDATE / RELEASE_PREPARATION`  
 Prior validated candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`  
@@ -53,14 +53,9 @@ Every mandatory gate must resolve to PASS or contract-backed NOT_APPLICABLE. UNK
 
 ## Current stop condition
 
-Remote staging is ready to reactivate after durable synchronization; no remote resource or deployment is authorized by this local block.
+Remote staging is active for the exact candidate; provision only the minimum D1/Worker validation footprint and stop at the contract classification.
 
-Resume only after `TL-CF-STATIC-ASSETS-01` produces:
-- a new exact candidate;
-- affected QA/build/runtime PASS;
-- Independent Critic PASS;
-- Integration Review PASS;
-- synchronized durable state/evidence.
+Entry conditions are satisfied: exact candidate, affected QA/build/runtime PASS, Independent Critic PASS, Integration Review PASS and synchronized governance.
 
 ## Done when
 

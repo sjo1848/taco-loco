@@ -10,8 +10,8 @@ Updated: 2026-09-13
 - Static-assets candidate: `4007a5810c998a7c4478dfb4b054c9c612860a1a`
 - Global mode: `DELIVERY`
 - Phase: `IMPLEMENT / VALIDATE`
-- State: `LOCAL_ADAPTATION / STATIC_ASSETS_ASSURANCE_PENDING`
-- Active contract: `docs/contracts/TL-CF-STATIC-ASSETS-01.md`
+- State: `REMOTE_STAGING_ACTIVE / STATIC_ASSETS`
+- Active contract: `docs/contracts/TL-CF-D1-REMOTE-STAGING-01.md`
 - Production: `NOT_AUTHORIZED`
 
 ## Prior D1 checkpoint
@@ -48,10 +48,10 @@ Local evidence: `docs/evidence/TL-CF-STATIC-ASSETS-4007a58.md` — PASS.
 
 ## Remote staging
 
-`TL-CF-D1-REMOTE-STAGING-01` is `READY_TO_REACTIVATE_STATIC_ASSETS`.
+`TL-CF-D1-REMOTE-STAGING-01` is `REMOTE_STAGING_ACTIVE / STATIC_ASSETS`.
 
-No R2 Dashboard action is required. No remote provisioning/deployment has occurred; the next authorized action is bounded remote staging against Workers + D1 + Static Assets.
+No R2 Dashboard action is required. Remote provisioning is authorized only for the minimum D1/Worker validation footprint.
 
 ## Next authorized objective
 
-Independent Critic PASS and Integration Review PASS are persisted for exact candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a`. Remote staging is ready to reactivate against Workers + D1 + Static Assets; no deployment has occurred.
+Independent Critic PASS and Integration Review PASS are persisted for exact candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a`. Execute the bounded remote journey and persist every gate result. Production remains unauthorized.
