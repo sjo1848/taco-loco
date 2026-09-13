@@ -34,11 +34,11 @@
   "staticAssetsEngineeringQa": "PASS",
   "staticAssetsFunctionalQa": "PASS_LOCAL",
   "staticAssetsSecurityReview": "PASS_LOCAL_UPLOAD_SURFACE_REMOVED",
-  "staticAssetsIndependentCritic": "PENDING",
+  "staticAssetsIndependentCritic": "REWORK_EVIDENCE_PACKET",
   "staticAssetsIntegrationReview": "PENDING",
   "staging": "PAUSED_PENDING_STATIC_ASSETS_ADAPTATION",
   "production": "NOT_AUTHORIZED",
   "humanGate": "RESOLVED_STATIC_ASSETS_INITIAL_MEDIA",
   "activeDecisionArtifact": "docs/evidence/TL-MEDIA-STATIC-ASSETS-DECISION-2026-09-13.md",
-  "resumePoint": "Candidate 4007a5810c998a7c4478dfb4b054c9c612860a1a passed local Static Assets QA/build/runtime evidence. Prepare and execute Independent Critic, then Integration Review. Remote staging remains paused; do not enable R2."
+  "resumePoint": "Independent Critic returned REWORK for evidence reproducibility only; substantive candidate 4007a5810c998a7c4478dfb4b054c9c612860a1a is unchanged. Corrected runtime transcript is persisted; rerun fresh Independent Critic, then Integration Review."
 }

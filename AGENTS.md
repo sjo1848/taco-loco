@@ -14,19 +14,19 @@ Baseline de migración fijado en `a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48` del 
 
 Migrar Taco Loco hacia una arquitectura Cloudflare-native sin alterar comportamiento de negocio durante el traslado inicial.
 
-Orden de trabajo:
-1. reproducir baseline funcional;
-2. mantener PostgreSQL + Prisma como fuente transaccional inicial;
-3. mover runtime a Cloudflare Workers sólo con evidencia de compatibilidad;
-4. usar R2 para media;
-5. aislar/reemplazar PostgreSQL LISTEN/NOTIFY + SSE antes del cutover completo;
-6. evaluar D1 únicamente después de alcanzar paridad funcional.
+Target vigente después de las decisiones Human Gate persistidas:
+1. preservar el baseline funcional;
+2. usar Cloudflare Workers + vinext como runtime;
+3. usar D1 para datos estructurados/transaccionales tras la evidencia de compatibilidad;
+4. usar Workers Static Assets para imágenes iniciales, con `Product.imageKey` como path público;
+5. mantener R2/Images, Hyperdrive y PostgreSQL externo sólo como evidencia histórica o deferred cuando no exista requisito actual;
+6. conservar las semánticas transaccionales y la adaptación de LISTEN/NOTIFY antes de cualquier staging/cutover.
 
 ## Invariantes
 
 - No escribir en `sjo1848/taco-loco-foodtrack`.
 - No agregar funcionalidades de producto durante la migración.
-- No migrar PostgreSQL a D1 en el mismo cambio que el runtime.
+- No cambiar semánticas de producto para facilitar D1 o Static Assets.
 - No declarar paridad ni readiness sin SHA y evidencia de CI/test.
 - Usar branches y pull requests; `main` debe permanecer inspectable.
 - Los cambios de arquitectura deben preservar validación server-side, sesiones, auditoría de pedidos y reglas transaccionales.

@@ -58,10 +58,10 @@ Production: NOT_AUTHORIZED.
 ## Current blockers and classifications
 There is no longer an R2 Human Action. R2 Dashboard enablement is cancelled/not required for the initial target.
 
-The current gate is assurance: Independent Critic and Integration Review for candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a` before remote staging resumes.
+The first Independent Critic returned `REWORK` for evidence reproducibility only: the substantive candidate was accepted, but runtime commands/output were not durable and the packet was not present at the exact code SHA. Corrected runtime evidence is now persisted in `docs/evidence/TL-CF-STATIC-ASSETS-runtime-4007a58.txt`; the candidate remains unchanged.
 
 ## Next authorized action
-Execute independent review of `docs/evidence/TL-CF-STATIC-ASSETS-4007a58.md` and candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a`. No remote provisioning or deployment is authorized in this block.
+Rerun the Independent Critic using `docs/reviews/TL-CF-STATIC-ASSETS-independent-critic-admission-4007a58-r1.md`, then perform Integration Review if it passes. No remote provisioning or deployment is authorized in this block.
 
 After local candidate PASS + Independent Critic PASS + Integration Review PASS, reactivate `TL-CF-D1-REMOTE-STAGING-01` against Workers + D1 + Static Assets.
 

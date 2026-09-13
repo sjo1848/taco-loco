@@ -1,0 +1,32 @@
+# TL-CF-STATIC-ASSETS runtime evidence
+
+Substantive candidate: 4007a5810c998a7c4478dfb4b054c9c612860a1a
+Evidence recorded in governance descendant: 530b96373b8bfdad16cd5d74febbe0333592f3be
+Environment: local Wrangler Worker only; no remote resources.
+
+Commands and observed results:
+
+    pnpm db:migrate:d1:local
+    0001_initial.sql | 22 commands executed successfully | PASS
+
+    pnpm exec wrangler types
+    generated bindings: DB, ASSETS, CF_VERSION_METADATA | PASS
+
+    pnpm build:vinext
+    Build complete. Route list contains no /api/admin/media/products or /api/media/products/:key | PASS
+
+    pnpm exec wrangler deploy --dry-run
+    bindings: env.DB, env.ASSETS, env.CF_VERSION_METADATA
+    no MEDIA_BUCKET or IMAGES binding | PASS; no deployment performed
+
+    pnpm exec wrangler dev --config dist/server/wrangler.json --local --port 8788
+    curl -D - http://127.0.0.1:8788/products/taco-carne.jpg
+    HTTP/1.1 200 OK
+    Content-Type: image/jpeg
+    response bytes matched public/products/taco-carne.jpg | PASS
+
+    curl -X POST http://127.0.0.1:8788/api/admin/media/products
+    HTTP 404 | PASS: upload surface absent
+
+    curl http://127.0.0.1:8788/api/media/products/products/taco-carne.jpg
+    HTTP 404 | PASS: legacy proxy surface absent
