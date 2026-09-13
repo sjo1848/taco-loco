@@ -8,7 +8,7 @@ Updated: 2026-09-13
 - Technical candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
 - Global mode: `DELIVERY`
 - Phase: `DESIGN / VALIDATE`
-- State: `D1_LOCAL_IMPLEMENTATION_REWORK / CRITIC_PENDING`
+- State: `D1_LOCAL_IMPLEMENTATION CRITIC_PASS / INTEGRATION_PENDING`
 - Independent Critic: `PASS` for `ce36a2c`; fresh context `01a0979a-e90b-70b3-b965-c708d2c91cdd`
 - Integration Review: `PASS` for `ce36a2c`; fresh context `01a0979c-f3ce-76e1-87ca-62378ba88ff0`
 - Staging: `UNKNOWN / NOT_READY`
@@ -25,7 +25,7 @@ Updated: 2026-09-13
 - Verification candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
 - Local implementation evidence: `docs/evidence/TL-CF-D1-LOCAL-IMPLEMENTATION-0fe52c7.md`
 - Local D1 implementation: `REWORK_READY_FOR_CRITIC`
-- Fresh Independent Critic: `PENDING`
+- Fresh Independent Critic: `PASS` — `docs/reviews/TL-CF-D1-LOCAL-IMPLEMENTATION-independent-critic-5d0a1bf.md`
 - D1 implementation: `UNKNOWN / NOT_STARTED`
 - Staging/deployment: `UNKNOWN`
 - Production: `NOT_AUTHORIZED`
@@ -39,6 +39,6 @@ Updated: 2026-09-13
 
 ## Next authorized objective
 
-Next: admit a fresh Independent Critic for `5d0a1bf` and its exact evidence. Remote staging comes later and must map Requirement → Producer → Evidence → Consumer → Failure behavior for Worker, D1, R2/media, Images if applicable, auth/admin, business operations, secrets/bindings, logs/runtime and behavior parity.
+Next: admit Integration Review for exact candidate `5d0a1bf`. Remote staging comes later and must map Requirement → Producer → Evidence → Consumer → Failure behavior for Worker, D1, R2/media, Images if applicable, auth/admin, business operations, secrets/bindings, logs/runtime and behavior parity.
 
 No production deployment, cutover, or Durable Objects/realtime work is authorized by this checkpoint.
