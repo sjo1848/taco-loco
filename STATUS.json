@@ -12,7 +12,7 @@
   "technicalCandidateRole": "REMOTE_VALIDATION_FINAL_REWORK_CANDIDATE",
   "staticAssetsCandidate": "6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3",
   "priorStaticAssetsCandidate": "4007a5810c998a7c4478dfb4b054c9c612860a1a",
-  "stage": "REMOTE_STAGING_INTEGRATION_REVIEW",
+  "stage": "REMOTE_INTEGRATION_PASS",
   "baselineParity": "PASS",
   "functionalQa": "PASS_PRIOR_CANDIDATE_REVALIDATE_AFFECTED_SURFACES",
   "securityAudit": "PASS_HIGH_THRESHOLD_MODERATE_REMAIN_PRIOR_CANDIDATE",
@@ -57,5 +57,8 @@
   "remoteIndependentCritic": "PASS",
   "remoteIndependentCriticCandidate": "6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3",
   "remoteIndependentCriticArtifact": "docs/reviews/TL-CF-D1-REMOTE-STAGING-independent-critic-6eccc3a.md",
-  "resumePoint": "Independent Critic PASS is persisted for 6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3; complete Integration Review over the remote Worker+D1+Static Assets composition, then classify REMOTE_INTEGRATION_PASS. Production remains NOT_AUTHORIZED."
+  "remoteIntegrationReview": "PASS",
+  "remoteIntegrationReviewCandidate": "6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3",
+  "remoteIntegrationReviewArtifact": "docs/reviews/TL-CF-D1-REMOTE-STAGING-integration-review-6eccc3a.md",
+  "resumePoint": "Remote staging REMOTE_INTEGRATION_PASS for 6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3. Prepare production eligibility and a separate Human Gate; production remains NOT_AUTHORIZED."
 }

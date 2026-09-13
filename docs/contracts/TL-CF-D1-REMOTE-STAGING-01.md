@@ -1,6 +1,6 @@
 # TL-CF-D1-REMOTE-STAGING-01 — bounded Cloudflare D1 validation
 
-Status: `REMOTE_STAGING_INTEGRATION_REVIEW / STATIC_ASSETS`  
+Status: `REMOTE_INTEGRATION_PASS / STATIC_ASSETS`  
 Mode: `DELIVERY`  
 Phase: `VALIDATE / RELEASE_PREPARATION`  
 Prior validated candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`  
@@ -53,12 +53,12 @@ Every mandatory gate must resolve to PASS or contract-backed NOT_APPLICABLE. UNK
 
 ## Current stop condition
 
-Remote execution completed for the exact candidate. Two routine runtime defects were corrected through bounded REWORK, with final evidence in `docs/evidence/TL-CF-D1-REMOTE-STAGING-6eccc3a.md`. Fresh Independent Critic PASS is persisted in `docs/reviews/TL-CF-D1-REMOTE-STAGING-independent-critic-6eccc3a.md`; the remaining gate is Integration Review.
+Remote execution completed for the exact candidate. Two routine runtime defects were corrected through bounded REWORK. Independent Critic PASS and Integration Review PASS are persisted for the exact candidate. Final evidence is in `docs/evidence/TL-CF-D1-REMOTE-STAGING-6eccc3a.md` and the effective binding artifact.
 
 Entry conditions now satisfied: exact candidate, affected QA/build/runtime PASS, Independent Critic PASS and synchronized governance. Integration Review is the remaining assurance gate for the cross-surface composition.
 
 ## Done when
 
-After fresh assurance, if the bounded remote journey passes every mandatory gate in the canonical map, state may advance to `REMOTE_INTEGRATION_PASS` without implying production authorization.
+The bounded remote journey passed every mandatory gate in the canonical map; state is `REMOTE_INTEGRATION_PASS` without implying production authorization.
 
 Production remains `NOT_AUTHORIZED`.

@@ -1,7 +1,7 @@
 # Taco Loco — bounded remote D1 + Static Assets staging evidence
 
 Date: 2026-09-13  
-Classification under review: `INTEGRATION_REVIEW_PENDING`  
+Classification: `REMOTE_INTEGRATION_PASS`  
 Repository: `sjo1848/taco-loco`  
 Branch: `migration/cloudflare-native`  
 Technical candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`  
@@ -78,6 +78,6 @@ Source references for limits and billing behavior: Cloudflare Workers Limits, D1
 
 ## Gate-map resolution
 
-All mandatory remote rows are `PASS` for the final candidate, with self-service upload `NOT_APPLICABLE` by the explicit `MEDIA_STATIC_ASSETS_INITIAL` decision. No mandatory `UNKNOWN` was consumed as green. The two earlier candidate defects were classified as routine `REWORK` and are retained here for traceability.
+All mandatory remote rows are `PASS` for the final candidate, with self-service upload `NOT_APPLICABLE` by the explicit `MEDIA_STATIC_ASSETS_INITIAL` decision. No mandatory `UNKNOWN` was consumed as green. The two earlier candidate defects were classified as routine `REWORK` and are retained here for traceability. Independent Critic and Integration Review both returned `PASS`.
 
 Production remains `NOT_AUTHORIZED`.

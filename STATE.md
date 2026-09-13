@@ -2,7 +2,7 @@
 Updated: 2026-09-13
 Mode: DELIVERY
 Phase: VALIDATE / RELEASE_PREPARATION
-Status: REMOTE_STAGING_INTEGRATION_REVIEW / STATIC_ASSETS
+Status: REMOTE_INTEGRATION_PASS / STATIC_ASSETS
 Active contract: TL-CF-D1-REMOTE-STAGING-01
 Remote staging candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
 Current execution HEAD: `8d741dede83344a99cd0e8572b07c597cf00b6ea`
@@ -94,8 +94,8 @@ If a substantive application change is required during staging, classify `REWORK
 ## Current classifications
 - Local implementation: PROVEN.
 - Static Assets assurance: PROVEN.
-- Remote integration: INTEGRATION REVIEW IN PROGRESS; Independent Critic PASS.
+- Remote integration: PROVEN PASS; Independent Critic PASS; Integration Review PASS.
 - Production: NOT_AUTHORIZED.
 
 ## Next authorized action
-Perform the bounded Integration Review for the synchronized final candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`; if PASS, classify remote staging `REMOTE_INTEGRATION_PASS`. Production remains NOT_AUTHORIZED.
+Remote staging is `REMOTE_INTEGRATION_PASS` for `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`. Next authorized action is production-eligibility preparation and a separate Human Gate; do not deploy or cut over production.
