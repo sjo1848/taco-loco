@@ -4,8 +4,8 @@ Date: 2026-09-13
 Repository: `sjo1848/taco-loco`  
 Branch: `migration/cloudflare-native`  
 Implementation candidate: `0fe52c73b69756a2d65bc7cab013690ba0a2d60f`
-Verification candidate: `6dfb2c4f811f53ce04b603d772c9b7b0f063b967`
-Execution HEAD at evidence capture: `6dfb2c4f811f53ce04b603d772c9b7b0f063b967`
+Verification candidate: `7dfd9716efe05531f3b7627bbb07fec07136f06d`
+Execution HEAD at evidence capture: `7dfd9716efe05531f3b7627bbb07fec07136f06d`
 
 This is the exact rework evidence packet. The prior candidate `fa76141` received Independent Critic `REWORK`; the rework is described in `docs/reviews/TL-CF-D1-LOCAL-IMPLEMENTATION-independent-critic-2026-09-13-rework.md`. The verification candidate contains the self-contained harnesses used for the proofs below.
 
@@ -51,7 +51,7 @@ assertions: PASS, duplicate_requests: 4, distinct_requests: 2
 D1_LOCAL_INTEGRATION_PROOF=PASS
 ```
 
-Database verification using the same local D1 persistence directory returned exactly three matching orders, three lines and three events. The distinct order numbers were 1, 2 and 3; the duplicate reference appeared once.
+Database verification using the same local D1 persistence directory returned exactly three matching orders, three lines and three events. The distinct order numbers were 1, 2 and 3; the duplicate reference appeared once. The harness asserts these counts and removes the temporary persistence directory and both Worker process groups on exit.
 
 ### Worker/Prisma WASM runtime
 
@@ -60,6 +60,10 @@ Database verification using the same local D1 persistence directory returned exa
 ### Bounded event polling
 
 `src/app/api/admin/orders/events/route.ts` now caps each cursor stream at 50 seconds and each replay poll at 100 events. `src/modules/orders/repository.ts` applies the bounded `take` query.
+
+### Catalog, settings, auth and sessions
+
+The integrated harness reads `/menu`, seeds an admin and valid seven-day settings schedule, logs in through `/api/auth/login`, verifies `/api/auth/session`, reads and patches `/api/admin/settings`, logs out, and verifies session invalidation with HTTP 401. It reports `catalog_settings_auth_session_assertions=PASS`.
 
 ## Full local checks
 
@@ -94,7 +98,7 @@ Database verification using the same local D1 persistence directory returned exa
 
 ## Not proven / not authorized
 
-- Full D1 catalog/settings/auth/session runtime journey.
+- Admin order status-transition race and SSE replay journey remain unproven in the harness; the route implementation is bounded and local unit/regression checks pass.
 - Remote D1/R2/Images resources, secrets, bindings, logs and free-tier account state.
 - Staging or production deployment.
 - Production cutover; production remains `NOT_AUTHORIZED`.
