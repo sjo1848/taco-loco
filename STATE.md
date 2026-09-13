@@ -5,7 +5,7 @@ Phase: IMPLEMENT / VALIDATE
 Status: D1_LOCAL_IMPLEMENTATION TECHNICAL_PASS / REMOTE_STAGING_NOT_AUTHORIZED
 Active contract: TL-CF-D1-LOCAL-IMPLEMENTATION-01
 Technical candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
-Current execution HEAD resolved dynamically: `80d91f82386698debdeb6cf7f4a6d58944306f23`.
+Current execution HEAD resolved dynamically: `08e5b5aafe8a025616237c69c56867946ae63133`.
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 
 ## Objective
