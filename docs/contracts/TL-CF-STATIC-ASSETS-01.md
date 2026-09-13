@@ -4,7 +4,7 @@ Status: `ACTIVE`
 Mode: `DELIVERY`  
 Phase: `IMPLEMENT / VALIDATE`  
 Baseline candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`  
-Target candidate: `PENDING`
+Target candidate: `4007a5810c998a7c4478dfb4b054c9c612860a1a`
 
 ## Objective
 
@@ -75,9 +75,11 @@ Run at minimum:
 - admin product create/edit without upload;
 - regression of D1/auth/orders/events sufficient to show the adaptation did not disturb their validated surfaces.
 
+Local result: PASS, persisted at `docs/evidence/TL-CF-STATIC-ASSETS-4007a58.md`.
+
 ## Assurance
 
-This is substantive cross-surface work. Produce a new exact technical candidate.
+This is substantive cross-surface work. The exact technical candidate is `4007a5810c998a7c4478dfb4b054c9c612860a1a`.
 
 Independent Critic: mandatory.  
 Integration Review: required because Worker configuration, product UI and media routing change together.

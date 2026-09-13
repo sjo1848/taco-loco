@@ -6,10 +6,10 @@ Updated: 2026-09-13
 - Branch: `migration/cloudflare-native`
 - Source-convergence baseline: `origin/migration/cloudflare-native@7a600439d7e2736c34ba9a8da63fd06ebf54c6b3`
 - Prior validated technical candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
-- Static-assets candidate: `PENDING`
+- Static-assets candidate: `4007a5810c998a7c4478dfb4b054c9c612860a1a`
 - Global mode: `DELIVERY`
 - Phase: `IMPLEMENT / VALIDATE`
-- State: `LOCAL_ADAPTATION / STATIC_ASSETS_MEDIA`
+- State: `LOCAL_ADAPTATION / STATIC_ASSETS_ASSURANCE_PENDING`
 - Active contract: `docs/contracts/TL-CF-STATIC-ASSETS-01.md`
 - Production: `NOT_AUTHORIZED`
 
@@ -43,6 +43,8 @@ Execute the bounded local `TL-CF-STATIC-ASSETS-01` adaptation:
 - Independent Critic PASS;
 - Integration Review PASS.
 
+Local evidence: `docs/evidence/TL-CF-STATIC-ASSETS-4007a58.md` — PASS.
+
 ## Remote staging
 
 `TL-CF-D1-REMOTE-STAGING-01` is `PAUSED_PENDING_STATIC_ASSETS_ADAPTATION`.
@@ -51,4 +53,4 @@ No R2 Dashboard action is required. No remote provisioning/deployment is authori
 
 ## Next authorized objective
 
-Run `TL-CF-STATIC-ASSETS-01` locally and continue autonomously through routine REWORK until its assurance boundary is reached.
+Prepare and execute the Independent Critic for exact candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a`, then Integration Review. Remote staging remains paused.

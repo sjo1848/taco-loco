@@ -1,7 +1,7 @@
 # Remote Staging Gate Map — Taco Loco D1 + Static Assets
 
 Prior D1 candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`  
-Remote staging candidate: `PENDING_NEW_STATIC_ASSETS_CANDIDATE`  
+Remote staging candidate: `PENDING_ASSURANCE_FOR_4007A58`
 Status: `PAUSED / LOCAL_STATIC_ASSETS_ADAPTATION_REQUIRED`
 
 This artifact does not provision Cloudflare resources or authorize production.

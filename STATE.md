@@ -2,10 +2,10 @@
 Updated: 2026-09-13
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: LOCAL_ADAPTATION / STATIC_ASSETS_MEDIA
+Status: LOCAL_ADAPTATION / STATIC_ASSETS_ASSURANCE_PENDING
 Active contract: TL-CF-STATIC-ASSETS-01
 Prior validated technical candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
-Static-assets candidate: `PENDING`
+Static-assets candidate: `4007a5810c998a7c4478dfb4b054c9c612860a1a`
 GitHub source convergence baseline: `origin/migration/cloudflare-native@7a600439d7e2736c34ba9a8da63fd06ebf54c6b3`; candidate `5d0a1bf` is an ancestor.
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 
@@ -49,7 +49,7 @@ That candidate is now the baseline for a bounded media adaptation, not the final
 
 ## Engineering evidence
 D1 implementation: PROVEN for prior candidate `5d0a1bf`.  
-Static Assets implementation: UNKNOWN / NOT_STARTED.  
+Static Assets implementation: PROVEN for candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a`; local QA/build/runtime PASS.  
 Remote validation: UNKNOWN / PAUSED_PENDING_STATIC_ASSETS_ADAPTATION.  
 Release/Deployment: UNKNOWN.  
 Maintenance/Operations: UNKNOWN.  
@@ -58,10 +58,10 @@ Production: NOT_AUTHORIZED.
 ## Current blockers and classifications
 There is no longer an R2 Human Action. R2 Dashboard enablement is cancelled/not required for the initial target.
 
-The current gate is technical: complete the bounded local Static Assets adaptation and assurance before remote staging resumes.
+The current gate is assurance: Independent Critic and Integration Review for candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a` before remote staging resumes.
 
 ## Next authorized action
-Execute `docs/contracts/TL-CF-STATIC-ASSETS-01.md` locally. No remote provisioning or deployment is authorized in this block.
+Execute independent review of `docs/evidence/TL-CF-STATIC-ASSETS-4007a58.md` and candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a`. No remote provisioning or deployment is authorized in this block.
 
 After local candidate PASS + Independent Critic PASS + Integration Review PASS, reactivate `TL-CF-D1-REMOTE-STAGING-01` against Workers + D1 + Static Assets.
 
