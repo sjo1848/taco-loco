@@ -11,7 +11,7 @@ Updated: 2026-09-13
 - Remote final rework candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
 - Global mode: `DELIVERY`
 - Phase: `IMPLEMENT / VALIDATE`
-- State: `REMOTE_STAGING_REWORK_PENDING_ASSURANCE / STATIC_ASSETS`
+- State: `REMOTE_STAGING_INTEGRATION_REVIEW / STATIC_ASSETS`
 - Active contract: `docs/contracts/TL-CF-D1-REMOTE-STAGING-01.md`
 - Production: `NOT_AUTHORIZED`
 
@@ -55,4 +55,4 @@ No R2 Dashboard action is required. Remote provisioning is authorized only for t
 
 ## Next authorized objective
 
-Admit exact candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3` for fresh Independent Critic review using `docs/evidence/TL-CF-D1-REMOTE-STAGING-6eccc3a.md`. If PASS, perform Integration Review and classify remote staging. Production remains unauthorized.
+Independent Critic PASS is persisted for exact candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`. Perform Integration Review over Worker/D1/Static Assets composition, then classify remote staging. Production remains unauthorized.

@@ -2,7 +2,7 @@
 Updated: 2026-09-13
 Mode: DELIVERY
 Phase: VALIDATE / RELEASE_PREPARATION
-Status: REMOTE_STAGING_REWORK_PENDING_ASSURANCE / STATIC_ASSETS
+Status: REMOTE_STAGING_INTEGRATION_REVIEW / STATIC_ASSETS
 Active contract: TL-CF-D1-REMOTE-STAGING-01
 Remote staging candidate: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
 Current execution HEAD: `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`
@@ -47,7 +47,7 @@ The prior exact candidate `4007a5810c998a7c4478dfb4b054c9c612860a1a` had:
 
 Prior D1 evidence from candidate `5d0a1bf` remains reusable for unchanged D1/auth/order/event semantics.
 
-Remote rework candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3` adds only D1-compatible health probing and BigInt-safe admin order serialization after bounded staging exposed those runtime defects. Tests 31/31, typecheck, lint and vinext build pass; final remote journey is documented in `docs/evidence/TL-CF-D1-REMOTE-STAGING-6eccc3a.md`. Independent assurance for this exact candidate is pending after the critic returned REWORK for stale governance/evidence synchronization.
+Remote rework candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3` adds only D1-compatible health probing and BigInt-safe admin order serialization after bounded staging exposed those runtime defects. Tests 31/31, typecheck, lint and vinext build pass; final remote journey is documented in `docs/evidence/TL-CF-D1-REMOTE-STAGING-6eccc3a.md`. Fresh Independent Critic verdict for this exact candidate is PASS; Integration Review is now required because the final remote composition spans Worker runtime, D1 and Static Assets.
 
 ## Current authorized work
 
@@ -94,8 +94,8 @@ If a substantive application change is required during staging, classify `REWORK
 ## Current classifications
 - Local implementation: PROVEN.
 - Static Assets assurance: PROVEN.
-- Remote integration: REWORK / FINAL CANDIDATE ASSURANCE PENDING.
+- Remote integration: INTEGRATION REVIEW IN PROGRESS; Independent Critic PASS.
 - Production: NOT_AUTHORIZED.
 
 ## Next authorized action
-Admit the synchronized final candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3` for fresh Independent Critic review using the remote evidence packet. If PASS, perform the required bounded Integration Review and then classify remote staging. Production remains NOT_AUTHORIZED.
+Perform the bounded Integration Review for the synchronized final candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3`; if PASS, classify remote staging `REMOTE_INTEGRATION_PASS`. Production remains NOT_AUTHORIZED.

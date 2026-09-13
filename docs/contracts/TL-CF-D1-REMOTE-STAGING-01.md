@@ -1,6 +1,6 @@
 # TL-CF-D1-REMOTE-STAGING-01 — bounded Cloudflare D1 validation
 
-Status: `REMOTE_STAGING_REWORK_PENDING_ASSURANCE / STATIC_ASSETS`  
+Status: `REMOTE_STAGING_INTEGRATION_REVIEW / STATIC_ASSETS`  
 Mode: `DELIVERY`  
 Phase: `VALIDATE / RELEASE_PREPARATION`  
 Prior validated candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`  
@@ -53,7 +53,7 @@ Every mandatory gate must resolve to PASS or contract-backed NOT_APPLICABLE. UNK
 
 ## Current stop condition
 
-Remote execution completed for the exact candidate. Two routine runtime defects were corrected through bounded REWORK, with final evidence in `docs/evidence/TL-CF-D1-REMOTE-STAGING-6eccc3a.md`. The final candidate is admitted for fresh Independent Critic review; do not classify remote staging green before that assurance.
+Remote execution completed for the exact candidate. Two routine runtime defects were corrected through bounded REWORK, with final evidence in `docs/evidence/TL-CF-D1-REMOTE-STAGING-6eccc3a.md`. Fresh Independent Critic PASS is persisted in `docs/reviews/TL-CF-D1-REMOTE-STAGING-independent-critic-6eccc3a.md`; the remaining gate is Integration Review.
 
 Entry conditions are satisfied: exact candidate, affected QA/build/runtime PASS, Independent Critic PASS, Integration Review PASS and synchronized governance.
 

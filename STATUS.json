@@ -12,7 +12,7 @@
   "technicalCandidateRole": "REMOTE_VALIDATION_FINAL_REWORK_CANDIDATE",
   "staticAssetsCandidate": "6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3",
   "priorStaticAssetsCandidate": "4007a5810c998a7c4478dfb4b054c9c612860a1a",
-  "stage": "REMOTE_STAGING_REWORK_PENDING_ASSURANCE",
+  "stage": "REMOTE_STAGING_INTEGRATION_REVIEW",
   "baselineParity": "PASS",
   "functionalQa": "PASS_PRIOR_CANDIDATE_REVALIDATE_AFFECTED_SURFACES",
   "securityAudit": "PASS_HIGH_THRESHOLD_MODERATE_REMAIN_PRIOR_CANDIDATE",
@@ -53,7 +53,8 @@
   "activeDecisionArtifact": "docs/evidence/TL-MEDIA-STATIC-ASSETS-DECISION-2026-09-13.md",
   "remoteEvidence": "docs/evidence/TL-CF-D1-REMOTE-STAGING-6eccc3a.md",
   "remoteDefectsReworked": ["HEALTH_D1_PROBE", "ADMIN_ORDER_BIGINT_SERIALIZATION"],
-  "remoteIndependentCritic": "REWORK",
-  "remoteIndependentCriticArtifact": "pending final candidate admission",
+  "remoteIndependentCritic": "PASS",
+  "remoteIndependentCriticCandidate": "6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3",
+  "remoteIndependentCriticArtifact": "docs/reviews/TL-CF-D1-REMOTE-STAGING-independent-critic-6eccc3a.md",
   "resumePoint": "Remote journey completed for 6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3; synchronize durable evidence and admit exact candidate for fresh Independent Critic, then Integration Review if PASS. Production remains NOT_AUTHORIZED."
 }
