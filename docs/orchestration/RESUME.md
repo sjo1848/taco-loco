@@ -7,8 +7,8 @@ Updated: 2026-09-13
 - Current execution HEAD resolved on recovery: `3a10ee809589995ddabb9042bcdf3c5711ac8064`
 - Technical candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
 - Global mode: `DELIVERY`
-- Phase: `DESIGN / VALIDATE`
-- State: `D1_LOCAL_IMPLEMENTATION TECHNICAL_PASS / REMOTE_STAGING_NOT_AUTHORIZED`
+- Phase: `VALIDATE / RELEASE_PREPARATION`
+- State: `REMOTE_STAGING HUMAN_ACTION / R2_ENABLEMENT`
 - Independent Critic: `PASS` for `ce36a2c`; fresh context `01a0979a-e90b-70b3-b965-c708d2c91cdd`
 - Integration Review: `PASS` for `ce36a2c`; fresh context `01a0979c-f3ce-76e1-87ca-62378ba88ff0`
 - Staging: `UNKNOWN / NOT_READY`
@@ -17,7 +17,7 @@ Updated: 2026-09-13
 
 ## Current D1 checkpoint
 
-- Active contract: `docs/contracts/TL-CF-D1-LOCAL-IMPLEMENTATION-01.md`
+- Active contract: `docs/contracts/TL-CF-D1-REMOTE-STAGING-01.md`
 - Review: `docs/reviews/TL-CF-D1-FEASIBILITY.md`
 - Recommendation: `PASS_FOR_LOCAL_MIGRATION`
 - Feasibility Independent Critic: `PASS` — `docs/reviews/TL-CF-D1-MIG-01-independent-critic-2026-09-13.md`
@@ -40,6 +40,6 @@ Updated: 2026-09-13
 
 ## Next authorized objective
 
-Next: remote-staging gate map is prepared at `docs/reviews/TL-CF-D1-REMOTE-STAGING-GATE-MAP.md`; remote execution remains unauthorized and must produce every required Requirement → Producer → Evidence → Consumer → Failure behavior result before any staging PASS.
+Next: `HUMAN_ACTION` — enable R2 through the Cloudflare Dashboard and provide a runtime channel for the account/cost recheck. No resource provisioning or deployment before that evidence exists.
 
 No production deployment, cutover, or Durable Objects/realtime work is authorized by this checkpoint.

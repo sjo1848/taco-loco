@@ -1,9 +1,9 @@
 # Taco Loco — Current Authoritative Project State
 Updated: 2026-09-13
 Mode: DELIVERY
-Phase: IMPLEMENT / VALIDATE
-Status: D1_LOCAL_IMPLEMENTATION TECHNICAL_PASS / REMOTE_STAGING_NOT_AUTHORIZED
-Active contract: TL-CF-D1-LOCAL-IMPLEMENTATION-01
+Phase: VALIDATE / RELEASE_PREPARATION
+Status: REMOTE_STAGING HUMAN_ACTION / R2_ENABLEMENT
+Active contract: TL-CF-D1-REMOTE-STAGING-01
 Technical candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`
 Current execution HEAD resolved dynamically: `3a10ee809589995ddabb9042bcdf3c5711ac8064`.
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
@@ -51,7 +51,7 @@ Staging: UNKNOWN / NOT_READY.
 Production: NOT_AUTHORIZED.
 
 ## Next authorized action
-Remote-staging gate map is prepared at `docs/reviews/TL-CF-D1-REMOTE-STAGING-GATE-MAP.md`; remote execution still requires authorization and account evidence. Do not provision resources or execute production cutover.
+Remote-staging gate map is prepared at `docs/reviews/TL-CF-D1-REMOTE-STAGING-GATE-MAP.md`. `wrangler r2 bucket list` returned API code `10042`, requiring Dashboard enablement; the browser channel was unavailable. Billing/plan reads also returned `403`, so no remote resource has been provisioned. Classification: `HUMAN_ACTION`.
 
 ## Stale check
 Before resume, verify branch HEAD, technical candidate identity, `STATUS.json`, contract and latest evidence. If product/code changes materially, rerun required evidence.

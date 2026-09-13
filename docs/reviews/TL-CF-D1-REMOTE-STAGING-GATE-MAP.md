@@ -1,7 +1,7 @@
 # Remote Staging Gate Map — Taco Loco D1 Candidate
 
 Candidate: `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`  
-Status: `PREPARED / REMOTE_EXECUTION_NOT_AUTHORIZED`
+Status: `BLOCKED / HUMAN_ACTION_R2_ENABLEMENT`
 
 This is a local gate-satisfiability artifact. It does not provision Cloudflare resources, deploy a Worker, activate billing, or authorize production.
 
