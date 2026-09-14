@@ -35,6 +35,28 @@ enum OrderStatus {
 enum OrderFulfillment {
   PICKUP
   DINE_IN
+  DELIVERY
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+  REJECTED
+}
+
+enum PaymentStatus {
+  NOT_REQUIRED
+  PENDING
+  REPORTED
+  CONFIRMED
+  REJECTED
+}
+
+enum RefundStatus {
+  NOT_REQUIRED
+  REQUIRED
+  REFUNDED
 }
 
 enum OrderSource {
@@ -43,31 +65,48 @@ enum OrderSource {
 }
 
 model Order {
-  id                 String           @id @default(uuid())
-  orderNumber        Int              @unique
-  status             OrderStatus      @default(RECEIVED)
-  fulfillment        OrderFulfillment @default(PICKUP)
-  source             OrderSource      @default(WHATSAPP)
-  customerName       String?
-  customerPhone      String?
-  tableLabel         String?
-  notes              String?
-  subtotalAmount     Int
-  adjustmentAmount   Int              @default(0)
-  totalAmount        Int
-  cancellationReason String?
-  confirmedAt        DateTime?
-  closedAt           DateTime?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  clientReference    String?          @unique
-  createdById        String?
-  updatedById        String?
-  createdBy          AdminUser?       @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  updatedBy          AdminUser?       @relation("OrderUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
-  lines              OrderLine[]
-  events             OrderEvent[]
+  id                     String             @id @default(uuid())
+  orderNumber            Int                @unique
+  status                 OrderStatus        @default(RECEIVED)
+  fulfillment            OrderFulfillment   @default(PICKUP)
+  verificationStatus     VerificationStatus @default(VERIFIED)
+  verificationResolvedAt DateTime?
+  paymentStatus          PaymentStatus      @default(NOT_REQUIRED)
+  paymentReportedAt      DateTime?
+  paymentConfirmedAt     DateTime?
+  refundStatus           RefundStatus       @default(NOT_REQUIRED)
+  refundRequiredAt       DateTime?
+  refundedAt             DateTime?
+  noShowAt               DateTime?
+  source                 OrderSource        @default(WHATSAPP)
+  customerName           String?
+  customerPhone          String?
+  tableLabel             String?
+  notes                  String?
+  deliveryAddress        String?
+  deliveryReference      String?
+  deliveryFeeAmount      Int                @default(0)
+  transferHolderName     String?
+  subtotalAmount         Int
+  adjustmentAmount       Int                @default(0)
+  totalAmount            Int
+  cancellationReason     String?
+  confirmedAt            DateTime?
+  closedAt               DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  clientReference        String?            @unique
+  createdById            String?
+  updatedById            String?
+  createdBy              AdminUser?         @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy              AdminUser?         @relation("OrderUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  lines                  OrderLine[]
+  events                 OrderEvent[]
+
   @@index([status, createdAt])
+  @@index([verificationStatus, createdAt])
+  @@index([paymentStatus, createdAt])
+  @@index([fulfillment, status, createdAt])
   @@index([customerPhone])
 }
 
@@ -83,6 +122,7 @@ model OrderLine {
   createdAt         DateTime @default(now())
   order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product           Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
   @@index([orderId])
 }
 
@@ -97,6 +137,7 @@ model OrderEvent {
   actorId    String?
   order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   actor      AdminUser?   @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
   @@index([orderId, createdAt])
 }
 
@@ -107,20 +148,23 @@ model Session {
   expiresAt DateTime
   createdAt DateTime  @default(now())
   user      AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([expiresAt])
 }
 
 model MenuSettings {
-  id              String   @id @default(uuid())
-  businessName    String
-  whatsappPhone   String
-  whatsappMessage String
-  currency        String   @default("ARS")
-  acceptingOrders Boolean  @default(true)
-  statusMessage   String?
-  weeklySchedule  Json?
-  updatedAt       DateTime @updatedAt
+  id                String   @id @default(uuid())
+  businessName      String
+  whatsappPhone     String
+  whatsappMessage   String
+  currency          String   @default("ARS")
+  acceptingOrders   Boolean  @default(true)
+  statusMessage     String?
+  weeklySchedule    Json?
+  deliveryEnabled   Boolean  @default(false)
+  deliveryFeeAmount Int      @default(0)
+  updatedAt         DateTime @updatedAt
 }
 
 model Category {
@@ -133,6 +177,7 @@ model Category {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   products   Product[]
+
   @@index([active, sortOrder])
 }
 
@@ -154,6 +199,7 @@ model Product {
   category       Category               @relation(fields: [categoryId], references: [id])
   modifierGroups ProductModifierGroup[]
   orderLines     OrderLine[]
+
   @@index([categoryId, published, sortOrder])
   @@index([featured, published])
 }
@@ -174,6 +220,7 @@ model ModifierOption {
   sortOrder Int           @default(0)
   active    Boolean       @default(true)
   group     ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
   @@index([groupId, active, sortOrder])
 }
 
@@ -185,5 +232,6 @@ model ProductModifierGroup {
   maxSelections   Int?
   product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
   modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+
   @@id([productId, modifierGroupId])
 }
