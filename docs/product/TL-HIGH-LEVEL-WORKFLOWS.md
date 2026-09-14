@@ -2,51 +2,49 @@
 
 **Artifact type:** High-Level Design (HLD)  
 **Method:** FALDEO Project Method v1.0 + Project Harness Minimum v1.0  
-**Status:** `HUMAN_REVIEW / DESIGN_BASELINE`  
+**Status:** `HUMAN_REVIEW_CLOSED / READY_FOR_TASK_CONTRACT`  
 **Environment:** staging  
 **Production:** `NOT_AUTHORIZED`  
-**Scope:** customer order journey, verification, operational lifecycle, anti-abuse controls, observability and evolution path.
+**Scope:** flujo cliente -> verificación -> operación -> entrega; delivery, pago manual, abuso, observabilidad y evolución.
 
 ---
 
 ## 1. Executive summary
 
-Taco Loco already proves the technical path `menu -> persisted order -> WhatsApp -> admin -> state transitions`, but the current flow has one material product risk: the system can persist a seemingly real order before it knows whether the customer actually sent the WhatsApp message or intends to buy.
+Taco Loco ya demuestra el camino técnico `menu -> pedido persistido -> WhatsApp -> admin -> transiciones de estado`, pero el flujo necesita distinguir una **intención recibida** de un **pedido operativo real**.
 
-The recommended high-level design separates **purchase intent** from **operational order admission**.
-
-A click on **Continuar pedido** should mean:
-
-> The system captured a valid purchase intent and generated a correlation reference.
-
-It should not mean:
-
-> Kitchen has a real order to prepare.
-
-The recommended MVP control is therefore **manual WhatsApp verification before operational admission**, with expiration for abandoned intents and progressive controls for higher-risk cases.
-
-### Architectural decision
-
-Keep two independent lifecycle dimensions:
+La decisión central es separar verificación y operación:
 
 ```text
 verificationStatus = PENDING | VERIFIED | EXPIRED | REJECTED
+paymentStatus      = NOT_REQUIRED | PENDING | REPORTED | CONFIRMED | REJECTED
 orderStatus        = RECEIVED | CONFIRMED | IN_PREPARATION | READY | DELIVERED | CANCELLED
+refundStatus       = NOT_REQUIRED | REQUIRED | REFUNDED
 ```
 
-Only `VERIFIED` intents may enter the operational queue.
+Sólo pedidos verificados pueden entrar a cocina.
+
+### Product principle
+
+**Progressive friction:** no pedir información, validaciones ni pasos adicionales salvo que sean necesarios para completar el pedido o mitigar un riesgo demostrado.
+
+### Operational principle
+
+**One-action transitions:** cada decisión normal del operador debe resolverse con una sola acción principal.
 
 ---
 
 ## 2. Engineering principles
 
-1. **Intent is not operation.** A browser action is not sufficient evidence to start preparing food.
-2. **Taco Loco is the system of record.** WhatsApp is a communication/verification channel, not the database.
-3. **Risk controls are progressive.** Normal customers should face minimal friction; stronger controls activate only when justified.
-4. **No silent destructive transitions.** Cancellation, rejection and operational state changes must remain auditable.
-5. **Operational UX is primary.** The admin should behave like a foodtruck control console, not primarily like a CRUD.
-6. **Evidence before complexity.** Payment automation, WhatsApp API and stronger fraud controls are introduced only when measured need justifies them.
-7. **Production remains a separate Human Gate.** This HLD does not authorize implementation or release.
+1. **Intent is not operation.** Una acción del navegador no autoriza preparación.
+2. **Taco Loco/D1 es la fuente de verdad.** WhatsApp es canal de comunicación y evidencia humana.
+3. **Progressive friction.** No pedir nombre, teléfono, registro, OTP o comprobantes sin necesidad real.
+4. **Risk controls are progressive.** Los controles aumentan sólo cuando la evidencia lo justifica.
+5. **No silent destructive transitions.** Rechazos, cancelaciones y cambios de estado quedan auditables.
+6. **Operational UX is primary.** El admin debe comportarse como consola del foodtruck, no como CRUD principal.
+7. **One-action transitions.** El camino feliz del operador no debe tener clicks redundantes.
+8. **Evidence before complexity.** WhatsApp API, conciliación automática, scoring y antifraude avanzado quedan deferidos.
+9. **Production is a separate Human Gate.** Este HLD no autoriza release productivo.
 
 ---
 
@@ -54,94 +52,89 @@ Only `VERIFIED` intents may enter the operational queue.
 
 ```mermaid
 flowchart LR
-    C[Cliente\nQR / menú web] -->|selecciona y confirma| WEB[Taco Loco Web\nMenú + carrito + checkout]
-    WEB -->|persiste intención / snapshots| D1[(Cloudflare D1\nIntenciones, pedidos, eventos)]
-    WEB -->|abre TL-xxxx| WA[WhatsApp\nCanal de confirmación]
-    C -->|envía mensaje| WA
-    WA -->|evidencia humana| OPS[Consola operativa\nRecepción + estados]
-    OPS -->|verifica / cambia estado| D1
-    D1 -->|cola + historial| OPS
-    OPS -->|sólo pedidos verificados| K[Cocina / despacho]
-    K -->|listo / entregado| OPS
+    C[Cliente\nQR / menú web] --> WEB[Taco Loco Web\nMenú + carrito + checkout]
+    WEB --> D1[(Cloudflare D1\nIntenciones, pedidos, eventos)]
+    WEB --> WA[WhatsApp\nConfirmación humana]
+    C --> WA
+    WA --> OPS[Consola operativa\nPendientes + operación]
+    OPS --> D1
+    D1 --> OPS
+    OPS --> K[Cocina / despacho]
 ```
 
 ### Boundary rules
 
-- The browser cannot directly place work into kitchen.
-- WhatsApp confirmation is evidence of intent, not the system of record.
-- The operator controls admission to the operational lifecycle.
-- D1 preserves intent/order/event history.
-- Production resources are outside the scope of this document.
+- El navegador no introduce trabajo directamente en cocina.
+- WhatsApp confirma intención, pero no reemplaza la base de datos.
+- El operador controla la admisión operativa.
+- D1 conserva snapshots, estados, pagos informados e historial.
+- Producción queda fuera del alcance.
 
 ---
 
-## 4. Baseline currently proven in staging
+## 4. Baseline proven in staging
 
-The current staging environment already proves:
+El staging ya prueba:
 
-- public menu with 7 categories and 31 canonical products;
-- prices, modifiers and static product media;
-- server-side order persistence;
-- `clientReference` idempotency;
-- `TL-xxxx` numbering;
-- order lines and snapshots;
-- operational state transitions;
-- `OrderEvent` history and SSE replay;
-- admin authentication/session/logout;
-- WhatsApp handoff with the correct Taco Loco number;
-- staging operator review flow.
+- menú público con 7 categorías y 31 productos canónicos;
+- precios, modificadores y Static Assets;
+- persistencia server-side;
+- `clientReference` idempotente;
+- numeración `TL-xxxx`;
+- líneas y snapshots;
+- estados operativos;
+- `OrderEvent` y SSE replay;
+- auth/session/logout admin;
+- WhatsApp al número correcto;
+- revisión operativa en staging.
 
-### Current operational state model
-
-```mermaid
-stateDiagram-v2
-    [*] --> RECEIVED
-    RECEIVED --> CONFIRMED
-    RECEIVED --> CANCELLED
-    CONFIRMED --> IN_PREPARATION
-    CONFIRMED --> CANCELLED
-    IN_PREPARATION --> READY
-    IN_PREPARATION --> CANCELLED
-    READY --> DELIVERED
-    READY --> CANCELLED
-    DELIVERED --> [*]
-    CANCELLED --> [*]
-```
-
-### Current material gap
-
-The order may be persisted before the customer actually sends WhatsApp. Therefore an abandoned or intentionally false browser action can currently look too similar to a genuine order.
+La brecha material es que abandono, pedido falso y pedido real pueden parecer demasiado similares antes de la verificación humana.
 
 ---
 
-## 5. Target business flow
+## 5. Target customer flow
 
 ```mermaid
 flowchart TD
-    A[QR / link] --> B[Browse menu]
-    B --> C[Select products + modifiers]
-    C --> D[Cart + total]
-    D --> E{Business accepting orders?}
-    E -- No --> Q[WhatsApp only for inquiry / closed-state UX]
-    E -- Yes --> F[Revalidate availability + price]
-    F --> G[Create PENDING intent\nfreeze snapshots + correlation reference]
-    G --> H[Open WhatsApp with TL-xxxx]
-    H --> I{Customer sends message?}
-    I -- No --> X[Expire intent]
-    I -- Yes --> J[Operator matches TL-xxxx]
-    J --> K{Accept / reject?}
-    K -- Reject --> R[REJECTED + reason]
-    K -- Accept --> V[VERIFIED]
-    V --> N[RECEIVED / NUEVO]
-    N --> O[CONFIRMED]
-    O --> P[IN_PREPARATION]
-    P --> L[READY]
-    L --> M[DELIVERED]
+    A[Menú] --> B[Carrito]
+    B --> C{Modalidad}
+
+    C -- RETIRO --> R1[Enviar pedido]
+    R1 --> R2[Asignar TL-xxxx\nPENDING]
+    R2 --> R3[Abrir WhatsApp]
+    R3 --> R4{Operador recibe TL-xxxx?}
+    R4 -- No --> RP[PENDING\nfuera de cocina]
+    R4 -- Sí --> R5[CONFIRMAR PEDIDO]
+    R5 --> O[NUEVO]
+
+    C -- DELIVERY --> D1[Dirección + referencia opcional]
+    D1 --> D2[Tarifa fija + total final]
+    D2 --> D3[Enviar pedido]
+    D3 --> D4[Asignar TL-xxxx\nPENDING]
+    D4 --> D5[Mostrar datos de transferencia]
+    D5 --> D6[Cliente informa titular]
+    D6 --> D7[Abrir WhatsApp]
+    D7 --> D8{Pago impactó?}
+    D8 -- No --> DP[PENDING / pago no encontrado]
+    D8 -- Sí --> D9[CONFIRMAR PAGO Y PEDIDO]
+    D9 --> O
+
+    O --> P[PREPARANDO]
+    P --> L[LISTO]
+    L --> E[ENTREGADO]
 ```
 
-### Design intent
+### Customer data policy
 
-The system should allow abandoned intents to exist briefly without polluting kitchen operations. The operational board starts only after verification.
+En v1 no se solicita nombre ni teléfono general del cliente.
+
+DELIVERY solicita sólo:
+
+- dirección obligatoria;
+- referencia opcional;
+- nombre del titular desde el que se hizo la transferencia.
+
+No se carga comprobante.
 
 ---
 
@@ -157,60 +150,66 @@ sequenceDiagram
     actor Operator as Operador
     actor Kitchen as Cocina
 
-    Customer->>Web: Build cart and continue
-    Web->>Web: Revalidate price / stock / modifiers
-    Web->>DB: Create PENDING intent + immutable snapshots
-    DB-->>Web: Correlation reference TL-xxxx
-    Web-->>Customer: Open WhatsApp with prepared message
-    Customer->>WA: Send TL-xxxx confirmation
-    WA-->>Operator: Message received
-    Operator->>DB: Match TL-xxxx and mark VERIFIED
-    Operator->>DB: CONFIRM order
-    Operator->>Kitchen: Admit order to preparation
-    Kitchen-->>Operator: READY
-    Operator->>DB: Mark READY
-    Operator-->>Customer: Ready-for-pickup message
-    Customer->>Operator: Pickup
-    Operator->>DB: Mark DELIVERED
+    Customer->>Web: Selecciona productos y modalidad
+    Web->>Web: Revalida precio / stock / modifiers
+    Web->>DB: Crea PENDING + snapshots + TL-xxxx
 
-    alt Customer never sends WhatsApp
-        DB->>DB: Expire PENDING intent after timeout
+    alt RETIRO
+        Web-->>Customer: WhatsApp preparado
+        Customer->>WA: Envía TL-xxxx
+        WA-->>Operator: Mensaje recibido
+        Operator->>DB: VERIFIED + CONFIRMAR PEDIDO
+    else DELIVERY
+        Web-->>Customer: Dirección, total final y datos de transferencia
+        Customer->>Web: Informa titular de transferencia
+        Web-->>Customer: WhatsApp preparado
+        Customer->>WA: Envía TL-xxxx + titular
+        WA-->>Operator: Mensaje recibido
+        Operator->>Operator: Comprueba transferencia
+        Operator->>DB: payment CONFIRMED + VERIFIED + CONFIRMAR PEDIDO
     end
+
+    Operator->>Kitchen: Admitir pedido
+    Kitchen-->>Operator: READY
+    Operator->>DB: READY
+    Operator->>DB: DELIVERED
 ```
-
-### Responsibility boundary
-
-| Actor | Owns | Must not own |
-|---|---|---|
-| Customer | selection, explicit confirmation action | operational state |
-| Web | validation, snapshots, intent creation, handoff | deciding that a customer is genuine |
-| WhatsApp | communication evidence | canonical order data |
-| Operator | verification, acceptance, state changes | silent data deletion |
-| Kitchen | preparation execution | identity/verification logic |
-| D1 | durable truth, history, correlation | human business judgment |
 
 ---
 
-## 7. Recommended state architecture
+## 7. State architecture
 
-### Verification lifecycle
+### Verification
 
 ```mermaid
 stateDiagram-v2
     [*] --> PENDING
-    PENDING --> VERIFIED: WhatsApp received + TL match
-    PENDING --> EXPIRED: timeout
-    PENDING --> REJECTED: suspected abuse / manual rejection
+    PENDING --> VERIFIED: verificación humana
+    PENDING --> REJECTED: rechazo manual
+    PENDING --> EXPIRED: cierre de jornada
     VERIFIED --> [*]
-    EXPIRED --> [*]
     REJECTED --> [*]
+    EXPIRED --> [*]
 ```
 
-### Operational lifecycle
+No existe expiración corta de 10–15 minutos. Los pendientes permanecen fuera de cocina y se cierran al final de la jornada.
+
+### Payment
 
 ```mermaid
 stateDiagram-v2
-    [*] --> RECEIVED: only after VERIFIED
+    [*] --> NOT_REQUIRED: RETIRO
+    [*] --> PENDING: DELIVERY
+    PENDING --> REPORTED: titular informado
+    REPORTED --> CONFIRMED: operador verifica impacto
+    REPORTED --> REJECTED: pago no encontrado / inconsistencia
+```
+
+### Operation
+
+```mermaid
+stateDiagram-v2
+    [*] --> RECEIVED: sólo después de VERIFIED
     RECEIVED --> CONFIRMED
     RECEIVED --> CANCELLED
     CONFIRMED --> IN_PREPARATION
@@ -223,15 +222,20 @@ stateDiagram-v2
     CANCELLED --> [*]
 ```
 
-### Why two dimensions
+### Refund
 
-Using one giant state machine would mix commercial verification, anti-abuse logic and kitchen operations. Separate dimensions keep the model understandable and allow future payment verification without destabilizing the operational lifecycle.
+```mermaid
+stateDiagram-v2
+    [*] --> NOT_REQUIRED
+    NOT_REQUIRED --> REQUIRED: pedido pagado cancelado y corresponde devolución
+    REQUIRED --> REFUNDED: devolución manual completada
+```
+
+La v1 no automatiza movimientos de dinero.
 
 ---
 
 ## 8. High-level information model
-
-The following is a logical model, not yet an implementation contract.
 
 ```mermaid
 classDiagram
@@ -239,18 +243,25 @@ classDiagram
       +id
       +reference
       +verificationStatus
-      +expiresAt
+      +deliveryMode
       +createdAt
-      +riskSignals
+      +closedAt?
     }
     class Order {
       +id
       +orderNumber
       +orderStatus
       +subtotalAmount
+      +deliveryFee
       +totalAmount
-      +customerName?
-      +customerPhone?
+      +deliveryAddress?
+      +deliveryReference?
+    }
+    class PaymentEvidence {
+      +paymentStatus
+      +amount
+      +payerName
+      +refundStatus
     }
     class OrderLine {
       +productId
@@ -261,337 +272,238 @@ classDiagram
     }
     class OrderEvent {
       +sequence
-      +fromStatus
-      +toStatus
-      +reason
+      +type
+      +fromStatus?
+      +toStatus?
+      +reason?
       +createdAt
-    }
-    class PaymentEvidence {
-      +status
-      +method
-      +amount
-      +reference
     }
 
     OrderIntent "1" --> "0..1" Order : admits
     Order "1" --> "1..*" OrderLine
     Order "1" --> "1..*" OrderEvent
-    Order "1" --> "0..1" PaymentEvidence : future / conditional
+    Order "1" --> "0..1" PaymentEvidence
 ```
 
-### Key modeling rule
+La implementación puede usar `OrderIntent` separado o una estructura equivalente, pero debe preservar **PENDING intent != operational order**.
 
-A future implementation may choose a separate `OrderIntent` entity or an equivalent normalized structure, but it must preserve the semantic boundary **PENDING intent != operational order**.
+Datos legacy no deben reinterpretarse ni destruirse.
 
 ---
 
 ## 9. Abuse / false-order threat model
 
-| Threat | Example | Business impact | MVP control | Future escalation |
-|---|---|---:|---|---|
-| Accidental duplicate | double tap / retry | low | idempotency | none if metrics healthy |
-| Normal abandonment | customer opens WhatsApp but never sends | low | PENDING + expiry | UX tuning |
-| Joke/fake order | person intentionally submits without buying | medium | WhatsApp verification before kitchen | risk history / payment rule |
-| Automated spam | bot creates many intents | medium/high | rate limit + expiry | distributed rate limit / challenge |
-| High-value fake order | large order with no pickup | high | manual review | deposit / prepayment |
-| Repeat no-show | same customer repeatedly does not collect | high | cancellation reason + history | deposit / denylist policy |
-| Forged phone entry | fake number entered manually | medium | do not treat typed phone as proof | verified channel / API integration |
+| Threat | Impact | MVP control | Escalation |
+|---|---:|---|---|
+| Duplicado accidental | bajo | idempotencia | ninguna |
+| Abandono normal | bajo | PENDING fuera de cocina + cierre de jornada | UX tuning |
+| Pedido en joda | medio | WhatsApp antes de cocina | revisar métricas |
+| Spam automatizado | medio/alto | rate limit + pendientes fuera de operación | control distribuido si se prueba necesidad |
+| No-show RETIRO | medio/alto | motivo `NO_SHOW` por pedido | reevaluar sólo con evidencia |
+| Delivery falso | alto | transferencia obligatoria + verificación manual | automatización futura si escala |
 
-### Important distinction
+### Identity limitation
 
-**Anti-spam is not identity verification.** The current public rate limiter is a useful soft control, but because it is process-local/in-memory it must not be treated as durable distributed abuse protection or proof of customer intent.
+Sin nombre/teléfono/identidad no puede detectarse de forma fiable una reincidencia individual. En v1 esto se acepta deliberadamente para evitar fricción. `NO_SHOW` se registra por pedido, no por persona.
 
 ---
 
-## 10. Defense-in-depth model
+## 10. Defense-in-depth
 
 ```mermaid
 flowchart TD
-    L1[1. Idempotency\nPrevent accidental duplicates]
-    L2[2. Rate limiting\nReduce volumetric abuse]
-    L3[3. WhatsApp verification\nRequire an extra human action]
-    L4[4. Expiration\nRemove abandoned intents from active work]
-    L5[5. Risk-adaptive controls\nPhone / challenge / manual review]
-    L6[6. Deposit or prepayment\nHigh amount / repeat risk only]
-
-    L1 --> L2 --> L3 --> L4 --> L5 --> L6
+    L1[Idempotencia] --> L2[Rate limiting]
+    L2 --> L3[WhatsApp humano]
+    L3 --> L4[PENDING fuera de cocina]
+    L4 --> L5[Transferencia obligatoria\nsólo en DELIVERY]
+    L5 --> L6[Controles adicionales\nsólo con evidencia]
 ```
 
-### Policy principle
-
-Do not impose the strongest control on every customer. The control level should increase with observed risk and order value.
+No CAPTCHA, OTP, registro, login de cliente, teléfono obligatorio ni scoring en el camino normal.
 
 ---
 
-## 11. Risk-adaptive policy
-
-### Normal risk
-
-```text
-Cart -> PENDING -> WhatsApp -> VERIFIED -> operational queue
-```
-
-No mandatory prepayment.
-
-### Medium risk
-
-Possible signals:
-
-- several recent abandoned intents;
-- repeated requests from the same source;
-- unusually large basket;
-- previous no-show;
-- suspicious request frequency.
-
-Response:
-
-- explicit operator review;
-- optional phone capture/validation;
-- do not enter preparation immediately;
-- optionally request deposit.
-
-### High risk
-
-Possible signals:
-
-- exceptional amount;
-- repeat no-show behavior;
-- obvious automation;
-- coordinated repeated fake attempts.
-
-Response:
-
-- mandatory deposit or full payment;
-- manual rejection;
-- temporary abuse block;
-- stronger challenge if automation is proven.
-
----
-
-## 12. Operational console — target UX model
-
-The primary admin surface should become a control board rather than a product CRUD.
+## 11. Operational console
 
 ```mermaid
 flowchart LR
-    PV[PENDIENTES DE VERIFICAR\nTL-0015 · 2 min\n$24.000] -->|verificar| NEW[NUEVOS\nTL-0015]
-    NEW -->|confirmar| PREP[PREPARANDO\nTL-0015 · 5 min]
-    PREP -->|listo| READY[LISTOS\nTL-0015 · 12 min]
-    READY -->|entregar| DONE[ENTREGADOS]
-    PV -->|rechazar / expirar| CLOSED[RECHAZADOS / EXPIRADOS]
+    P[PENDIENTES] -->|Confirmar pedido / Confirmar pago y pedido| N[NUEVOS]
+    N -->|Preparar| I[PREPARANDO]
+    I -->|Listo| R[LISTOS]
+    R -->|Entregar| D[ENTREGADOS]
 ```
 
-Each card should expose at minimum:
+### RETIRO card
 
-- `TL-xxxx` reference;
-- age since intent/order creation;
-- key products/modifiers;
+Debe mostrar:
+
+- `TL-xxxx`;
+- edad;
+- productos/modificadores;
 - total;
-- verification state;
-- operational state;
-- one-touch next action;
-- exception/reason when blocked.
+- acción primaria **CONFIRMAR PEDIDO**.
 
-Catalog/settings remain secondary navigation.
+### DELIVERY card
+
+Además:
+
+- dirección;
+- referencia;
+- costo de envío;
+- total final;
+- titular informado;
+- acción primaria **CONFIRMAR PAGO Y PEDIDO**.
+
+`Pago no encontrado`, rechazo, cancelación y devolución son excepciones, no parte del camino feliz.
+
+---
+
+## 12. Delivery and payment policy
+
+Para RETIRO:
+
+```text
+paymentStatus = NOT_REQUIRED
+```
+
+Para DELIVERY:
+
+```text
+PENDING -> REPORTED -> CONFIRMED
+```
+
+Reglas:
+
+- tarifa de delivery única y configurable desde admin/settings;
+- importe comercial concreto es configuración operativa, no decisión de arquitectura;
+- transferencia obligatoria antes de aprobar DELIVERY;
+- titular informado llega a WhatsApp y admin;
+- el dueño verifica manualmente que la transferencia impactó;
+- no se carga comprobante;
+- no hay integración bancaria en v1.
 
 ---
 
 ## 13. Exception flows
 
-| Scenario | Expected behavior | Classification |
-|---|---|---|
-| Business closed | prevent operational intent; allow inquiry UX | normal business rule |
-| Product becomes unavailable during checkout | revalidate before intent persistence | recoverable conflict |
-| WhatsApp app does not open | preserve PENDING intent and provide fallback | UX fallback |
-| WhatsApp arrives after expiry | operator may reactivate if still valid | manual exception |
-| Customer changes confirmed order | record explicit change/history | auditable mutation |
-| Customer cancels | CANCELLED + reason + event | operational exception |
-| Customer does not collect | close with specific no-show reason | risk evidence |
-| Suspicious fake attempt | REJECTED + reason; never send to kitchen | abuse handling |
-
----
-
-## 14. Payment evolution
-
-Payment is an optional future verification dimension, not a prerequisite for the first improved flow.
-
-```mermaid
-flowchart LR
-    V[VERIFIED] --> R{Risk / amount threshold?}
-    R -- No --> C[CONFIRMED]
-    R -- Yes --> PP[PAYMENT_PENDING]
-    PP --> PC[PAYMENT_CONFIRMED]
-    PC --> C
-    PP -->|timeout / reject| X[CANCELLED / REJECTED]
-```
-
-Initial implementation may use transfer/alias with manual confirmation. API automation should be justified by volume or operational burden.
-
----
-
-## 15. WhatsApp role and message contract
-
-WhatsApp should remain a **human communication channel**, while Taco Loco keeps canonical data.
-
-Minimum initial message:
-
-```text
-Hola Taco Loco, quiero confirmar el pedido TL-0012.
-
-2 x Taco x2 común — Salsa: Guacamole
-1 x Gaseosa 1,5 L
-
-Total: $25.000
-
-Envío este mensaje para confirmar mi pedido.
-```
-
-Ready-for-pickup message:
-
-```text
-Tu pedido TL-0012 está listo para retirar.
-```
-
-Future WhatsApp Business API/webhooks may automate matching and outbound status notifications, but are not required for the MVP verification architecture.
-
----
-
-## 16. Metrics and observability
-
-The design should make these metrics derivable without reconstructing them from logs:
-
-| Metric | Why it matters |
+| Scenario | Expected behavior |
 |---|---|
-| intents created | demand / funnel entry |
-| verified intents | genuine contact rate |
-| expired intents | abandonment rate |
-| rejected intents | abuse/manual rejection rate |
-| intent -> verified time | verification friction |
-| verified -> confirmed time | operator response |
-| confirmed -> ready time | kitchen cycle time |
-| ready -> delivered time | pickup delay |
-| cancellation reason distribution | operational losses |
-| no-show count/rate | strongest business-risk signal |
-| average order amount | economics / risk threshold |
-| manual intervention rate | automation opportunity |
+| Negocio cerrado | no admitir pedidos operativos |
+| Producto deja de estar disponible | revalidar antes de persistir |
+| WhatsApp no abre | mantener PENDING y ofrecer fallback |
+| TL llega después del cierre de jornada | reactivación manual sólo si el negocio decide aceptarlo |
+| Cambio sobre pedido confirmado | mutación explícita + evento |
+| Cliente cancela | `CANCELLED` + motivo + evento |
+| Cliente no retira | `NO_SHOW` + evento |
+| Intento sospechoso | `REJECTED` + motivo; nunca cocina |
+| Delivery pagado cancelado | `REFUND_REQUIRED`; devolución manual; luego `REFUNDED` |
 
-No stronger anti-fraud mechanism should be introduced without evidence from these metrics unless an immediate material incident requires it.
+La política comercial sobre **cuándo corresponde devolver** queda fuera del HLD; la arquitectura sólo garantiza trazabilidad.
 
 ---
 
-## 17. Decision register
+## 14. Metrics and observability
+
+| Metric | Purpose |
+|---|---|
+| intents created | funnel |
+| verified / expired / rejected | calidad de intención |
+| intent -> verified | fricción de confirmación |
+| confirmed -> ready | tiempo de cocina |
+| ready -> delivered | demora de retiro/entrega |
+| cancelaciones por motivo | pérdidas operativas |
+| no-show rate | señal de riesgo |
+| delivery payment rejection rate | fricción/errores de pago |
+| refund required / refunded | obligaciones pendientes |
+| intervención manual | oportunidad de automatización |
+
+---
+
+## 15. Decision register
 
 | ID | Decision | Status |
 |---|---|---|
-| D-001 | Separate verification lifecycle from operational lifecycle | **RECOMMENDED** |
-| D-002 | WhatsApp manual verification is sufficient for MVP | **RECOMMENDED** |
-| D-003 | Keep customer phone optional initially | **RECOMMENDED** |
-| D-004 | Use expiry for non-verified intents | **RECOMMENDED** |
-| D-005 | Start with ~10–15 min expiry window | **HYPOTHESIS / VALIDATE** |
-| D-006 | Deposit/payment only by amount/risk, not globally | **RECOMMENDED** |
-| D-007 | Admin becomes an operational board | **RECOMMENDED** |
-| D-008 | Exact correlation/reference numbering semantics | **OPEN** |
-| D-009 | Exact risk thresholds / no-show policy | **OPEN** |
-| D-010 | WhatsApp API automation | **DEFERRED** |
+| D-001 | Separar verificación y operación | **APPROVED** |
+| D-002 | Verificación manual por WhatsApp para v1 | **APPROVED** |
+| D-003 | No pedir nombre ni teléfono general | **APPROVED** |
+| D-004 | PENDING fuera de cocina hasta confirmación/cierre | **APPROVED** |
+| D-005 | Sin timeout corto; cierre al final de jornada | **APPROVED** |
+| D-006 | DELIVERY requiere transferencia; RETIRO no | **APPROVED** |
+| D-007 | Admin como consola con one-action transitions | **APPROVED** |
+| D-008 | TL-xxxx al enviar el pedido | **APPROVED** |
+| D-009 | NO_SHOW por pedido, sin penalización/identidad automática | **APPROVED** |
+| D-010 | WhatsApp API/webhooks | **DEFERRED** |
+| D-011 | Refund tracking manual para delivery pagado cancelado | **APPROVED** |
 
 ---
 
-## 18. Delivery roadmap and gates
+## 16. Delivery roadmap and gates
 
 ```mermaid
 flowchart LR
-    A[Stage A\nVerification model] --> G1{Design Gate}
-    G1 --> B[Stage B\nStaging implementation]
-    B --> G2{QA + Critic + Integration}
-    G2 --> C[Stage C\nOperational board]
-    C --> G3{Human workflow review}
-    G3 --> D[Stage D\nRisk controls based on evidence]
-    D --> G4{Need for payment?}
-    G4 --> E[Stage E\nPayment / WhatsApp automation if justified]
+    A[Stage A\nDomain model + migration] --> B[Stage B\nPublic checkout]
+    B --> C[Stage C\nAdmin verification + board]
+    C --> D[Stage D\nClose-day + no-show + refunds]
+    D --> G{QA + Critic + Integration Review}
+    G --> H[Human Workflow Review]
 ```
 
-### Stage A — verification architecture
-
-- define intent semantics;
-- choose reference strategy;
-- define expiry/rejection rules;
-- define operator verification UX;
-- define evidence/metrics.
-
-### Stage B — bounded staging implementation
-
-- data model / service changes;
-- pending-verification queue;
-- expiry handling;
-- WhatsApp matching workflow;
-- regression and abuse-path QA.
-
-### Stage C — operational console
-
-- Nuevos / Preparando / Listos;
-- order age and SLA cues;
-- one-touch transitions;
-- exception reasons;
-- mobile/tablet usability.
-
-### Stage D — evidence-driven abuse controls
-
-- strengthen rate limiting only if needed;
-- no-show history;
-- suspicious-pattern review;
-- risk rules.
-
-### Stage E — conditional automation
-
-- deposit/payment workflow;
-- WhatsApp API/webhooks;
-- automatic matching/status messaging.
+Implementation contract: `docs/contracts/TL-TC-ORDER-FLOW-01.md`.
 
 ---
 
-## 19. Acceptance criteria for a future implementation contract
+## 17. Acceptance criteria for implementation
 
-A future implementation should not be considered complete until staging proves:
+La futura implementación no queda completa hasta probar en staging:
 
-- PENDING intents do not enter the kitchen queue;
-- WhatsApp/TL correlation can be verified reliably by the operator;
-- unverified intents expire cleanly;
-- duplicate browser retries remain idempotent;
-- rejection and cancellation reasons remain auditable;
-- verified orders preserve the existing state/event guarantees;
-- the operational board separates verification from preparation;
-- existing catalog/order functionality does not regress;
-- metrics can distinguish abandonment, rejection, cancellation and no-show;
-- abuse controls do not block a normal customer journey;
-- production remains blocked until a separate Human Gate.
-
----
-
-## 20. Open questions for Human Review
-
-1. Should the visible `TL-xxxx` be assigned at intent creation even if some numbers later expire?
-2. Should pending intents live on the same admin screen or in a dedicated verification inbox?
-3. Is 10–15 minutes the right initial expiry window for this foodtruck operation?
-4. Should customer name be requested before WhatsApp?
-5. Under what evidence should phone capture become mandatory?
-6. What amount should trigger optional/mandatory deposit?
-7. How many no-shows should escalate a customer to higher risk?
-8. What should the operator see when a previously expired TL reference arrives late?
-9. Which flow should be optimized first: customer friction, operator speed, or fake-order resistance?
+- PENDING nunca entra a cocina;
+- RETIRO funciona sin identidad/pago obligatorio;
+- DELIVERY exige pago confirmado;
+- `TL-xxxx` correlaciona sistema y WhatsApp;
+- titular de transferencia aparece en WhatsApp y admin;
+- tarifa fija proviene de settings;
+- DELIVERY se aprueba con una sola acción;
+- cierre de jornada cierra PENDING sin afectar confirmados;
+- NO_SHOW queda auditado;
+- refund tracking funciona sin automatización bancaria;
+- idempotencia, eventos/SSE, catálogo, auth y assets no regresan;
+- producción sigue bloqueada.
 
 ---
 
-## 21. Authorization boundary
+## 18. Human Review closure
 
-This HLD is a **design baseline for Human Review**. It does not authorize:
+El Human Review queda cerrado con estas decisiones:
 
-- production provisioning;
-- production deployment or cutover;
-- payment integration;
-- WhatsApp Business API integration;
-- stronger identity collection;
-- irreversible schema changes.
+- `TL-xxxx` al enviar pedido;
+- sin nombre ni teléfono general;
+- RETIRO: WhatsApp + aprobación manual;
+- DELIVERY: dirección mínima + referencia opcional + tarifa fija + transferencia + titular;
+- titular y `TL-xxxx` visibles en WhatsApp y admin;
+- PENDING fuera de cocina;
+- cierre de pendientes al final de jornada;
+- NO_SHOW sólo como evidencia por pedido;
+- admin con una acción primaria por transición;
+- refund tracking manual cuando corresponda.
 
-All implementation must begin in staging under a bounded Task Contract and follow the normal FALDEO assurance path.
+Inputs de negocio pendientes para la **validación manual final**, no para la arquitectura:
 
-**Production remains `NOT_AUTHORIZED`.**
+1. importe inicial de delivery en settings de staging;
+2. validar con el dueño que la tarjeta operativa contiene suficiente información de un vistazo.
+
+---
+
+## 19. Authorization boundary
+
+Este HLD cierra diseño y habilita la creación/ejecución del Task Contract **sólo en staging**.
+
+No autoriza:
+
+- producción;
+- cutover productivo;
+- integración bancaria;
+- WhatsApp Business API;
+- identidad adicional del cliente;
+- infraestructura nueva fuera del contrato.
+
+**Producción permanece `NOT_AUTHORIZED`.**
