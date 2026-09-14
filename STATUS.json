@@ -4,8 +4,8 @@
   "sourceRepo": "sjo1848/taco-loco-foodtrack",
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
   "targetBranch": "migration/cloudflare-native",
-  "technicalCandidate": "6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3",
-  "stage": "STAGING_WHATSAPP_NUMBER_FIXED",
+  "technicalCandidate": "f896b6b7f3af22987aaf42097be1aacebeea556a",
+  "stage": "STAGING_STATIC_ASSETS_READY",
   "remoteIntegration": "PASS",
   "stagingWorker": "taco-loco-staging-20260913",
   "stagingD1": "taco-loco-staging-20260913",
@@ -40,5 +40,10 @@
   "stagingWhatsAppPhone": "5492615956912",
   "stagingWhatsAppPreviousSanitized": "5491112345678",
   "stagingWhatsAppEvidence": "docs/evidence/TL-STAGING-WHATSAPP-NUMBER-FIXED-2026-09-13.md",
+  "stagingStaticAssets": "STAGING_STATIC_ASSETS_READY",
+  "stagingStaticAssetsEvidence": "docs/evidence/TL-STAGING-STATIC-PRODUCT-ASSETS-2026-09-13.md",
+  "stagingStaticAssetsReal": 26,
+  "stagingStaticAssetsPlaceholder": 5,
+  "stagingDeploymentVersion": "e38f7071-779c-4933-945f-08c69d120d44",
   "resumePoint": "Existing staging is ready for manual human review with the corrected WhatsApp destination. Keep staging available and await human feedback. Production remains NOT_AUTHORIZED; do not reopen production eligibility automatically."
 }
