@@ -1,16 +1,16 @@
 # Taco Loco — Current Authoritative Project State
-Updated: 2026-09-13
+Updated: 2026-09-14
 Mode: DELIVERY
-Phase: VALIDATE
-Status: STAGING_WHATSAPP_NUMBER_FIXED
-Active contract: TL-STAGING-CATALOG-PARITY-01 (PASS; follow-up manual review preparation)
+Phase: DESIGN / STAGING_REWORK_READY
+Status: ORDER_FLOW_HLD_CLOSED / TASK_CONTRACT_READY
+Active contract: TL-TC-ORDER-FLOW-01 (`READY_FOR_EXECUTION / STAGING_ONLY`)
 Application candidate: `f896b6b7f3af22987aaf42097be1aacebeea556a`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
 ## Objective
 
-Keep Taco Loco in the existing staging environment for human review. Do not reopen production eligibility until the human explicitly asks to do so.
+Execute `TL-TC-ORDER-FLOW-01` only in staging: separate pending intent from kitchen operation, add RETIRO/DELIVERY branching, manual transfer verification for DELIVERY, a low-friction operator console, end-of-day pending closure, no-show evidence and manual refund tracking. Do not reopen production eligibility.
 
 ## Active architecture
 
@@ -25,19 +25,36 @@ R2, Cloudflare Images, Hyperdrive, external PostgreSQL, KV, Durable Objects, que
 
 ## Proven staging checkpoint
 
-Candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3` is proven in remote staging. Catalog parity is PASS with 7 active categories, 31 canonical published products, exact source values/modifiers, realistic order flow, auth/session/admin and event replay.
+Candidate `6eccc3aa81d351fc3e9e8ee718f781a77a9b48e3` remains the proven remote integration baseline. The later technical candidate recorded above includes the current staging asset/review work. Catalog parity remains PASS with 7 active categories and 31 canonical published products.
 
-Existing staging resources remain the validation environment:
+Existing staging resources remain the only validation environment:
 - Worker: `taco-loco-staging-20260913`
 - D1: `taco-loco-staging-20260913`
 
-## Human decisions 2026-09-13
+## Human decisions — 2026-09-14
 
+- `TL-xxxx` is assigned when the customer sends/submits the order.
+- Do not request general customer name or phone in v1.
+- `TL-xxxx` is the primary correlation reference with WhatsApp.
+- RETIRO does not require prepayment; operator confirms after matching the WhatsApp message.
+- DELIVERY requires minimal address data, optional reference, fixed configurable delivery fee and transfer before approval.
+- DELIVERY customer provides only the transfer account holder name needed for manual reconciliation.
+- `TL-xxxx` and transfer-holder name must be visible in both WhatsApp and admin.
+- DELIVERY is admitted to operation only after the owner confirms the transfer impacted.
+- No receipt upload, customer account, registration or OTP in the normal flow.
+- Progressive friction is the governing UX principle.
+- Normal operator transitions should be one-action transitions.
+- Unconfirmed PENDING stays outside kitchen; no short timeout. Remaining PENDING closes at end of service day.
+- NO_SHOW is recorded per order without automatic identity tracking or penalties in v1.
+- A paid cancelled delivery can be tracked as `REFUND_REQUIRED -> REFUNDED`; money movement remains manual in v1.
 - Production remains explicitly deferred until a future direct instruction from the human.
-- Continue reviewing flows in staging.
-- Before production reconsideration, make product images visible for manual review; temporary reuse of the existing Taco Loco Static Asset is acceptable where dedicated product photos are not available.
-- Provide the human with known staging-only admin access for manual review without persisting credential secrets in repository/Drive evidence.
-- `workers.dev` remains accepted as the preferred future initial zero-cost production URL, but this does not authorize production.
+
+## Design authority
+
+- HLD: `docs/product/TL-HIGH-LEVEL-WORKFLOWS.md`
+- Active Task Contract: `docs/contracts/TL-TC-ORDER-FLOW-01.md`
+
+The HLD Human Review is closed and the Task Contract is ready for staging execution.
 
 ## Media review posture
 
@@ -55,14 +72,17 @@ For staging manual review only, products without a dedicated asset may temporari
 7. Conversation is cache only.
 
 ## Current classifications
-- Local implementation: PROVEN.
-- Remote integration: PROVEN PASS.
+- Existing local implementation: PROVEN.
+- Existing remote integration: PROVEN PASS.
 - Catalog parity: PROVEN PASS.
-- Manual staging review readiness: PROVEN PASS — `docs/evidence/TL-STAGING-MANUAL-REVIEW-READY-2026-09-13.md`.
-- Staging WhatsApp number: PROVEN PASS — `docs/evidence/TL-STAGING-WHATSAPP-NUMBER-FIXED-2026-09-13.md`; `MenuSettings.whatsappPhone` corrected to `5492615956912`.
-- Static product assets in staging: PROVEN PASS — `docs/evidence/TL-STAGING-STATIC-PRODUCT-ASSETS-2026-09-13.md`; 26 real WebP assets deployed, 5 products retain the staging placeholder.
+- Manual staging review readiness of current baseline: PROVEN PASS.
+- Staging WhatsApp number: PROVEN PASS; `MenuSettings.whatsappPhone = 5492615956912`.
+- Static product assets in staging: PROVEN PASS; 26 real WebP assets, 5 staging placeholders.
+- Order-flow HLD: HUMAN_REVIEW_CLOSED.
+- Order-flow implementation: NOT_YET_EXECUTED.
+- Active Task Contract: READY_FOR_EXECUTION / STAGING_ONLY.
 - Production: NOT_AUTHORIZED_BY_EXPLICIT_HUMAN_HOLD.
 
 ## Next action
 
-The existing staging environment is ready for human manual review with real product assets where supplied and the corrected WhatsApp destination. Do not create, deploy or modify production resources. Production remains NOT_AUTHORIZED and may be reconsidered only after a future explicit human instruction.
+Execute Stage A of `TL-TC-ORDER-FLOW-01` against the staging-only branch/environment: domain model and staging-compatible migration design/implementation, preserving historical orders, `clientReference`, `OrderEvent`, SSE replay and all current catalog/auth/assets behavior. Stop before any production action.
