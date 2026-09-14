@@ -1,12 +1,12 @@
 {
-  "contract": "TL-STAGING-CATALOG-PARITY-01",
-  "status": "ACTIVE",
+  "contract": "TL-TC-ORDER-FLOW-01",
+  "status": "READY_FOR_EXECUTION",
   "sourceRepo": "sjo1848/taco-loco-foodtrack",
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
   "targetBranch": "migration/cloudflare-native",
   "technicalCandidate": "f896b6b7f3af22987aaf42097be1aacebeea556a",
-  "stage": "STAGING_STATIC_ASSETS_READY",
-  "remoteIntegration": "PASS",
+  "stage": "ORDER_FLOW_STAGING_REWORK_READY",
+  "remoteIntegration": "PASS_BASELINE",
   "stagingWorker": "taco-loco-staging-20260913",
   "stagingD1": "taco-loco-staging-20260913",
   "stagingD1Id": "266d23b2-4056-41c0-82d9-4f063ba48d78",
@@ -33,7 +33,7 @@
   "productionUrlDecision": "WORKERS_DEV_ACCEPTED_FOR_FUTURE_INITIAL_RELEASE",
   "keepStaging": "YES",
   "humanGate": "EXPLICIT_HUMAN_HOLD_NO_PRODUCTION_REOPEN",
-  "manualReview": "STAGING_REVIEW_READY",
+  "manualReview": "BASELINE_PROVEN_ORDER_FLOW_REWORK_PENDING",
   "manualReviewEvidence": "docs/evidence/TL-STAGING-MANUAL-REVIEW-READY-2026-09-13.md",
   "temporaryImageCoverage": "31_OF_31",
   "stagingAdminAccess": "STAGING_ADMIN_ACCESS_PASS",
@@ -45,5 +45,10 @@
   "stagingStaticAssetsReal": 26,
   "stagingStaticAssetsPlaceholder": 5,
   "stagingDeploymentVersion": "e38f7071-779c-4933-945f-08c69d120d44",
-  "resumePoint": "Existing staging is ready for manual human review with the corrected WhatsApp destination. Keep staging available and await human feedback. Production remains NOT_AUTHORIZED; do not reopen production eligibility automatically."
+  "orderFlowHld": "HUMAN_REVIEW_CLOSED",
+  "orderFlowHldPath": "docs/product/TL-HIGH-LEVEL-WORKFLOWS.md",
+  "orderFlowTaskContract": "READY_FOR_EXECUTION_STAGING_ONLY",
+  "orderFlowTaskContractPath": "docs/contracts/TL-TC-ORDER-FLOW-01.md",
+  "orderFlowImplementation": "NOT_YET_EXECUTED",
+  "resumePoint": "Execute Stage A of TL-TC-ORDER-FLOW-01 in staging only: domain model and staging-compatible migration, preserving historical orders, clientReference idempotency, OrderEvent/SSE, catalog, auth and assets. Production remains NOT_AUTHORIZED."
 }
