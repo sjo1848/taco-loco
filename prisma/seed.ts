@@ -19,6 +19,35 @@ async function main() {
   const canonicalSlugs = categoryNames.map((name) => name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replaceAll(" ", "-"));
   await prisma.category.updateMany({ where: { slug: { notIn: canonicalSlugs } }, data: { active: false, archivedAt: new Date() } });
 
+  const staticProductImageIds = new Set([
+    "00000000-0000-0000-0000-000000000002",
+    "00000000-0000-0000-0000-000000000003",
+    "00000000-0000-0000-0000-000000000004",
+    "00000000-0000-0000-0000-000000000005",
+    "00000000-0000-0000-0000-000000000006",
+    "00000000-0000-0000-0000-000000000007",
+    "00000000-0000-0000-0000-000000000008",
+    "00000000-0000-0000-0000-000000000009",
+    "00000000-0000-0000-0000-000000000010",
+    "00000000-0000-0000-0000-000000000011",
+    "00000000-0000-0000-0000-000000000012",
+    "00000000-0000-0000-0000-000000000013",
+    "00000000-0000-0000-0000-000000000014",
+    "00000000-0000-0000-0000-000000000015",
+    "00000000-0000-0000-0000-000000000016",
+    "00000000-0000-0000-0000-000000000017",
+    "00000000-0000-0000-0000-000000000018",
+    "00000000-0000-0000-0000-000000000019",
+    "00000000-0000-0000-0000-000000000020",
+    "00000000-0000-0000-0000-000000000021",
+    "00000000-0000-0000-0000-000000000022",
+    "00000000-0000-0000-0000-000000000023",
+    "00000000-0000-0000-0000-000000000024",
+    "00000000-0000-0000-0000-000000000025",
+    "00000000-0000-0000-0000-000000000029",
+    "00000000-0000-0000-0000-000000000030",
+  ]);
+
   const products = [
     ["Tacos", "Taco x2 común", "Queso, carne a elección, lechuga, tomate + 1 salsa a elección.", 10000],
     ["Tacos", "Taco especial x2", "Queso, carne a elección, lechuga, tomate, porotos, zanahoria y repollo.", 12000],
@@ -45,7 +74,9 @@ async function main() {
   for (const [sortOrder, [categoryName, name, description, priceAmount]] of products.entries()) {
     const categoryId = categories.get(categoryName);
     if (!categoryId) throw new Error(`Missing category ${categoryName}`);
-    await prisma.product.upsert({ where: { id: `00000000-0000-0000-0000-${String(sortOrder + 2).padStart(12, "0")}` }, update: { categoryId, name, description, priceAmount, sortOrder, published: true }, create: { id: `00000000-0000-0000-0000-${String(sortOrder + 2).padStart(12, "0")}`, categoryId, name, description, priceAmount, sortOrder } });
+    const id = `00000000-0000-0000-0000-${String(sortOrder + 2).padStart(12, "0")}`;
+    const imageKey = staticProductImageIds.has(id) ? `/products/${id}.webp` : undefined;
+    await prisma.product.upsert({ where: { id }, update: { categoryId, name, description, priceAmount, sortOrder, published: true, ...(imageKey ? { imageKey } : {}) }, create: { id, categoryId, name, description, priceAmount, sortOrder, ...(imageKey ? { imageKey } : {}) } });
   }
 
   const modifierDefinitions = [
