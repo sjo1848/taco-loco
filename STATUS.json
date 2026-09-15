@@ -1,6 +1,6 @@
 {
   "contract": "TL-TC-ORDER-FLOW-01",
-  "status": "STAGING_ADMISSION_READY",
+  "status": "STAGING_VALIDATION_HUMAN_INPUT",
   "sourceRepo": "sjo1848/taco-loco-foodtrack",
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
   "targetBranch": "rework/tl-order-flow-01",
@@ -61,6 +61,10 @@
   "orderFlowStagesBCDCriticEvidence": "docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-independent-critic-e6f2465.md",
   "orderFlowStagesBCDIntegrationReview": "PASS",
   "orderFlowStagesBCDIntegrationReviewEvidence": "docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-integration-review-e6f2465.md",
-  "orderFlowStagesBCD": "STAGING_ADMISSION_READY",
-  "resumePoint": "Run bounded staging validation for exact candidate e6f2465. Production remains NOT_AUTHORIZED."
+  "orderFlowStagesBCD": "STAGING_VALIDATION_HUMAN_INPUT",
+  "orderFlowStagingValidation": "PARTIAL_HUMAN_INPUT",
+  "orderFlowStagingEvidence": "docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465.md",
+  "orderFlowStagingDeploymentVersion": "f88fab8a-779b-410c-a7d8-4d0fc7127ef4",
+  "orderFlowStagingDeliveryFee": "HUMAN_INPUT_REQUIRED",
+  "resumePoint": "Provide fixed staging delivery fee in ARS; then enable DELIVERY only in existing staging and validate delivery journey. Production remains NOT_AUTHORIZED."
 }

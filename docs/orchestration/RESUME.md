@@ -48,4 +48,4 @@ The existing staging Worker now serves 26 real product WebP assets through Worke
 
 ## Next authorized objective
 
-Run Integration Review on exact candidate `e6f2465d827f853690ebc96d65db7030de5c484e`, then bounded staging validation. Keep staging available. Production remains `NOT_AUTHORIZED`; do not reopen production eligibility or perform production actions without a future explicit human instruction.
+Staging validation is partial for exact candidate `e6f2465`: health/assets/auth, pickup modifiers/idempotency, admin transitions and runtime pass. DELIVERY awaits the fixed staging fee; evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465.md`. Production remains `NOT_AUTHORIZED`.

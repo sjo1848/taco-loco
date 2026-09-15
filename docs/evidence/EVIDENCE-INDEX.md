@@ -27,7 +27,8 @@ As of: 2026-09-13
 - Order-flow Stage A implementation: PROVEN TECHNICAL_PASS — substantive candidate `d8d98f7196284ffe0464a562033241aebbaf4c3c`; `docs/evidence/TL-TC-ORDER-FLOW-STAGE-A-d8d98f7.md`. PostgreSQL/D1 order-flow dimensions, safe legacy defaults and D1 `DELIVERY` binding coverage are validated locally.
 - Order-flow Stage A Independent Critic: PROVEN PASS — `docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-independent-critic-d8d98f7.md`; fresh independent context, exact candidate, prior binding-test gap reworked and closed.
 - Order-flow Stage A Integration Review: PROVEN PASS — `docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-integration-review-d8d98f7.md`; exact candidate and synchronized governance state.
-- Order-flow Stages B–D: TECHNICAL_PASS — exact candidate `915dd73492b05c2fe3f679d72ecf63a0b2f30005`; checkout, exception actions, empty-table-safe D1/PostgreSQL guards, SSE queue snapshots and tests pass. Evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGES-BCD-915dd73.md`.
+- Order-flow Stages B–D: TECHNICAL_PASS — exact candidate `e6f2465d827f853690ebc96d65db7030de5c484e`; checkout, exception actions, empty-table-safe D1/PostgreSQL guards, SSE queue snapshots and tests pass. Evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGES-BCD-e6f2465.md`.
+- Order-flow staging validation: PARTIAL / HUMAN_INPUT — exact candidate `e6f2465d827f853690ebc96d65db7030de5c484e`; health/assets/auth/session, pickup modifiers/idempotency, admin transitions and runtime pass. DELIVERY awaits fixed staging fee. Evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465.md`.
 - Order-flow Stages B–D Independent Critic: PROVEN PASS — exact candidate `e6f2465d827f853690ebc96d65db7030de5c484e`; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-independent-critic-e6f2465.md`.
 - Order-flow Stages B–D Integration Review: PROVEN PASS — exact candidate `e6f2465d827f853690ebc96d65db7030de5c484e`; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-integration-review-e6f2465.md`.
 

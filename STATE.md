@@ -2,7 +2,7 @@
 Updated: 2026-09-15
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: ORDER_FLOW_STAGES_BCD_IMPLEMENTED / STAGING_ADMISSION_READY
+Status: ORDER_FLOW_STAGES_BCD_IMPLEMENTED / STAGING_VALIDATION_HUMAN_INPUT
 Active contract: TL-TC-ORDER-FLOW-01 (`STAGE_A_PASS / STAGING_ONLY`)
 Application candidate: `e6f2465d827f853690ebc96d65db7030de5c484e`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
@@ -85,9 +85,10 @@ For staging manual review only, products without a dedicated asset may temporari
 - Order-flow Stages B–D implementation: REWORKED to make the D1 generic delivery guard unconditional when required; local 38-test/typecheck/lint/build evidence passes. Exact candidate `e6f2465d827f853690ebc96d65db7030de5c484e`.
 - Order-flow Stages B–D Independent Critic: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-independent-critic-e6f2465.md`.
 - Order-flow Stages B–D Integration Review: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-integration-review-e6f2465.md`.
+- Remote staging validation: PARTIAL; health/assets/auth/session, pickup modifiers/idempotency, admin transitions and runtime PASS. DELIVERY awaits fixed-fee input; evidence `docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465.md`.
 - Active Task Contract: STAGES_BCD_IMPLEMENTED / STAGING_ONLY.
 - Production: NOT_AUTHORIZED_BY_EXPLICIT_HUMAN_HOLD.
 
 ## Next action
 
-Run bounded staging validation for exact candidate `e6f2465d827f853690ebc96d65db7030de5c484e`. Preserve historical orders, `clientReference`, `OrderEvent`, SSE replay and all current catalog/auth/assets behavior. Stop before any production action.
+Await the fixed staging delivery fee in ARS, then enable DELIVERY only in existing staging and validate the bounded delivery journey. Production remains unauthorized.
