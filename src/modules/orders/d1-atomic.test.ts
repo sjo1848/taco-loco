@@ -47,8 +47,10 @@ describe("D1 atomic order adapter", () => {
 
   it("accepts DELIVERY fulfillment through the D1 order writer", async () => {
     const { db, bindings } = fakeD1();
-    await createD1OrderWith(db, { ...order, fulfillment: "DELIVERY" });
-    expect(bindings[0]?.[1]).toBe("DELIVERY");
+    await createD1OrderWith(db, { ...order, fulfillment: "DELIVERY", verificationStatus: "PENDING", paymentStatus: "PENDING", deliveryAddress: "Calle 1", deliveryFeeAmount: 900, transferHolderName: "Ana" });
+    expect(bindings[0]?.slice(1, 9)).toEqual(["DELIVERY", "PENDING", "PENDING", "NOT_REQUIRED", "PUBLIC_MENU", null, null, null]);
+    expect(bindings[0]?.[12]).toBe(900);
+    expect(bindings[0]?.[13]).toBe("Ana");
   });
 
   it("does not convert a failed batch into a partial success", async () => {
