@@ -5,12 +5,12 @@ export type OrderConfirmationInput = {
   orderNumber: number;
   totalAmount: number;
   customerName: string | null;
-  fulfillment: "PICKUP" | "DINE_IN";
+  fulfillment: "PICKUP" | "DINE_IN" | "DELIVERY";
 };
 
 export function buildOrderConfirmationMessage(input: OrderConfirmationInput) {
   const greeting = input.customerName ? `Hola ${input.customerName},` : "Hola,";
-  const modality = input.fulfillment === "PICKUP" ? "Te esperamos para retirarlo." : "Te esperamos para disfrutarlo en el local.";
+  const modality = input.fulfillment === "PICKUP" ? "Te esperamos para retirarlo." : input.fulfillment === "DELIVERY" ? "Coordinamos el envío con vos." : "Te esperamos para disfrutarlo en el local.";
   return [greeting, `Tu pedido ${formatOrderNumber(input.orderNumber)} fue confirmado.`, "", `Total final: ${formatAmount(input.totalAmount)}.`, modality, "", "Si necesitás hacer algún cambio, respondé por este medio."].join("\n");
 }
 

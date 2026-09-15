@@ -85,18 +85,21 @@ export async function transitionD1OrderWith(db: D1Database, input: D1TransitionW
   if (changed !== 1) throw new Error("D1_ORDER_CHANGED");
 }
 
-export type D1WorkflowAction = { orderId: string; action: "EXPIRE_PENDING" | "MARK_NO_SHOW" | "REQUIRE_REFUND" | "MARK_REFUNDED"; actorId: string; fromStatus: string; verificationStatus?: string; refundStatus?: string; noShowAt?: string; closedAt?: string; reason: string };
+export type D1WorkflowAction = { orderId: string; action: "EXPIRE_PENDING" | "MARK_NO_SHOW" | "REPORT_PAYMENT" | "REJECT_PAYMENT" | "REQUIRE_REFUND" | "MARK_REFUNDED"; actorId: string; fromStatus: string; verificationStatus?: string; refundStatus?: string; noShowAt?: string; closedAt?: string; reason: string };
 
 export async function applyD1WorkflowActionWith(db: D1Database, input: D1WorkflowAction) {
   const now = new Date().toISOString();
   const isExpiry = input.action === "EXPIRE_PENDING";
   const isNoShow = input.action === "MARK_NO_SHOW";
+  const isPaymentReport = input.action === "REPORT_PAYMENT" || input.action === "REJECT_PAYMENT";
   const isRefundRequired = input.action === "REQUIRE_REFUND";
   const update = isExpiry
     ? db.prepare(`UPDATE "Order" SET "status" = 'CANCELLED', "verificationStatus" = 'EXPIRED', "verificationResolvedAt" = ?, "closedAt" = ?, "updatedById" = ?, "updatedAt" = ? WHERE "id" = ? AND "status" = ? AND "verificationStatus" = 'PENDING'`).bind(now, now, input.actorId, now, input.orderId, input.fromStatus)
     : isNoShow
       ? db.prepare(`UPDATE "Order" SET "noShowAt" = ?, "updatedById" = ?, "updatedAt" = ? WHERE "id" = ? AND "fulfillment" = 'PICKUP' AND "status" = ? AND "noShowAt" IS NULL`).bind(now, input.actorId, now, input.orderId, input.fromStatus)
-      : db.prepare(`UPDATE "Order" SET "refundStatus" = ?, "refundRequiredAt" = COALESCE("refundRequiredAt", ?), "refundedAt" = CASE WHEN ? = 'REFUNDED' THEN ? ELSE "refundedAt" END, "updatedById" = ?, "updatedAt" = ? WHERE "id" = ? AND "status" = ? AND "refundStatus" = ?`).bind(input.refundStatus, now, input.refundStatus, now, input.actorId, now, input.orderId, input.fromStatus, isRefundRequired ? "NOT_REQUIRED" : "REQUIRED");
+      : isPaymentReport
+        ? db.prepare(`UPDATE "Order" SET "paymentStatus" = ?, "paymentReportedAt" = ?, "updatedById" = ?, "updatedAt" = ? WHERE "id" = ? AND "status" = ? AND "paymentStatus" = ?`).bind(input.action === "REPORT_PAYMENT" ? "REPORTED" : "REJECTED", now, input.actorId, now, input.orderId, input.fromStatus, input.action === "REPORT_PAYMENT" ? "PENDING" : "REPORTED")
+        : db.prepare(`UPDATE "Order" SET "refundStatus" = ?, "refundRequiredAt" = COALESCE("refundRequiredAt", ?), "refundedAt" = CASE WHEN ? = 'REFUNDED' THEN ? ELSE "refundedAt" END, "updatedById" = ?, "updatedAt" = ? WHERE "id" = ? AND "status" = ? AND "refundStatus" = ?`).bind(input.refundStatus, now, input.refundStatus, now, input.actorId, now, input.orderId, input.fromStatus, isRefundRequired ? "NOT_REQUIRED" : "REQUIRED");
   const event = db.prepare(`INSERT INTO "OrderEvent" ("id", "sequence", "orderId", "fromStatus", "toStatus", "reason", "createdAt", "actorId") SELECT ?, COALESCE(MAX("sequence"), 0) + 1, ?, ?, ?, ?, ?, ? FROM "OrderEvent" WHERE changes() = 1`).bind(crypto.randomUUID(), input.orderId, input.fromStatus, isExpiry ? "CANCELLED" : input.fromStatus, input.reason, now, input.actorId);
   const results = await db.batch([update, event]);
   assertBatchSucceeded(results);
