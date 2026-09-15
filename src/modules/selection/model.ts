@@ -9,6 +9,13 @@ export type SelectionLine = {
   modifiers: SelectionModifier[];
 };
 
+export type CheckoutDetails = {
+  fulfillment: "PICKUP" | "DELIVERY";
+  deliveryAddress?: string;
+  deliveryReference?: string;
+  transferHolderName?: string;
+};
+
 export function lineId(productId: string, modifiers: SelectionModifier[]) {
   return `${productId}:${JSON.stringify(modifiers)}`;
 }
@@ -51,6 +58,12 @@ export function buildWhatsAppMessageWithOrder(lines: SelectionLine[], businessNa
     return `- ${line.quantity} x ${line.name}${modifiers}`;
   });
   return [`Hola ${businessName}, quiero ordenar:`, `Pedido: TL-${String(orderNumber).padStart(4, "0")}`, "", ...rows, "", "Quedo a la espera de confirmación."] .join("\n");
+}
+
+export function buildWhatsAppMessageWithCheckout(lines: SelectionLine[], businessName: string, orderNumber: number, checkout: CheckoutDetails) {
+  const base = buildWhatsAppMessageWithOrder(lines, businessName, orderNumber);
+  if (checkout.fulfillment === "PICKUP") return `${base}\n\nModalidad: Retiro`;
+  return `${base}\n\nModalidad: Delivery\nDirección: ${checkout.deliveryAddress ?? ""}${checkout.deliveryReference ? `\nReferencia: ${checkout.deliveryReference}` : ""}\nTitular de la transferencia: ${checkout.transferHolderName ?? ""}`;
 }
 
 export function buildWhatsAppUrl(baseUrl: string, message: string) {

@@ -1,10 +1,10 @@
 # Taco Loco — Current Authoritative Project State
-Updated: 2026-09-14
+Updated: 2026-09-15
 Mode: DELIVERY
-Phase: DESIGN / STAGING_REWORK_READY
-Status: ORDER_FLOW_HLD_CLOSED / TASK_CONTRACT_READY
-Active contract: TL-TC-ORDER-FLOW-01 (`READY_FOR_EXECUTION / STAGING_ONLY`)
-Application candidate: `f896b6b7f3af22987aaf42097be1aacebeea556a`
+Phase: IMPLEMENT / VALIDATE
+Status: CORRECTIVE_INTERVENTION / STAGING_MANUAL_REVIEW_PASS
+Active contract: TL-TC-ORDER-FLOW-01 (`STAGE_A_PASS / STAGING_ONLY`)
+Application candidate: `ea99ca83d7e6831833a97a11e21d5585c0903273`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
@@ -79,10 +79,19 @@ For staging manual review only, products without a dedicated asset may temporari
 - Staging WhatsApp number: PROVEN PASS; `MenuSettings.whatsappPhone = 5492615956912`.
 - Static product assets in staging: PROVEN PASS; 26 real WebP assets, 5 staging placeholders.
 - Order-flow HLD: HUMAN_REVIEW_CLOSED.
-- Order-flow implementation: NOT_YET_EXECUTED.
-- Active Task Contract: READY_FOR_EXECUTION / STAGING_ONLY.
+- Order-flow Stage A implementation: TECHNICAL_PASS; exact candidate `d8d98f7196284ffe0464a562033241aebbaf4c3c`.
+- Stage A Independent Critic: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-independent-critic-d8d98f7.md`.
+- Stage A Integration Review: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-integration-review-d8d98f7.md`.
+- Order-flow Stages B–D implementation: REWORKED to make the D1 generic delivery guard unconditional when required; local 38-test/typecheck/lint/build evidence passes. Exact candidate `e6f2465d827f853690ebc96d65db7030de5c484e`.
+- Order-flow Stages B–D Independent Critic: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-independent-critic-e6f2465.md`.
+- Order-flow Stages B–D Integration Review: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-integration-review-e6f2465.md`.
+- Remote staging validation: STAGING_ORDER_FLOW_PASS; DELIVERY and PICKUP bounded journeys, server-side fee, payment gating, idempotency, events/replay, admin/session and runtime PASS. Evidence `docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465-delivery-2026-09-15.md`.
+- Corrective workflow review: STAGING_MANUAL_REVIEW_PASS; authenticated `/admin` opens the operational order board, product CRUD remains at `/admin/products`, and pending PICKUP/DELIVERY orders arrive through SSE without refresh. Exact candidate `ea99ca83d7e6831833a97a11e21d5585c0903273`; evidence `docs/evidence/TL-STAGING-MANUAL-REVIEW-WORKFLOW-94719f8-2026-09-15.md`.
+- Corrective workflow Independent Critic: PASS; evidence `docs/reviews/TL-STAGING-MANUAL-REVIEW-independent-critic-ea99ca8.md`.
+- Corrective workflow Integration Review: PASS; evidence `docs/reviews/TL-STAGING-MANUAL-REVIEW-integration-review-ea99ca8.md`.
+- Active Task Contract: STAGES_BCD_IMPLEMENTED / STAGING_ONLY.
 - Production: NOT_AUTHORIZED_BY_EXPLICIT_HUMAN_HOLD.
 
 ## Next action
 
-Execute Stage A of `TL-TC-ORDER-FLOW-01` against the staging-only branch/environment: domain model and staging-compatible migration design/implementation, preserving historical orders, `clientReference`, `OrderEvent`, SSE replay and all current catalog/auth/assets behavior. Stop before any production action.
+Human review of the corrected staging operational workflow. Production remains unauthorized.

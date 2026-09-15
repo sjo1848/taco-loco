@@ -15,4 +15,4 @@ export function normalizeWhatsAppUrl(phone: string, message: string) {
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
-export type PublicSettings = Pick<MenuSettingsInput, "businessName" | "whatsappPhone" | "whatsappMessage" | "currency" | "acceptingOrders" | "statusMessage" | "weeklySchedule">;
+export type PublicSettings = Pick<MenuSettingsInput, "businessName" | "whatsappPhone" | "whatsappMessage" | "currency" | "acceptingOrders" | "statusMessage" | "weeklySchedule" | "deliveryEnabled" | "deliveryFeeAmount">;

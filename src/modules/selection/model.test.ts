@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addSelectionLine, buildWhatsAppAppUrl, buildWhatsAppMessage, buildWhatsAppMessageWithOrder, buildWhatsAppUrl, createClientReference, removeSelectionLine, selectionCount, selectionTotal, updateSelectionQuantity, type SelectionLine } from "@/modules/selection/model";
+import { addSelectionLine, buildWhatsAppAppUrl, buildWhatsAppMessage, buildWhatsAppMessageWithCheckout, buildWhatsAppMessageWithOrder, buildWhatsAppUrl, createClientReference, removeSelectionLine, selectionCount, selectionTotal, updateSelectionQuantity, type SelectionLine } from "@/modules/selection/model";
 
 const taco: Omit<SelectionLine, "id" | "quantity"> = { productId: "taco", name: "Taco x2", priceAmount: 5000, modifiers: [{ group: "Salsa", option: "Picante" }] };
 
@@ -49,6 +49,13 @@ describe("selection model", () => {
       "",
       "Quedo a la espera de confirmación.",
     ].join("\n"));
+  });
+
+  it("includes delivery address and transfer holder in the prepared message", () => {
+    const message = buildWhatsAppMessageWithCheckout([addSelectionLine([], taco)[0]], "Taco Loco", 185, { fulfillment: "DELIVERY", deliveryAddress: "Calle 1 123", deliveryReference: "Portón negro", transferHolderName: "Ana Pérez" });
+    expect(message).toContain("Modalidad: Delivery");
+    expect(message).toContain("Dirección: Calle 1 123");
+    expect(message).toContain("Titular de la transferencia: Ana Pérez");
   });
 
   it("creates an idempotency reference without requiring randomUUID", () => {

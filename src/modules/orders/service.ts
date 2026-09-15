@@ -9,11 +9,17 @@ export const transitionOrderInputSchema = z.object({
   orderId: z.uuid(),
   toStatus: orderStatusSchema,
   reason: z.string().trim().max(500).nullable().optional(),
+  confirmPayment: z.boolean().optional().default(false),
 }).superRefine((input, context) => {
   if (input.toStatus === "CANCELLED" && !input.reason) context.addIssue({ code: "custom", path: ["reason"], message: "El motivo de cancelación es obligatorio." });
 });
 
 export type TransitionOrderInput = z.infer<typeof transitionOrderInputSchema>;
+export function canConfirmDelivery(paymentStatus: string) {
+  return paymentStatus === "CONFIRMED";
+}
+export const orderWorkflowActionSchema = z.object({ orderId: z.uuid(), action: z.enum(["CONFIRM_PAYMENT_AND_ORDER", "EXPIRE_PENDING", "MARK_NO_SHOW", "REPORT_PAYMENT", "REJECT_PAYMENT", "REQUIRE_REFUND", "MARK_REFUNDED"]) });
+export type OrderWorkflowActionInput = z.infer<typeof orderWorkflowActionSchema>;
 
 const databaseUuidSchema = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "UUID inválido");
 const manualModifierSchema = z.object({ group: z.string().trim().min(1).max(120), option: z.string().trim().min(1).max(120) });
@@ -27,7 +33,15 @@ const manualOrderLineSchema = z.object({
 const publicOrderIntentLineSchema = manualOrderLineSchema.omit({ note: true });
 export const createPublicOrderIntentInputSchema = z.object({
   clientReference: z.string().trim().min(16).max(100),
+  fulfillment: orderFulfillmentSchema.extract(["PICKUP", "DELIVERY"]).default("PICKUP"),
+  deliveryAddress: z.string().trim().max(500).nullable().optional(),
+  deliveryReference: z.string().trim().max(200).nullable().optional(),
+  transferHolderName: z.string().trim().max(160).nullable().optional(),
   lines: z.array(publicOrderIntentLineSchema).min(1).max(100),
+}).superRefine((input, context) => {
+  if (input.fulfillment !== "DELIVERY") return;
+  if (!input.deliveryAddress) context.addIssue({ code: "custom", path: ["deliveryAddress"], message: "La dirección de delivery es obligatoria." });
+  if (!input.transferHolderName) context.addIssue({ code: "custom", path: ["transferHolderName"], message: "El titular de la transferencia es obligatorio." });
 });
 
 export const createManualOrderInputSchema = z.object({
@@ -41,6 +55,15 @@ export const createManualOrderInputSchema = z.object({
 });
 
 export type CreateManualOrderInput = z.infer<typeof createManualOrderInputSchema>;
+
+type OrderWorkflow = {
+  verificationStatus: "PENDING" | "VERIFIED";
+  paymentStatus: "NOT_REQUIRED" | "PENDING";
+  deliveryAddress: string | null;
+  deliveryReference: string | null;
+  deliveryFeeAmount: number;
+  transferHolderName: string | null;
+};
 
 export function transitionOrderData(toStatus: OrderStatus, reason: string | null | undefined, now = new Date()) {
   return {
@@ -71,7 +94,7 @@ function resolveModifiers(product: ManualProduct, modifiers: CreateManualOrderIn
   return modifiers.map((modifier) => ({ group: modifier.group, option: grouped.get(modifier.group)?.shift() ?? modifier.option }));
 }
 
-export async function createManualOrder(input: unknown, actorId: string | null, clientReference: string | null = null, reason = "Pedido registrado manualmente", source: "WHATSAPP" | "PUBLIC_MENU" = "WHATSAPP") {
+export async function createManualOrder(input: unknown, actorId: string | null, clientReference: string | null = null, reason = "Pedido registrado manualmente", source: "WHATSAPP" | "PUBLIC_MENU" = "WHATSAPP", workflow: OrderWorkflow = { verificationStatus: "VERIFIED", paymentStatus: "NOT_REQUIRED", deliveryAddress: null, deliveryReference: null, deliveryFeeAmount: 0, transferHolderName: null }) {
   const parsed = createManualOrderInputSchema.parse(input);
   const productIds = [...new Set(parsed.lines.map((line) => line.productId))];
   const products = await db.product.findMany({ where: { id: { in: productIds }, archivedAt: null, published: true, available: true }, include: { modifierGroups: { include: { modifierGroup: { include: { options: true } } } } } }) as ManualProduct[];
@@ -87,7 +110,7 @@ export async function createManualOrder(input: unknown, actorId: string | null, 
   if (isD1Runtime) {
     const { createD1Order } = await import("@/modules/orders/d1-atomic.worker");
     const id = crypto.randomUUID();
-    await createD1Order({ id, source, fulfillment: parsed.fulfillment, customerName: parsed.customerName ?? null, customerPhone: parsed.customerPhone ?? null, tableLabel: parsed.tableLabel ?? null, notes: parsed.notes ?? null, subtotalAmount, adjustmentAmount: parsed.adjustmentAmount, totalAmount, clientReference, createdById: actorId, reason, lines: resolvedLines.map((line) => ({ ...line, id: crypto.randomUUID() })) });
+    await createD1Order({ id, source, fulfillment: parsed.fulfillment, verificationStatus: workflow.verificationStatus, paymentStatus: workflow.paymentStatus, deliveryAddress: workflow.deliveryAddress, deliveryReference: workflow.deliveryReference, deliveryFeeAmount: workflow.deliveryFeeAmount, transferHolderName: workflow.transferHolderName, customerName: parsed.customerName ?? null, customerPhone: parsed.customerPhone ?? null, tableLabel: parsed.tableLabel ?? null, notes: parsed.notes ?? null, subtotalAmount, adjustmentAmount: parsed.adjustmentAmount, totalAmount, clientReference, createdById: actorId, reason, lines: resolvedLines.map((line) => ({ ...line, id: crypto.randomUUID() })) });
     const order = await db.order.findUniqueOrThrow({ where: { id }, include: { lines: true } });
     const event = await db.orderEvent.findFirstOrThrow({ where: { orderId: id }, orderBy: { sequence: "desc" } });
     return { order, event };
@@ -97,6 +120,12 @@ export async function createManualOrder(input: unknown, actorId: string | null, 
       data: {
         source,
         fulfillment: parsed.fulfillment,
+        verificationStatus: workflow.verificationStatus,
+        paymentStatus: workflow.paymentStatus,
+        deliveryAddress: workflow.deliveryAddress,
+        deliveryReference: workflow.deliveryReference,
+        deliveryFeeAmount: workflow.deliveryFeeAmount,
+        transferHolderName: workflow.transferHolderName,
         customerName: parsed.customerName ?? null,
         customerPhone: parsed.customerPhone ?? null,
         tableLabel: parsed.tableLabel ?? null,
@@ -120,8 +149,11 @@ export async function createPublicOrderIntent(input: unknown) {
   const parsed = createPublicOrderIntentInputSchema.parse(input);
   const existing = await db.order.findUnique({ where: { clientReference: parsed.clientReference }, include: { lines: true } });
   if (existing) return { order: existing, event: null, reused: true };
+  const settings = await db.menuSettings.findFirstOrThrow();
+  if (parsed.fulfillment === "DELIVERY" && !settings.deliveryEnabled) throw new AppError("DELIVERY_UNAVAILABLE", "El delivery no está disponible en este momento.", 400);
+  const deliveryFeeAmount = parsed.fulfillment === "DELIVERY" ? settings.deliveryFeeAmount : 0;
   try {
-    return await createManualOrder({ fulfillment: "PICKUP", customerName: null, customerPhone: null, tableLabel: null, notes: "Intención registrada desde el menú. Confirmar recepción por WhatsApp.", adjustmentAmount: 0, lines: parsed.lines }, null, parsed.clientReference, "Intención preparada desde el menú público", "PUBLIC_MENU");
+    return await createManualOrder({ fulfillment: parsed.fulfillment, customerName: null, customerPhone: null, tableLabel: null, notes: "Intención registrada desde el menú. Confirmar recepción por WhatsApp.", adjustmentAmount: deliveryFeeAmount, lines: parsed.lines }, null, parsed.clientReference, "Intención preparada desde el menú público", "PUBLIC_MENU", { verificationStatus: "PENDING", paymentStatus: parsed.fulfillment === "DELIVERY" ? "PENDING" : "NOT_REQUIRED", deliveryAddress: parsed.deliveryAddress ?? null, deliveryReference: parsed.deliveryReference ?? null, deliveryFeeAmount, transferHolderName: parsed.transferHolderName ?? null });
   } catch (error) {
     const isClientReferenceConflict = error && typeof error === "object" && (("code" in error && error.code === "P2002") || ("message" in error && typeof error.message === "string" && error.message.includes("Order.clientReference")));
     if (isClientReferenceConflict) {
@@ -139,15 +171,24 @@ export async function transitionOrder(input: unknown, actorId: string) {
 
     try {
       assertValidTransition(current.status, parsed.toStatus);
-    } catch {
+  } catch {
       throw new AppError("INVALID_ORDER_TRANSITION", "El pedido no puede pasar a ese estado.", 409);
     }
+
+  const confirming = parsed.toStatus === "CONFIRMED";
+  const isDelivery = current.fulfillment === "DELIVERY";
+  if (confirming && isDelivery && !canConfirmDelivery(current.paymentStatus)) throw new AppError("PAYMENT_REQUIRED", "Confirmá el pago y el pedido con la acción operativa correspondiente.", 409);
+  const transitionNow = new Date();
+  const verificationStatus = confirming ? "VERIFIED" : null;
+  const verificationResolvedAt = confirming ? transitionNow.toISOString() : null;
+  const paymentStatus = confirming && isDelivery && parsed.confirmPayment ? "CONFIRMED" : null;
+  const paymentConfirmedAt = paymentStatus ? transitionNow.toISOString() : null;
 
   if (isD1Runtime) {
     const { transitionD1Order } = await import("@/modules/orders/d1-atomic.worker");
     const data = transitionOrderData(parsed.toStatus, parsed.reason);
     try {
-      await transitionD1Order({ orderId: parsed.orderId, fromStatus: current.status, toStatus: parsed.toStatus, reason: parsed.reason ?? null, actorId, cancellationReason: data.cancellationReason ?? null, confirmedAt: data.confirmedAt?.toISOString() ?? null, closedAt: data.closedAt?.toISOString() ?? null });
+      await transitionD1Order({ orderId: parsed.orderId, fromStatus: current.status, toStatus: parsed.toStatus, reason: parsed.reason ?? null, actorId, cancellationReason: data.cancellationReason ?? null, confirmedAt: data.confirmedAt?.toISOString() ?? null, closedAt: data.closedAt?.toISOString() ?? null, verificationStatus, verificationResolvedAt, paymentStatus, paymentConfirmedAt, requireConfirmedPayment: confirming && isDelivery });
     } catch (error) {
       if (error instanceof Error && (["D1_ORDER_CHANGED", "D1_BATCH_FAILED"].includes(error.message) || /OrderEvent\.sequence|SQLITE_BUSY|database is locked/i.test(error.message))) throw new AppError("ORDER_CHANGED", "El pedido cambió mientras lo actualizabas. Recargá e intentá de nuevo.", 409);
       throw error;
@@ -159,9 +200,9 @@ export async function transitionOrder(input: unknown, actorId: string) {
   return db.$transaction(async (tx: { order: typeof db.order; orderEvent: typeof db.orderEvent; $executeRaw: typeof db.$executeRaw }) => {
     const txCurrent = await tx.order.findUnique({ where: { id: parsed.orderId } });
     if (!txCurrent) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
-    const result = await tx.order.updateMany({
-      where: { id: parsed.orderId, status: txCurrent.status },
-      data: { ...transitionOrderData(parsed.toStatus, parsed.reason), updatedById: actorId },
+      const result = await tx.order.updateMany({
+      where: { id: parsed.orderId, status: txCurrent.status, paymentStatus: parsed.toStatus === "CONFIRMED" && txCurrent.fulfillment === "DELIVERY" ? "CONFIRMED" : undefined },
+      data: { ...transitionOrderData(parsed.toStatus, parsed.reason), verificationStatus: verificationStatus ?? undefined, verificationResolvedAt: verificationResolvedAt ?? undefined, paymentStatus: paymentStatus ?? undefined, paymentConfirmedAt: paymentConfirmedAt ?? undefined, updatedById: actorId },
     });
     if (result.count !== 1) throw new AppError("ORDER_CHANGED", "El pedido cambió mientras lo actualizabas. Recargá e intentá de nuevo.", 409);
 
@@ -170,4 +211,32 @@ export async function transitionOrder(input: unknown, actorId: string) {
     const order = await tx.order.findUniqueOrThrow({ where: { id: parsed.orderId }, include: { lines: true, events: { orderBy: { createdAt: "asc" } } } });
     return { order, event };
   });
+}
+
+export async function applyOrderWorkflowAction(input: unknown, actorId: string) {
+  const parsed = orderWorkflowActionSchema.parse(input);
+  const current = await db.order.findUnique({ where: { id: parsed.orderId } });
+  if (!current) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
+  if (parsed.action === "CONFIRM_PAYMENT_AND_ORDER" && (current.fulfillment !== "DELIVERY" || current.status !== "RECEIVED" || current.verificationStatus !== "PENDING" || !["PENDING", "REPORTED"].includes(current.paymentStatus))) throw new AppError("DELIVERY_CONFIRMATION_NOT_AVAILABLE", "Este delivery no admite confirmar pago y pedido.", 409);
+  if (parsed.action === "EXPIRE_PENDING" && current.verificationStatus !== "PENDING") throw new AppError("ORDER_NOT_PENDING", "El pedido ya no está pendiente.", 409);
+  if (parsed.action === "MARK_NO_SHOW" && (current.fulfillment !== "PICKUP" || !["READY", "DELIVERED"].includes(current.status) || current.noShowAt)) throw new AppError("NO_SHOW_NOT_AVAILABLE", "Este pedido no admite no-show.", 409);
+  if (parsed.action === "REPORT_PAYMENT" && (current.fulfillment !== "DELIVERY" || current.paymentStatus !== "PENDING")) throw new AppError("PAYMENT_REPORT_NOT_AVAILABLE", "Este pedido no admite informar pago.", 409);
+  if (parsed.action === "REJECT_PAYMENT" && (current.fulfillment !== "DELIVERY" || !["PENDING", "REPORTED"].includes(current.paymentStatus))) throw new AppError("PAYMENT_REJECT_NOT_AVAILABLE", "Este pedido no admite rechazar pago.", 409);
+  if (parsed.action === "REQUIRE_REFUND" && (current.fulfillment !== "DELIVERY" || current.paymentStatus !== "CONFIRMED" || current.status !== "CANCELLED" || current.refundStatus !== "NOT_REQUIRED")) throw new AppError("REFUND_NOT_AVAILABLE", "Este pedido no admite solicitar devolución.", 409);
+  if (parsed.action === "MARK_REFUNDED" && current.refundStatus !== "REQUIRED") throw new AppError("REFUND_NOT_REQUIRED", "No hay una devolución pendiente.", 409);
+  const reason = parsed.action === "CONFIRM_PAYMENT_AND_ORDER" ? "Pago verificado y pedido confirmado" : parsed.action === "EXPIRE_PENDING" ? "Cierre de jornada: intención pendiente" : parsed.action === "MARK_NO_SHOW" ? "No-show registrado" : parsed.action === "REPORT_PAYMENT" ? "Pago informado para verificación" : parsed.action === "REJECT_PAYMENT" ? "Pago rechazado" : parsed.action === "REQUIRE_REFUND" ? "Devolución manual requerida" : "Devolución manual realizada";
+  const refundStatus = parsed.action === "REQUIRE_REFUND" ? "REQUIRED" : parsed.action === "MARK_REFUNDED" ? "REFUNDED" : undefined;
+  if (isD1Runtime) {
+    const { applyD1WorkflowAction } = await import("@/modules/orders/d1-atomic.worker");
+    await applyD1WorkflowAction({ orderId: parsed.orderId, action: parsed.action, actorId, fromStatus: current.status, refundStatus, reason });
+  } else {
+    await db.$transaction(async (tx: { order: typeof db.order; orderEvent: typeof db.orderEvent }) => {
+      const now = new Date();
+      const data = parsed.action === "CONFIRM_PAYMENT_AND_ORDER" ? { status: "CONFIRMED" as const, verificationStatus: "VERIFIED" as const, verificationResolvedAt: now, paymentStatus: "CONFIRMED" as const, paymentConfirmedAt: now, confirmedAt: now } : parsed.action === "EXPIRE_PENDING" ? { status: "CANCELLED" as const, verificationStatus: "EXPIRED" as const, verificationResolvedAt: now, closedAt: now } : parsed.action === "MARK_NO_SHOW" ? { noShowAt: now } : parsed.action === "REPORT_PAYMENT" || parsed.action === "REJECT_PAYMENT" ? { paymentStatus: parsed.action === "REPORT_PAYMENT" ? "REPORTED" as const : "REJECTED" as const, paymentReportedAt: now } : { refundStatus, refundRequiredAt: parsed.action === "REQUIRE_REFUND" ? now : undefined, refundedAt: parsed.action === "MARK_REFUNDED" ? now : undefined };
+      const result = await tx.order.updateMany({ where: { id: parsed.orderId, status: current.status, fulfillment: ["MARK_NO_SHOW", "CONFIRM_PAYMENT_AND_ORDER"].includes(parsed.action) ? parsed.action === "MARK_NO_SHOW" ? "PICKUP" : "DELIVERY" : undefined, noShowAt: parsed.action === "MARK_NO_SHOW" ? null : undefined, verificationStatus: ["EXPIRE_PENDING", "CONFIRM_PAYMENT_AND_ORDER"].includes(parsed.action) ? "PENDING" : undefined, paymentStatus: parsed.action === "CONFIRM_PAYMENT_AND_ORDER" ? { in: ["PENDING", "REPORTED"] } : parsed.action === "REPORT_PAYMENT" ? "PENDING" : parsed.action === "REJECT_PAYMENT" ? { in: ["PENDING", "REPORTED"] } : undefined, refundStatus: parsed.action === "REQUIRE_REFUND" ? "NOT_REQUIRED" : parsed.action === "MARK_REFUNDED" ? "REQUIRED" : undefined }, data: { ...data, updatedById: actorId } });
+      if (result.count !== 1) throw new AppError("ORDER_ACTION_CHANGED", "El pedido cambió mientras aplicabas la acción.", 409);
+      await tx.orderEvent.create({ data: { orderId: parsed.orderId, fromStatus: current.status, toStatus: parsed.action === "EXPIRE_PENDING" ? "CANCELLED" : current.status, actorId, reason } });
+    });
+  }
+  return db.order.findUniqueOrThrow({ where: { id: parsed.orderId }, include: { lines: true, events: { orderBy: { createdAt: "asc" } } } });
 }

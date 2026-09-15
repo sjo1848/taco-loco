@@ -1,25 +1,29 @@
 # Taco Loco — Resume / Orchestration State
 
-Updated: 2026-09-13
+Updated: 2026-09-15
 
 - Repository: `sjo1848/taco-loco`
-- Branch: `migration/cloudflare-native`
-- Application candidate: `f896b6b7f3af22987aaf42097be1aacebeea556a`
+- Branch: `rework/tl-order-flow-01`
+- Application candidate: `ea99ca83d7e6831833a97a11e21d5585c0903273`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `STAGING_WHATSAPP_NUMBER_FIXED`
-- Active contract: `docs/contracts/TL-STAGING-CATALOG-PARITY-01.md`
+- State: `CORRECTIVE_INTERVENTION / STAGING_MANUAL_REVIEW_PASS`
+- Active contract: `docs/contracts/TL-TC-ORDER-FLOW-01.md`
 - Production: `NOT_AUTHORIZED`
 
 ## Proven checkpoint
 
-Remote staging already reached `REMOTE_INTEGRATION_PASS` for the application candidate. Worker + D1 + Static Assets, auth/session, orders/idempotency/transitions, events/SSE, logs/runtime, Independent Critic and Integration Review are PASS.
+The existing remote staging baseline remains historical evidence for the prior application candidate. Candidate `e6f2465` separates the explicit atomic payment-and-order confirmation action, enforces the generic confirmed-payment guard in both runtimes, and passes local validation, Independent Critic and Integration Review. Production remains `NOT_AUTHORIZED`.
 
 ## Current human decision
 
 Do not release production yet. Continue in the existing staging environment, restore the established Taco Loco catalog from the frozen former implementation, validate realistic behavior, then reopen the production gate.
 
 `workers.dev` is accepted as the preferred future initial zero-cost public URL. Staging remains available.
+
+## Order-flow Stage A checkpoint
+
+Stages B–D are reworked locally on exact candidate `e6f2465d827f853690ebc96d65db7030de5c484e`; local evidence, Independent Critic and Integration Review are PASS. Production remains `NOT_AUTHORIZED`.
 
 ## Catalog source
 
@@ -42,6 +46,12 @@ The staging `MenuSettings.whatsappPhone` value is corrected to `5492615956912`; 
 
 The existing staging Worker now serves 26 real product WebP assets through Workers Static Assets. Five canonical products retain the temporary placeholder because no source asset was supplied. Evidence: `docs/evidence/TL-STAGING-STATIC-PRODUCT-ASSETS-2026-09-13.md`.
 
+## Order-flow staging validation
+
+The fixed staging setting `deliveryEnabled=1`, `deliveryFeeAmount=3000`, `currency=ARS` enabled a bounded real DELIVERY journey on candidate `e6f2465`: server-side fee, address/transfer data, idempotency, payment report, atomic payment-and-order confirmation, operation gate, final delivery, events/SSE replay, admin/session and PICKUP regression all passed. Evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465-delivery-2026-09-15.md`.
+
+The corrective workflow on exact candidate `ea99ca8` makes `/admin` redirect to `/admin/orders`, preserves product CRUD at `/admin/products`, and proves owner SSE arrival of pending PICKUP/DELIVERY submissions without refresh. Evidence: `docs/evidence/TL-STAGING-MANUAL-REVIEW-WORKFLOW-94719f8-2026-09-15.md`. Independent Critic and Integration Review: PASS.
+
 ## Next authorized objective
 
-Human manually reviews the existing staging URL. Keep staging available. Production remains `NOT_AUTHORIZED`; do not reopen production eligibility or perform production actions without a future explicit human instruction.
+Human review of the corrected staging operational workflow after Independent Critic and Integration Review. Production remains `NOT_AUTHORIZED`.

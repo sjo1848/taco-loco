@@ -1,9 +1,16 @@
 import { z } from "zod";
 
 export const orderStatusSchema = z.enum(["RECEIVED", "CONFIRMED", "IN_PREPARATION", "READY", "DELIVERED", "CANCELLED"]);
-export const orderFulfillmentSchema = z.enum(["PICKUP", "DINE_IN"]);
+export const orderFulfillmentSchema = z.enum(["PICKUP", "DINE_IN", "DELIVERY"]);
+export const verificationStatusSchema = z.enum(["PENDING", "VERIFIED", "EXPIRED", "REJECTED"]);
+export const paymentStatusSchema = z.enum(["NOT_REQUIRED", "PENDING", "REPORTED", "CONFIRMED", "REJECTED"]);
+export const refundStatusSchema = z.enum(["NOT_REQUIRED", "REQUIRED", "REFUNDED"]);
+
 export type OrderStatus = z.infer<typeof orderStatusSchema>;
 export type OrderFulfillment = z.infer<typeof orderFulfillmentSchema>;
+export type VerificationStatus = z.infer<typeof verificationStatusSchema>;
+export type PaymentStatus = z.infer<typeof paymentStatusSchema>;
+export type RefundStatus = z.infer<typeof refundStatusSchema>;
 
 const ORDER_STATUS = { RECEIVED: "RECEIVED", CONFIRMED: "CONFIRMED", IN_PREPARATION: "IN_PREPARATION", READY: "READY", DELIVERED: "DELIVERED", CANCELLED: "CANCELLED" } as const;
 

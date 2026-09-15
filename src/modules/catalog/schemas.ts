@@ -40,6 +40,8 @@ export const menuSettingsInputSchema = z.object({
   acceptingOrders: z.boolean().default(true),
   statusMessage: z.string().trim().max(160).nullable().default(null),
   weeklySchedule: weeklyScheduleSchema,
+  deliveryEnabled: z.boolean().default(false),
+  deliveryFeeAmount: z.number().int().nonnegative().max(100000000).default(0),
 });
 
 export type CategoryInput = z.infer<typeof categoryInputSchema>;

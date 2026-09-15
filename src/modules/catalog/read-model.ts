@@ -23,7 +23,7 @@ export type MenuReadModel = {
 };
 
 type ReadModelInput = {
-  settings: { businessName: string; whatsappPhone: string; whatsappMessage: string; currency: string; acceptingOrders: boolean; statusMessage: string | null; weeklySchedule: unknown };
+  settings: { businessName: string; whatsappPhone: string; whatsappMessage: string; currency: string; acceptingOrders: boolean; statusMessage: string | null; weeklySchedule: unknown; deliveryEnabled: boolean; deliveryFeeAmount: number };
   categories: Array<{
     id: string; name: string; slug: string;
     products: Array<{
@@ -43,6 +43,8 @@ export function buildMenuReadModel(input: ReadModelInput): MenuReadModel {
       acceptingOrders: input.settings.acceptingOrders,
       statusMessage: input.settings.statusMessage,
       weeklySchedule: input.settings.weeklySchedule as PublicSettings["weeklySchedule"],
+      deliveryEnabled: input.settings.deliveryEnabled,
+      deliveryFeeAmount: input.settings.deliveryFeeAmount,
       whatsappUrl: normalizeWhatsAppUrl(input.settings.whatsappPhone, input.settings.whatsappMessage),
       operatingContext: getOperatingContext(input.settings),
     },

@@ -1,24 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { createManualOrderInputSchema, transitionOrderData, transitionOrderInputSchema } from "./service";
+import { canConfirmDelivery, createPublicOrderIntentInputSchema } from "./service";
 
-describe("order transition service", () => {
-  it("requires a reason for cancellation at the input boundary", () => {
-    expect(transitionOrderInputSchema.safeParse({ orderId: "123e4567-e89b-12d3-a456-426614174000", toStatus: "CANCELLED" }).success).toBe(false);
-    expect(transitionOrderInputSchema.safeParse({ orderId: "123e4567-e89b-12d3-a456-426614174000", toStatus: "CANCELLED", reason: "Sin disponibilidad" }).success).toBe(true);
+const line = { productId: "11111111-1111-4111-8111-111111111111", quantity: 1, modifiers: [] };
+
+describe("public order intent checkout", () => {
+  it("defaults to pickup without customer identity or payment", () => {
+    expect(createPublicOrderIntentInputSchema.parse({ clientReference: "client-reference-0001", lines: [line] })).toMatchObject({ fulfillment: "PICKUP" });
   });
 
-  it("sets confirmation and closing timestamps according to the target state", () => {
-    const now = new Date("2026-08-09T19:30:00.000Z");
-    expect(transitionOrderData("CONFIRMED", null, now)).toMatchObject({ status: "CONFIRMED", confirmedAt: now, closedAt: undefined });
-    expect(transitionOrderData("DELIVERED", null, now)).toMatchObject({ status: "DELIVERED", closedAt: now });
-    expect(transitionOrderData("CANCELLED", "Sin disponibilidad", now)).toMatchObject({ status: "CANCELLED", cancellationReason: "Sin disponibilidad", closedAt: now });
+  it("requires delivery address and transfer holder", () => {
+    const result = createPublicOrderIntentInputSchema.safeParse({ clientReference: "client-reference-0002", fulfillment: "DELIVERY", lines: [line] });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues.map((issue) => issue.path.join("."))).toEqual(expect.arrayContaining(["deliveryAddress", "transferHolderName"]));
   });
 
-  it("accepts only catalog references for manual order lines", () => {
-    const productId = "123e4567-e89b-12d3-a456-426614174000";
-    expect(createManualOrderInputSchema.safeParse({ lines: [{ productId, quantity: 2 }] }).success).toBe(true);
-    expect(createManualOrderInputSchema.safeParse({ lines: [{ productId: "00000000-0000-0000-0000-000000000002", quantity: 1 }] }).success).toBe(true);
-    expect(createManualOrderInputSchema.safeParse({ lines: [{ productId: "not-an-id", quantity: 1 }] }).success).toBe(false);
-    expect(createManualOrderInputSchema.safeParse({ lines: [] }).success).toBe(false);
+  it("accepts the complete delivery checkout payload", () => {
+    expect(createPublicOrderIntentInputSchema.parse({ clientReference: "client-reference-0003", fulfillment: "DELIVERY", deliveryAddress: "Calle 1 123", deliveryReference: "Portón negro", transferHolderName: "Ana Pérez", lines: [line] })).toMatchObject({ fulfillment: "DELIVERY", deliveryAddress: "Calle 1 123", transferHolderName: "Ana Pérez" });
+  });
+
+  it("only allows delivery confirmation after confirmed or explicitly verified reported payment", () => {
+    expect(canConfirmDelivery("NOT_REQUIRED")).toBe(false);
+    expect(canConfirmDelivery("PENDING")).toBe(false);
+    expect(canConfirmDelivery("REPORTED")).toBe(false);
+    expect(canConfirmDelivery("CONFIRMED")).toBe(true);
   });
 });

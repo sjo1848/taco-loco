@@ -12,6 +12,9 @@ type OrderSnapshot = {
   orderNumber: number;
   status: string;
   fulfillment: string;
+  verificationStatus: string;
+  paymentStatus: string;
+  refundStatus: string;
   source: string;
   customerName: string | null;
   customerPhone: string | null;
@@ -31,6 +34,9 @@ function serializeOrder(order: Awaited<ReturnType<typeof orderRepository.findByI
     orderNumber: order.orderNumber,
     status: order.status,
     fulfillment: order.fulfillment,
+    verificationStatus: order.verificationStatus,
+    paymentStatus: order.paymentStatus,
+    refundStatus: order.refundStatus,
     source: order.source,
     customerName: order.customerName,
     customerPhone: order.customerPhone,
