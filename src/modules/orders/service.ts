@@ -200,8 +200,8 @@ export async function transitionOrder(input: unknown, actorId: string) {
   return db.$transaction(async (tx: { order: typeof db.order; orderEvent: typeof db.orderEvent; $executeRaw: typeof db.$executeRaw }) => {
     const txCurrent = await tx.order.findUnique({ where: { id: parsed.orderId } });
     if (!txCurrent) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
-    const result = await tx.order.updateMany({
-      where: { id: parsed.orderId, status: txCurrent.status },
+      const result = await tx.order.updateMany({
+      where: { id: parsed.orderId, status: txCurrent.status, paymentStatus: parsed.toStatus === "CONFIRMED" && txCurrent.fulfillment === "DELIVERY" ? { in: ["REPORTED", "CONFIRMED"] } : undefined },
       data: { ...transitionOrderData(parsed.toStatus, parsed.reason), verificationStatus: verificationStatus ?? undefined, verificationResolvedAt: verificationResolvedAt ?? undefined, paymentStatus: paymentStatus ?? undefined, paymentConfirmedAt: paymentConfirmedAt ?? undefined, updatedById: actorId },
     });
     if (result.count !== 1) throw new AppError("ORDER_CHANGED", "El pedido cambió mientras lo actualizabas. Recargá e intentá de nuevo.", 409);
