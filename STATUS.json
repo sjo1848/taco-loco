@@ -4,7 +4,7 @@
   "sourceRepo": "sjo1848/taco-loco-foodtrack",
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
   "targetBranch": "rework/tl-order-flow-01",
-  "technicalCandidate": "65de7048b9fc95e3523ddd73d927c82db72bfe54",
+  "technicalCandidate": "c2c9330d587cb9f16aab629ea0596d131364917b",
   "stage": "ORDER_FLOW_STAGES_BCD_IMPLEMENTED_CRITIC_PENDING",
   "remoteIntegration": "PASS_BASELINE",
   "stagingWorker": "taco-loco-staging-20260913",
@@ -56,7 +56,7 @@
   "orderFlowStageACriticEvidence": "docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-independent-critic-d8d98f7.md",
   "orderFlowStageAIntegrationReview": "PASS",
   "orderFlowStageAIntegrationReviewEvidence": "docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-integration-review-d8d98f7.md",
-  "orderFlowStagesBCDEvidence": "docs/evidence/TL-TC-ORDER-FLOW-STAGES-BCD-65de704.md",
+  "orderFlowStagesBCDEvidence": "docs/evidence/TL-TC-ORDER-FLOW-STAGES-BCD-c2c9330.md",
   "orderFlowStagesBCD": "IMPLEMENTED_LOCAL_VALIDATION_PENDING",
-  "resumePoint": "Run Independent Critic on exact Stages B-D rework candidate 65de704, then Integration Review and staging-only validation. Production remains NOT_AUTHORIZED."
+  "resumePoint": "Run Independent Critic on exact Stages B-D rework candidate c2c9330, then Integration Review and staging-only validation. Production remains NOT_AUTHORIZED."
 }
