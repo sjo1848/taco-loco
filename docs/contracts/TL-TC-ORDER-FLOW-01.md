@@ -2,7 +2,7 @@
 
 **Artifact type:** Bounded Task Contract  
 **Method:** FALDEO Project Method v1.0 + Project Harness Minimum v1.0  
-**Status:** `READY_FOR_EXECUTION / STAGING_ONLY`  
+**Status:** `STAGING_ADMISSION_READY / STAGING_ONLY`  
 **Parent design:** `TL-HLD-001 — HUMAN_REVIEW_CLOSED / READY_FOR_TASK_CONTRACT`  
 **Production:** `NOT_AUTHORIZED`
 

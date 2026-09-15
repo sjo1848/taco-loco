@@ -4,16 +4,16 @@ Updated: 2026-09-15
 
 - Repository: `sjo1848/taco-loco`
 - Branch: `rework/tl-order-flow-01`
-- Application candidate: `d8d98f7196284ffe0464a562033241aebbaf4c3c`
+- Application candidate: `03fa3ce14d51e8ec2017c2a2ff9d00da19d79c04`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `ORDER_FLOW_STAGES_BCD_REWORKED / CRITIC_PENDING`
+- State: `ORDER_FLOW_STAGES_BCD_IMPLEMENTED / STAGING_ADMISSION_READY`
 - Active contract: `docs/contracts/TL-TC-ORDER-FLOW-01.md`
 - Production: `NOT_AUTHORIZED`
 
 ## Proven checkpoint
 
-Remote staging already reached `REMOTE_INTEGRATION_PASS` for the application candidate. Worker + D1 + Static Assets, auth/session, orders/idempotency/transitions, events/SSE, logs/runtime, Independent Critic and Integration Review are PASS.
+The existing remote staging baseline remains historical evidence for the prior application candidate. The current Stages B–D candidate has passed local validation, Independent Critic and Integration Review. No remote execution has been performed for this candidate.
 
 ## Current human decision
 
@@ -23,7 +23,7 @@ Do not release production yet. Continue in the existing staging environment, res
 
 ## Order-flow Stage A checkpoint
 
-Stages B–D are reworked locally on exact candidate `ce081a40e886d2fbf7afeaf1c04321001faeff0d`; evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGES-BCD-ce081a4.md`. Independent Critic for this cross-surface increment is pending. Production remains `NOT_AUTHORIZED`.
+Stages B–D are reworked locally on exact candidate `03fa3ce14d51e8ec2017c2a2ff9d00da19d79c04`; evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGES-BCD-03fa3ce.md`. Independent Critic and Integration Review are PASS. Production remains `NOT_AUTHORIZED`.
 
 ## Catalog source
 
@@ -48,4 +48,4 @@ The existing staging Worker now serves 26 real product WebP assets through Worke
 
 ## Next authorized objective
 
-Run Independent Critic, then Integration Review and bounded staging validation for the exact candidate. Keep staging available. Production remains `NOT_AUTHORIZED`; do not reopen production eligibility or perform production actions without a future explicit human instruction.
+Run bounded staging validation for exact candidate `03fa3ce14d51e8ec2017c2a2ff9d00da19d79c04`. Keep staging available. Production remains `NOT_AUTHORIZED`; do not reopen production eligibility or perform production actions without a future explicit human instruction.

@@ -1,10 +1,10 @@
 {
   "contract": "TL-TC-ORDER-FLOW-01",
-  "status": "READY_FOR_EXECUTION",
+  "status": "STAGING_ADMISSION_READY",
   "sourceRepo": "sjo1848/taco-loco-foodtrack",
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
   "targetBranch": "rework/tl-order-flow-01",
-  "technicalCandidate": "ce081a40e886d2fbf7afeaf1c04321001faeff0d",
+  "technicalCandidate": "03fa3ce14d51e8ec2017c2a2ff9d00da19d79c04",
   "stage": "ORDER_FLOW_STAGES_BCD_IMPLEMENTED_CRITIC_PENDING",
   "remoteIntegration": "PASS_BASELINE",
   "stagingWorker": "taco-loco-staging-20260913",
@@ -49,7 +49,7 @@
   "orderFlowHldPath": "docs/product/TL-HIGH-LEVEL-WORKFLOWS.md",
   "orderFlowTaskContract": "STAGES_BCD_IMPLEMENTED_STAGING_ONLY",
   "orderFlowTaskContractPath": "docs/contracts/TL-TC-ORDER-FLOW-01.md",
-  "orderFlowImplementation": "STAGES_BCD_TECHNICAL_VALIDATION_PENDING",
+  "orderFlowImplementation": "STAGES_BCD_TECHNICAL_PASS_CRITIC_PASS_INTEGRATION_PENDING",
   "orderFlowStageACandidate": "d8d98f7196284ffe0464a562033241aebbaf4c3c",
   "orderFlowStageAEvidence": "docs/evidence/TL-TC-ORDER-FLOW-STAGE-A-d8d98f7.md",
   "orderFlowStageACritic": "PASS",
@@ -57,6 +57,10 @@
   "orderFlowStageAIntegrationReview": "PASS",
   "orderFlowStageAIntegrationReviewEvidence": "docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-integration-review-d8d98f7.md",
   "orderFlowStagesBCDEvidence": "docs/evidence/TL-TC-ORDER-FLOW-STAGES-BCD-ce081a4.md",
-  "orderFlowStagesBCD": "IMPLEMENTED_LOCAL_VALIDATION_PENDING",
-  "resumePoint": "Run Independent Critic on exact Stages B-D rework candidate ce081a4, then Integration Review and staging-only validation. Production remains NOT_AUTHORIZED."
+  "orderFlowStagesBCDCritic": "PASS",
+  "orderFlowStagesBCDCriticEvidence": "docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-independent-critic-03fa3ce.md",
+  "orderFlowStagesBCDIntegrationReview": "PASS",
+  "orderFlowStagesBCDIntegrationReviewEvidence": "docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-integration-review-03fa3ce.md",
+  "orderFlowStagesBCD": "STAGING_ADMISSION_READY",
+  "resumePoint": "Run bounded staging validation for exact candidate 03fa3ce. Production remains NOT_AUTHORIZED."
 }
