@@ -44,6 +44,12 @@ describe("D1 atomic order adapter", () => {
     expect(sql[2]).toContain("COALESCE(MAX(\"sequence\"), 0) + 1");
   });
 
+  it("accepts DELIVERY fulfillment through the D1 order writer", async () => {
+    const { db, sql } = fakeD1();
+    await createD1OrderWith(db, { ...order, fulfillment: "DELIVERY" });
+    expect(sql[0]).toContain('"fulfillment"');
+  });
+
   it("does not convert a failed batch into a partial success", async () => {
     const { db } = fakeD1({ reject: true });
     await expect(createD1OrderWith(db, order)).rejects.toThrow("UNIQUE constraint failed");
