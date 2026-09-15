@@ -4,7 +4,7 @@
   "sourceRepo": "sjo1848/taco-loco-foodtrack",
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
   "targetBranch": "rework/tl-order-flow-01",
-  "technicalCandidate": "e6f2465d827f853690ebc96d65db7030de5c484e",
+  "technicalCandidate": "ea99ca83d7e6831833a97a11e21d5585c0903273",
   "stage": "ORDER_FLOW_STAGES_BCD_IMPLEMENTED_CRITIC_PENDING",
   "remoteIntegration": "PASS_BASELINE",
   "stagingWorker": "taco-loco-staging-20260913",
@@ -62,7 +62,7 @@
   "orderFlowStagesBCDIntegrationReview": "PASS",
   "orderFlowStagesBCDIntegrationReviewEvidence": "docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-integration-review-e6f2465.md",
   "orderFlowStagesBCD": "STAGING_VALIDATION_HUMAN_INPUT",
-  "orderFlowStagingValidation": "STAGING_ORDER_FLOW_PASS",
+  "orderFlowStagingValidation": "STAGING_MANUAL_REVIEW_PASS",
   "orderFlowStagingEvidence": "docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465-delivery-2026-09-15.md",
   "orderFlowStagingDeploymentVersion": "f88fab8a-779b-410c-a7d8-4d0fc7127ef4",
   "orderFlowStagingDeliveryFee": 3000,
@@ -70,5 +70,10 @@
   "orderFlowStagingDeliveryOrder": "70ddef94-88b9-4de9-87d8-b9e608837c7b",
   "orderFlowStagingDeliveryOrderNumber": 17,
   "orderFlowStagingPickupOrderNumber": 18,
-  "resumePoint": "Bounded DELIVERY/PICKUP staging validation PASS; human review of staging order-flow journey is next. Production remains NOT_AUTHORIZED."
+  "correctiveWorkflowEvidence": "docs/evidence/TL-STAGING-MANUAL-REVIEW-WORKFLOW-94719f8-2026-09-15.md",
+  "correctiveWorkflowCandidate": "ea99ca83d7e6831833a97a11e21d5585c0903273",
+  "correctiveWorkflowDeploymentVersion": "d6c7627d-9752-4d29-8ab7-0fbdf8091847",
+  "correctiveWorkflowIndependentCritic": "PENDING",
+  "correctiveWorkflowIntegrationReview": "PENDING",
+  "resumePoint": "Corrected staging operational workflow validated; Independent Critic and Integration Review pending for exact candidate ea99ca8. Production remains NOT_AUTHORIZED."
 }

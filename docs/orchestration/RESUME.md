@@ -4,10 +4,10 @@ Updated: 2026-09-15
 
 - Repository: `sjo1848/taco-loco`
 - Branch: `rework/tl-order-flow-01`
-- Application candidate: `e6f2465d827f853690ebc96d65db7030de5c484e`
+- Application candidate: `ea99ca83d7e6831833a97a11e21d5585c0903273`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `STAGING_ORDER_FLOW_PASS`
+- State: `CORRECTIVE_INTERVENTION / STAGING_MANUAL_REVIEW_PASS`
 - Active contract: `docs/contracts/TL-TC-ORDER-FLOW-01.md`
 - Production: `NOT_AUTHORIZED`
 
@@ -50,6 +50,8 @@ The existing staging Worker now serves 26 real product WebP assets through Worke
 
 The fixed staging setting `deliveryEnabled=1`, `deliveryFeeAmount=3000`, `currency=ARS` enabled a bounded real DELIVERY journey on candidate `e6f2465`: server-side fee, address/transfer data, idempotency, payment report, atomic payment-and-order confirmation, operation gate, final delivery, events/SSE replay, admin/session and PICKUP regression all passed. Evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465-delivery-2026-09-15.md`.
 
+The corrective workflow on exact candidate `ea99ca8` makes `/admin` redirect to `/admin/orders`, preserves product CRUD at `/admin/products`, and proves owner SSE arrival of pending PICKUP/DELIVERY submissions without refresh. Evidence: `docs/evidence/TL-STAGING-MANUAL-REVIEW-WORKFLOW-94719f8-2026-09-15.md`.
+
 ## Next authorized objective
 
-Human review of the validated staging order-flow journey. Production remains `NOT_AUTHORIZED`.
+Human review of the corrected staging operational workflow after Independent Critic and Integration Review. Production remains `NOT_AUTHORIZED`.

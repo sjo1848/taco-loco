@@ -2,9 +2,9 @@
 Updated: 2026-09-15
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: ORDER_FLOW_STAGES_BCD_IMPLEMENTED / STAGING_ORDER_FLOW_PASS
+Status: CORRECTIVE_INTERVENTION / STAGING_MANUAL_REVIEW_PASS
 Active contract: TL-TC-ORDER-FLOW-01 (`STAGE_A_PASS / STAGING_ONLY`)
-Application candidate: `e6f2465d827f853690ebc96d65db7030de5c484e`
+Application candidate: `ea99ca83d7e6831833a97a11e21d5585c0903273`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
@@ -86,9 +86,10 @@ For staging manual review only, products without a dedicated asset may temporari
 - Order-flow Stages B–D Independent Critic: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-independent-critic-e6f2465.md`.
 - Order-flow Stages B–D Integration Review: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-integration-review-e6f2465.md`.
 - Remote staging validation: STAGING_ORDER_FLOW_PASS; DELIVERY and PICKUP bounded journeys, server-side fee, payment gating, idempotency, events/replay, admin/session and runtime PASS. Evidence `docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465-delivery-2026-09-15.md`.
+- Corrective workflow review: STAGING_MANUAL_REVIEW_PASS; authenticated `/admin` opens the operational order board, product CRUD remains at `/admin/products`, and pending PICKUP/DELIVERY orders arrive through SSE without refresh. Exact candidate `ea99ca83d7e6831833a97a11e21d5585c0903273`; evidence `docs/evidence/TL-STAGING-MANUAL-REVIEW-WORKFLOW-94719f8-2026-09-15.md`.
 - Active Task Contract: STAGES_BCD_IMPLEMENTED / STAGING_ONLY.
 - Production: NOT_AUTHORIZED_BY_EXPLICIT_HUMAN_HOLD.
 
 ## Next action
 
-Human review of the validated staging order-flow journey. Production remains unauthorized.
+Human review of the corrected staging operational workflow. Production remains unauthorized.
