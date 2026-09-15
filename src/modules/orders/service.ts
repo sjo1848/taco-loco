@@ -15,6 +15,9 @@ export const transitionOrderInputSchema = z.object({
 });
 
 export type TransitionOrderInput = z.infer<typeof transitionOrderInputSchema>;
+export function canConfirmDelivery(paymentStatus: string, confirmPayment: boolean) {
+  return paymentStatus === "CONFIRMED" || (paymentStatus === "REPORTED" && confirmPayment);
+}
 export const orderWorkflowActionSchema = z.object({ orderId: z.uuid(), action: z.enum(["EXPIRE_PENDING", "MARK_NO_SHOW", "REPORT_PAYMENT", "REJECT_PAYMENT", "REQUIRE_REFUND", "MARK_REFUNDED"]) });
 export type OrderWorkflowActionInput = z.infer<typeof orderWorkflowActionSchema>;
 
@@ -174,7 +177,7 @@ export async function transitionOrder(input: unknown, actorId: string) {
 
   const confirming = parsed.toStatus === "CONFIRMED";
   const isDelivery = current.fulfillment === "DELIVERY";
-  if (confirming && isDelivery && (current.paymentStatus === "PENDING" || current.paymentStatus === "REJECTED" || (current.paymentStatus === "REPORTED" && !parsed.confirmPayment))) throw new AppError("PAYMENT_REQUIRED", "Primero verificá el pago informado antes de confirmar este delivery.", 409);
+  if (confirming && isDelivery && !canConfirmDelivery(current.paymentStatus, parsed.confirmPayment)) throw new AppError("PAYMENT_REQUIRED", "Primero verificá el pago informado antes de confirmar este delivery.", 409);
   const transitionNow = new Date();
   const verificationStatus = confirming ? "VERIFIED" : null;
   const verificationResolvedAt = confirming ? transitionNow.toISOString() : null;
