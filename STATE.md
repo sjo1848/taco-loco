@@ -80,7 +80,7 @@ For staging manual review only, products without a dedicated asset may temporari
 - Static product assets in staging: PROVEN PASS; 26 real WebP assets, 5 staging placeholders.
 - Order-flow HLD: HUMAN_REVIEW_CLOSED.
 - Order-flow Stage A implementation: TECHNICAL_PASS; exact candidate `d8d98f7196284ffe0464a562033241aebbaf4c3c`.
-- Stage A Independent Critic: PASS; evidence `docs/evidence/TL-TC-ORDER-FLOW-STAGE-A-d8d98f7.md`.
+- Stage A Independent Critic: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-independent-critic-d8d98f7.md`.
 - Stage A Integration Review: PENDING durable synchronization after governance repair.
 - Active Task Contract: STAGE_A_PASS / STAGING_ONLY.
 - Production: NOT_AUTHORIZED_BY_EXPLICIT_HUMAN_HOLD.

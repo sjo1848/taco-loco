@@ -53,6 +53,7 @@
   "orderFlowStageACandidate": "d8d98f7196284ffe0464a562033241aebbaf4c3c",
   "orderFlowStageAEvidence": "docs/evidence/TL-TC-ORDER-FLOW-STAGE-A-d8d98f7.md",
   "orderFlowStageACritic": "PASS",
+  "orderFlowStageACriticEvidence": "docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-independent-critic-d8d98f7.md",
   "orderFlowStageAIntegrationReview": "PENDING_DURABLE_SYNCHRONIZATION",
   "resumePoint": "Complete Stage A integration-review admission after durable-state synchronization, then continue Stage B in staging only. Production remains NOT_AUTHORIZED."
 }
