@@ -41,8 +41,9 @@ describe("D1 atomic order adapter", () => {
     await createD1OrderWith(db, order);
     expect(sql).toHaveLength(3);
     expect(sql[0]).toContain("COALESCE(MAX(\"orderNumber\"), 0) + 1");
+    expect(sql[0]).toContain('VALUES (?, (SELECT COALESCE(MAX("orderNumber"), 0) + 1 FROM "Order"),');
     expect(sql[1]).toContain("modifiersSnapshot");
-    expect(sql[2]).toContain("COALESCE(MAX(\"sequence\"), 0) + 1");
+    expect(sql[2]).toContain('VALUES (?, (SELECT COALESCE(MAX("sequence"), 0) + 1 FROM "OrderEvent"),');
     expect((sql[0].match(/\?/g) ?? []).length).toBe(bindings[0]?.length);
   });
 
