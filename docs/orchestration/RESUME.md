@@ -7,7 +7,7 @@ Updated: 2026-09-15
 - Application candidate: `d8d98f7196284ffe0464a562033241aebbaf4c3c`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `ORDER_FLOW_STAGE_A_PASS / INTEGRATION_REVIEW_PENDING`
+- State: `ORDER_FLOW_STAGE_A_PASS / STAGE_B_READY`
 - Active contract: `docs/contracts/TL-TC-ORDER-FLOW-01.md`
 - Production: `NOT_AUTHORIZED`
 
@@ -23,7 +23,7 @@ Do not release production yet. Continue in the existing staging environment, res
 
 ## Order-flow Stage A checkpoint
 
-Stage A is implemented and locally validated on substantive candidate `d8d98f7196284ffe0464a562033241aebbaf4c3c`. The exact D1 migration/schema/model and atomic writer evidence is in `docs/evidence/TL-TC-ORDER-FLOW-STAGE-A-d8d98f7.md`. Independent Critic: `PASS`, persisted at `docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-independent-critic-d8d98f7.md`. Integration Review is being re-admitted after this governance synchronization. Stage B is not started. Production remains `NOT_AUTHORIZED`.
+Stage A is implemented and locally validated on substantive candidate `d8d98f7196284ffe0464a562033241aebbaf4c3c`. The exact D1 migration/schema/model and atomic writer evidence is in `docs/evidence/TL-TC-ORDER-FLOW-STAGE-A-d8d98f7.md`. Independent Critic: `PASS`, persisted at `docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-independent-critic-d8d98f7.md`. Integration Review: `PASS`, persisted at `docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-integration-review-d8d98f7.md`. Stage B is now ready to begin in staging-only scope. Production remains `NOT_AUTHORIZED`.
 
 ## Catalog source
 
@@ -48,4 +48,4 @@ The existing staging Worker now serves 26 real product WebP assets through Worke
 
 ## Next authorized objective
 
-Complete Stage A integration admission, then implement Stage B in the existing staging-only branch/environment. Keep staging available. Production remains `NOT_AUTHORIZED`; do not reopen production eligibility or perform production actions without a future explicit human instruction.
+Implement Stage B in the existing staging-only branch/environment. Keep staging available. Production remains `NOT_AUTHORIZED`; do not reopen production eligibility or perform production actions without a future explicit human instruction.
