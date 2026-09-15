@@ -24,5 +24,8 @@ As of: 2026-09-13
 - Staging static product assets: PROVEN PASS — `docs/evidence/TL-STAGING-STATIC-PRODUCT-ASSETS-2026-09-13.md`; candidate `f896b6b`, 26 real WebP assets deployed and linked in D1, 5 documented placeholders, Worker/D1/Static Assets runtime PASS.
 - Static Assets Independent Critic: PROVEN PASS — `docs/reviews/TL-CF-STATIC-ASSETS-independent-critic-4007a58.md`; exact candidate and fresh independent context.
 - Static Assets Integration Review: PROVEN PASS — `docs/reviews/TL-CF-STATIC-ASSETS-integration-review-4007a58.md`; exact candidate and fresh independent context.
+- Order-flow Stage A implementation: PROVEN TECHNICAL_PASS — substantive candidate `d8d98f7196284ffe0464a562033241aebbaf4c3c`; `docs/evidence/TL-TC-ORDER-FLOW-STAGE-A-d8d98f7.md`. PostgreSQL/D1 order-flow dimensions, safe legacy defaults and D1 `DELIVERY` binding coverage are validated locally.
+- Order-flow Stage A Independent Critic: PROVEN PASS — fresh independent review of exact candidate; prior binding-test gap was reworked and closed.
+- Order-flow Stage A Integration Review: PENDING — governance state is synchronized before re-admission.
 
 Coverage is conservative; no historical process or PASS state is fabricated.

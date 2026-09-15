@@ -1,14 +1,14 @@
 # Taco Loco — Resume / Orchestration State
 
-Updated: 2026-09-13
+Updated: 2026-09-15
 
 - Repository: `sjo1848/taco-loco`
-- Branch: `migration/cloudflare-native`
-- Application candidate: `f896b6b7f3af22987aaf42097be1aacebeea556a`
+- Branch: `rework/tl-order-flow-01`
+- Application candidate: `d8d98f7196284ffe0464a562033241aebbaf4c3c`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `STAGING_WHATSAPP_NUMBER_FIXED`
-- Active contract: `docs/contracts/TL-STAGING-CATALOG-PARITY-01.md`
+- State: `ORDER_FLOW_STAGE_A_PASS / INTEGRATION_REVIEW_PENDING`
+- Active contract: `docs/contracts/TL-TC-ORDER-FLOW-01.md`
 - Production: `NOT_AUTHORIZED`
 
 ## Proven checkpoint
@@ -20,6 +20,10 @@ Remote staging already reached `REMOTE_INTEGRATION_PASS` for the application can
 Do not release production yet. Continue in the existing staging environment, restore the established Taco Loco catalog from the frozen former implementation, validate realistic behavior, then reopen the production gate.
 
 `workers.dev` is accepted as the preferred future initial zero-cost public URL. Staging remains available.
+
+## Order-flow Stage A checkpoint
+
+Stage A is implemented and locally validated on substantive candidate `d8d98f7196284ffe0464a562033241aebbaf4c3c`. The exact D1 migration/schema/model and atomic writer evidence is in `docs/evidence/TL-TC-ORDER-FLOW-STAGE-A-d8d98f7.md`. Independent Critic: `PASS`. Integration Review is being re-admitted after this governance synchronization. Stage B is not started. Production remains `NOT_AUTHORIZED`.
 
 ## Catalog source
 
@@ -44,4 +48,4 @@ The existing staging Worker now serves 26 real product WebP assets through Worke
 
 ## Next authorized objective
 
-Human manually reviews the existing staging URL. Keep staging available. Production remains `NOT_AUTHORIZED`; do not reopen production eligibility or perform production actions without a future explicit human instruction.
+Complete Stage A integration admission, then implement Stage B in the existing staging-only branch/environment. Keep staging available. Production remains `NOT_AUTHORIZED`; do not reopen production eligibility or perform production actions without a future explicit human instruction.

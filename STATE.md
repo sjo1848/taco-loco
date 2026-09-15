@@ -1,10 +1,10 @@
 # Taco Loco — Current Authoritative Project State
-Updated: 2026-09-14
+Updated: 2026-09-15
 Mode: DELIVERY
-Phase: DESIGN / STAGING_REWORK_READY
-Status: ORDER_FLOW_HLD_CLOSED / TASK_CONTRACT_READY
-Active contract: TL-TC-ORDER-FLOW-01 (`READY_FOR_EXECUTION / STAGING_ONLY`)
-Application candidate: `f896b6b7f3af22987aaf42097be1aacebeea556a`
+Phase: IMPLEMENT / VALIDATE
+Status: ORDER_FLOW_STAGE_A_PASS / INTEGRATION_REVIEW_PENDING
+Active contract: TL-TC-ORDER-FLOW-01 (`STAGE_A_PASS / STAGING_ONLY`)
+Application candidate: `d8d98f7196284ffe0464a562033241aebbaf4c3c`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
@@ -79,10 +79,12 @@ For staging manual review only, products without a dedicated asset may temporari
 - Staging WhatsApp number: PROVEN PASS; `MenuSettings.whatsappPhone = 5492615956912`.
 - Static product assets in staging: PROVEN PASS; 26 real WebP assets, 5 staging placeholders.
 - Order-flow HLD: HUMAN_REVIEW_CLOSED.
-- Order-flow implementation: NOT_YET_EXECUTED.
-- Active Task Contract: READY_FOR_EXECUTION / STAGING_ONLY.
+- Order-flow Stage A implementation: TECHNICAL_PASS; exact candidate `d8d98f7196284ffe0464a562033241aebbaf4c3c`.
+- Stage A Independent Critic: PASS; evidence `docs/evidence/TL-TC-ORDER-FLOW-STAGE-A-d8d98f7.md`.
+- Stage A Integration Review: PENDING durable synchronization after governance repair.
+- Active Task Contract: STAGE_A_PASS / STAGING_ONLY.
 - Production: NOT_AUTHORIZED_BY_EXPLICIT_HUMAN_HOLD.
 
 ## Next action
 
-Execute Stage A of `TL-TC-ORDER-FLOW-01` against the staging-only branch/environment: domain model and staging-compatible migration design/implementation, preserving historical orders, `clientReference`, `OrderEvent`, SSE replay and all current catalog/auth/assets behavior. Stop before any production action.
+Complete the Stage A governance/integration admission, then continue to Stage B of `TL-TC-ORDER-FLOW-01` against the staging-only branch/environment. Preserve historical orders, `clientReference`, `OrderEvent`, SSE replay and all current catalog/auth/assets behavior. Stop before any production action.

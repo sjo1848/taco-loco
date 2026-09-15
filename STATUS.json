@@ -3,9 +3,9 @@
   "status": "READY_FOR_EXECUTION",
   "sourceRepo": "sjo1848/taco-loco-foodtrack",
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
-  "targetBranch": "migration/cloudflare-native",
-  "technicalCandidate": "f896b6b7f3af22987aaf42097be1aacebeea556a",
-  "stage": "ORDER_FLOW_STAGING_REWORK_READY",
+  "targetBranch": "rework/tl-order-flow-01",
+  "technicalCandidate": "d8d98f7196284ffe0464a562033241aebbaf4c3c",
+  "stage": "ORDER_FLOW_STAGE_A_PASS_INTEGRATION_PENDING",
   "remoteIntegration": "PASS_BASELINE",
   "stagingWorker": "taco-loco-staging-20260913",
   "stagingD1": "taco-loco-staging-20260913",
@@ -47,8 +47,12 @@
   "stagingDeploymentVersion": "e38f7071-779c-4933-945f-08c69d120d44",
   "orderFlowHld": "HUMAN_REVIEW_CLOSED",
   "orderFlowHldPath": "docs/product/TL-HIGH-LEVEL-WORKFLOWS.md",
-  "orderFlowTaskContract": "READY_FOR_EXECUTION_STAGING_ONLY",
+  "orderFlowTaskContract": "STAGE_A_PASS_STAGING_ONLY",
   "orderFlowTaskContractPath": "docs/contracts/TL-TC-ORDER-FLOW-01.md",
-  "orderFlowImplementation": "NOT_YET_EXECUTED",
-  "resumePoint": "Execute Stage A of TL-TC-ORDER-FLOW-01 in staging only: domain model and staging-compatible migration, preserving historical orders, clientReference idempotency, OrderEvent/SSE, catalog, auth and assets. Production remains NOT_AUTHORIZED."
+  "orderFlowImplementation": "STAGE_A_TECHNICAL_PASS",
+  "orderFlowStageACandidate": "d8d98f7196284ffe0464a562033241aebbaf4c3c",
+  "orderFlowStageAEvidence": "docs/evidence/TL-TC-ORDER-FLOW-STAGE-A-d8d98f7.md",
+  "orderFlowStageACritic": "PASS",
+  "orderFlowStageAIntegrationReview": "PENDING_DURABLE_SYNCHRONIZATION",
+  "resumePoint": "Complete Stage A integration-review admission after durable-state synchronization, then continue Stage B in staging only. Production remains NOT_AUTHORIZED."
 }
