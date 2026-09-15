@@ -31,5 +31,6 @@ As of: 2026-09-13
 - Order-flow staging validation: PARTIAL / HUMAN_INPUT — exact candidate `e6f2465d827f853690ebc96d65db7030de5c484e`; health/assets/auth/session, pickup modifiers/idempotency, admin transitions and runtime pass. DELIVERY awaits fixed staging fee. Evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465.md`.
 - Order-flow Stages B–D Independent Critic: PROVEN PASS — exact candidate `e6f2465d827f853690ebc96d65db7030de5c484e`; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-independent-critic-e6f2465.md`.
 - Order-flow Stages B–D Integration Review: PROVEN PASS — exact candidate `e6f2465d827f853690ebc96d65db7030de5c484e`; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-integration-review-e6f2465.md`.
+- Order-flow staging DELIVERY/PICKUP validation: PROVEN PASS — exact candidate `e6f2465d827f853690ebc96d65db7030de5c484e`; staging-only fee ARS 3,000, server-side total, address/transfer validation, payment gating, idempotency, events/SSE replay, admin/session and PICKUP regression. Evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465-delivery-2026-09-15.md`. Production remains unauthorized.
 
 Coverage is conservative; no historical process or PASS state is fabricated.

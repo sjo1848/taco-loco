@@ -1,6 +1,6 @@
 {
   "contract": "TL-TC-ORDER-FLOW-01",
-  "status": "STAGING_VALIDATION_HUMAN_INPUT",
+  "status": "STAGING_ORDER_FLOW_PASS",
   "sourceRepo": "sjo1848/taco-loco-foodtrack",
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
   "targetBranch": "rework/tl-order-flow-01",
@@ -62,9 +62,13 @@
   "orderFlowStagesBCDIntegrationReview": "PASS",
   "orderFlowStagesBCDIntegrationReviewEvidence": "docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-integration-review-e6f2465.md",
   "orderFlowStagesBCD": "STAGING_VALIDATION_HUMAN_INPUT",
-  "orderFlowStagingValidation": "PARTIAL_HUMAN_INPUT",
-  "orderFlowStagingEvidence": "docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465.md",
+  "orderFlowStagingValidation": "STAGING_ORDER_FLOW_PASS",
+  "orderFlowStagingEvidence": "docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465-delivery-2026-09-15.md",
   "orderFlowStagingDeploymentVersion": "f88fab8a-779b-410c-a7d8-4d0fc7127ef4",
-  "orderFlowStagingDeliveryFee": "HUMAN_INPUT_REQUIRED",
-  "resumePoint": "Provide fixed staging delivery fee in ARS; then enable DELIVERY only in existing staging and validate delivery journey. Production remains NOT_AUTHORIZED."
+  "orderFlowStagingDeliveryFee": 3000,
+  "orderFlowStagingDeliveryCurrency": "ARS",
+  "orderFlowStagingDeliveryOrder": "70ddef94-88b9-4de9-87d8-b9e608837c7b",
+  "orderFlowStagingDeliveryOrderNumber": 17,
+  "orderFlowStagingPickupOrderNumber": 18,
+  "resumePoint": "Bounded DELIVERY/PICKUP staging validation PASS; human review of staging order-flow journey is next. Production remains NOT_AUTHORIZED."
 }

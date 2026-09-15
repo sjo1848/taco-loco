@@ -7,7 +7,7 @@ Updated: 2026-09-15
 - Application candidate: `e6f2465d827f853690ebc96d65db7030de5c484e`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `ORDER_FLOW_STAGES_BCD_IMPLEMENTED / STAGING_ADMISSION_READY`
+- State: `STAGING_ORDER_FLOW_PASS`
 - Active contract: `docs/contracts/TL-TC-ORDER-FLOW-01.md`
 - Production: `NOT_AUTHORIZED`
 
@@ -46,6 +46,10 @@ The staging `MenuSettings.whatsappPhone` value is corrected to `5492615956912`; 
 
 The existing staging Worker now serves 26 real product WebP assets through Workers Static Assets. Five canonical products retain the temporary placeholder because no source asset was supplied. Evidence: `docs/evidence/TL-STAGING-STATIC-PRODUCT-ASSETS-2026-09-13.md`.
 
+## Order-flow staging validation
+
+The fixed staging setting `deliveryEnabled=1`, `deliveryFeeAmount=3000`, `currency=ARS` enabled a bounded real DELIVERY journey on candidate `e6f2465`: server-side fee, address/transfer data, idempotency, payment report, atomic payment-and-order confirmation, operation gate, final delivery, events/SSE replay, admin/session and PICKUP regression all passed. Evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465-delivery-2026-09-15.md`.
+
 ## Next authorized objective
 
-Staging validation is partial for exact candidate `e6f2465`: health/assets/auth, pickup modifiers/idempotency, admin transitions and runtime pass. DELIVERY awaits the fixed staging fee; evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465.md`. Production remains `NOT_AUTHORIZED`.
+Human review of the validated staging order-flow journey. Production remains `NOT_AUTHORIZED`.
