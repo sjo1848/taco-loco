@@ -2,9 +2,9 @@
 Updated: 2026-09-15
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: ORDER_FLOW_STAGE_A_PASS / INTEGRATION_REVIEW_PENDING
+Status: ORDER_FLOW_STAGES_BCD_IMPLEMENTED / CRITIC_PENDING
 Active contract: TL-TC-ORDER-FLOW-01 (`STAGE_A_PASS / STAGING_ONLY`)
-Application candidate: `d8d98f7196284ffe0464a562033241aebbaf4c3c`
+Application candidate: `00ac161dc2532ee21a6bbcf08a9fffeb9d35ec32`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
@@ -82,9 +82,10 @@ For staging manual review only, products without a dedicated asset may temporari
 - Order-flow Stage A implementation: TECHNICAL_PASS; exact candidate `d8d98f7196284ffe0464a562033241aebbaf4c3c`.
 - Stage A Independent Critic: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-independent-critic-d8d98f7.md`.
 - Stage A Integration Review: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-integration-review-d8d98f7.md`.
-- Active Task Contract: STAGE_B_READY / STAGING_ONLY.
+- Order-flow Stages B–D implementation: TECHNICAL_VALIDATION_PENDING; evidence `docs/evidence/TL-TC-ORDER-FLOW-STAGES-BCD-00ac161.md`.
+- Active Task Contract: STAGES_BCD_IMPLEMENTED / STAGING_ONLY.
 - Production: NOT_AUTHORIZED_BY_EXPLICIT_HUMAN_HOLD.
 
 ## Next action
 
-Implement Stage B of `TL-TC-ORDER-FLOW-01` against the staging-only branch/environment: customer checkout with PICKUP/DELIVERY branching, validation and pending intent semantics. Preserve historical orders, `clientReference`, `OrderEvent`, SSE replay and all current catalog/auth/assets behavior. Stop before any production action.
+Run Independent Critic on the exact Stages B–D candidate, then Integration Review and staging-only validation if both pass. Preserve historical orders, `clientReference`, `OrderEvent`, SSE replay and all current catalog/auth/assets behavior. Stop before any production action.

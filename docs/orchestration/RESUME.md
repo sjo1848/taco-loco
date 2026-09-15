@@ -7,7 +7,7 @@ Updated: 2026-09-15
 - Application candidate: `d8d98f7196284ffe0464a562033241aebbaf4c3c`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `ORDER_FLOW_STAGE_A_PASS / STAGE_B_READY`
+- State: `ORDER_FLOW_STAGES_BCD_IMPLEMENTED / CRITIC_PENDING`
 - Active contract: `docs/contracts/TL-TC-ORDER-FLOW-01.md`
 - Production: `NOT_AUTHORIZED`
 
@@ -23,7 +23,7 @@ Do not release production yet. Continue in the existing staging environment, res
 
 ## Order-flow Stage A checkpoint
 
-Stage A is implemented and locally validated on substantive candidate `d8d98f7196284ffe0464a562033241aebbaf4c3c`. The exact D1 migration/schema/model and atomic writer evidence is in `docs/evidence/TL-TC-ORDER-FLOW-STAGE-A-d8d98f7.md`. Independent Critic: `PASS`, persisted at `docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-independent-critic-d8d98f7.md`. Integration Review: `PASS`, persisted at `docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-integration-review-d8d98f7.md`. Stage B is now ready to begin in staging-only scope. Production remains `NOT_AUTHORIZED`.
+Stages B–D are implemented locally on exact candidate `00ac161dc2532ee21a6bbcf08a9fffeb9d35ec32`; evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGES-BCD-00ac161.md`. Independent Critic for this cross-surface increment is pending. Production remains `NOT_AUTHORIZED`.
 
 ## Catalog source
 
@@ -48,4 +48,4 @@ The existing staging Worker now serves 26 real product WebP assets through Worke
 
 ## Next authorized objective
 
-Implement Stage B in the existing staging-only branch/environment. Keep staging available. Production remains `NOT_AUTHORIZED`; do not reopen production eligibility or perform production actions without a future explicit human instruction.
+Run Independent Critic, then Integration Review and bounded staging validation for the exact candidate. Keep staging available. Production remains `NOT_AUTHORIZED`; do not reopen production eligibility or perform production actions without a future explicit human instruction.
