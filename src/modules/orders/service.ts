@@ -9,6 +9,7 @@ export const transitionOrderInputSchema = z.object({
   orderId: z.uuid(),
   toStatus: orderStatusSchema,
   reason: z.string().trim().max(500).nullable().optional(),
+  confirmPayment: z.boolean().optional().default(false),
 }).superRefine((input, context) => {
   if (input.toStatus === "CANCELLED" && !input.reason) context.addIssue({ code: "custom", path: ["reason"], message: "El motivo de cancelación es obligatorio." });
 });
@@ -165,15 +166,24 @@ export async function transitionOrder(input: unknown, actorId: string) {
 
     try {
       assertValidTransition(current.status, parsed.toStatus);
-    } catch {
+  } catch {
       throw new AppError("INVALID_ORDER_TRANSITION", "El pedido no puede pasar a ese estado.", 409);
     }
+
+  const confirming = parsed.toStatus === "CONFIRMED";
+  const isDelivery = current.fulfillment === "DELIVERY";
+  if (confirming && isDelivery && current.paymentStatus !== "CONFIRMED" && !parsed.confirmPayment) throw new AppError("PAYMENT_REQUIRED", "Confirmá el pago antes de confirmar este delivery.", 409);
+  const transitionNow = new Date();
+  const verificationStatus = confirming ? "VERIFIED" : null;
+  const verificationResolvedAt = confirming ? transitionNow.toISOString() : null;
+  const paymentStatus = confirming && isDelivery && parsed.confirmPayment ? "CONFIRMED" : null;
+  const paymentConfirmedAt = paymentStatus ? transitionNow.toISOString() : null;
 
   if (isD1Runtime) {
     const { transitionD1Order } = await import("@/modules/orders/d1-atomic.worker");
     const data = transitionOrderData(parsed.toStatus, parsed.reason);
     try {
-      await transitionD1Order({ orderId: parsed.orderId, fromStatus: current.status, toStatus: parsed.toStatus, reason: parsed.reason ?? null, actorId, cancellationReason: data.cancellationReason ?? null, confirmedAt: data.confirmedAt?.toISOString() ?? null, closedAt: data.closedAt?.toISOString() ?? null });
+      await transitionD1Order({ orderId: parsed.orderId, fromStatus: current.status, toStatus: parsed.toStatus, reason: parsed.reason ?? null, actorId, cancellationReason: data.cancellationReason ?? null, confirmedAt: data.confirmedAt?.toISOString() ?? null, closedAt: data.closedAt?.toISOString() ?? null, verificationStatus, verificationResolvedAt, paymentStatus, paymentConfirmedAt });
     } catch (error) {
       if (error instanceof Error && (["D1_ORDER_CHANGED", "D1_BATCH_FAILED"].includes(error.message) || /OrderEvent\.sequence|SQLITE_BUSY|database is locked/i.test(error.message))) throw new AppError("ORDER_CHANGED", "El pedido cambió mientras lo actualizabas. Recargá e intentá de nuevo.", 409);
       throw error;
@@ -187,7 +197,7 @@ export async function transitionOrder(input: unknown, actorId: string) {
     if (!txCurrent) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
     const result = await tx.order.updateMany({
       where: { id: parsed.orderId, status: txCurrent.status },
-      data: { ...transitionOrderData(parsed.toStatus, parsed.reason), updatedById: actorId },
+      data: { ...transitionOrderData(parsed.toStatus, parsed.reason), verificationStatus: verificationStatus ?? undefined, verificationResolvedAt: verificationResolvedAt ?? undefined, paymentStatus: paymentStatus ?? undefined, paymentConfirmedAt: paymentConfirmedAt ?? undefined, updatedById: actorId },
     });
     if (result.count !== 1) throw new AppError("ORDER_CHANGED", "El pedido cambió mientras lo actualizabas. Recargá e intentá de nuevo.", 409);
 

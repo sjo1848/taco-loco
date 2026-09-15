@@ -6,7 +6,7 @@ import { getCurrentAdmin } from "@/modules/auth/session";
 import { orderRepository } from "@/modules/orders/repository";
 
 export const dynamic = "force-dynamic";
-type OrderListItem = { id: string; orderNumber: number; status: "RECEIVED" | "CONFIRMED" | "IN_PREPARATION" | "READY" | "DELIVERED" | "CANCELLED"; fulfillment: "PICKUP" | "DINE_IN"; source: "WHATSAPP" | "PUBLIC_MENU"; customerName: string | null; customerPhone: string | null; totalAmount: number; createdAt: Date; lines: unknown[] };
+type OrderListItem = { id: string; orderNumber: number; status: "RECEIVED" | "CONFIRMED" | "IN_PREPARATION" | "READY" | "DELIVERED" | "CANCELLED"; fulfillment: "PICKUP" | "DINE_IN" | "DELIVERY"; verificationStatus: string; paymentStatus: string; source: "WHATSAPP" | "PUBLIC_MENU"; customerName: string | null; customerPhone: string | null; totalAmount: number; createdAt: Date; lines: unknown[] };
 
 export default async function OrdersPage() {
   const user = await getCurrentAdmin();

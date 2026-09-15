@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { buildCustomerWhatsAppAppUrl, buildCustomerWhatsAppUrl, buildOrderConfirmationMessage } from "@/modules/orders/confirmation";
 
-type Props = { businessName: string; orderNumber: number; totalAmount: number; customerName: string | null; customerPhone: string | null; fulfillment: "PICKUP" | "DINE_IN" };
+type Props = { businessName: string; orderNumber: number; totalAmount: number; customerName: string | null; customerPhone: string | null; fulfillment: "PICKUP" | "DINE_IN" | "DELIVERY" };
 
 export function OrderConfirmation({ businessName, orderNumber, totalAmount, customerName, customerPhone, fulfillment }: Props) {
   const [isMobileDevice, setIsMobileDevice] = useState(false);
