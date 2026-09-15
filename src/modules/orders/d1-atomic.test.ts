@@ -83,14 +83,14 @@ describe("D1 atomic order adapter", () => {
 
   it("binds confirmed payment and verification for an atomic delivery transition", async () => {
     const { db, bindings } = fakeD1();
-    await transitionD1OrderWith(db, { orderId: order.id, fromStatus: "RECEIVED", toStatus: "CONFIRMED", reason: "Pago verificado", actorId: "44444444-4444-4444-8444-444444444444", cancellationReason: null, confirmedAt: new Date().toISOString(), closedAt: null, verificationStatus: "VERIFIED", verificationResolvedAt: new Date().toISOString(), paymentStatus: "CONFIRMED", paymentConfirmedAt: new Date().toISOString() });
+    await transitionD1OrderWith(db, { orderId: order.id, fromStatus: "RECEIVED", toStatus: "CONFIRMED", reason: "Pago verificado", actorId: "44444444-4444-4444-8444-444444444444", cancellationReason: null, confirmedAt: new Date().toISOString(), closedAt: null, verificationStatus: "VERIFIED", verificationResolvedAt: new Date().toISOString(), paymentStatus: null, paymentConfirmedAt: null, requireConfirmedPayment: true });
     expect(bindings[0]).toContain("CONFIRMED");
     expect(bindings[0]).toContain("VERIFIED");
   });
 
   it("guards delivery confirmation against a concurrent payment rejection", async () => {
     const { db, sql } = fakeD1();
-    await transitionD1OrderWith(db, { orderId: order.id, fromStatus: "RECEIVED", toStatus: "CONFIRMED", reason: "Pago verificado", actorId: "44444444-4444-4444-8444-444444444444", cancellationReason: null, confirmedAt: new Date().toISOString(), closedAt: null, verificationStatus: "VERIFIED", verificationResolvedAt: new Date().toISOString(), paymentStatus: "CONFIRMED", paymentConfirmedAt: new Date().toISOString() });
+    await transitionD1OrderWith(db, { orderId: order.id, fromStatus: "RECEIVED", toStatus: "CONFIRMED", reason: "Pago verificado", actorId: "44444444-4444-4444-8444-444444444444", cancellationReason: null, confirmedAt: new Date().toISOString(), closedAt: null, verificationStatus: "VERIFIED", verificationResolvedAt: new Date().toISOString(), paymentStatus: "CONFIRMED", paymentConfirmedAt: new Date().toISOString(), requireConfirmedPayment: true });
     expect(sql[0]).toContain('"paymentStatus" = \'CONFIRMED\'');
   });
 });

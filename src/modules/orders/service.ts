@@ -188,7 +188,7 @@ export async function transitionOrder(input: unknown, actorId: string) {
     const { transitionD1Order } = await import("@/modules/orders/d1-atomic.worker");
     const data = transitionOrderData(parsed.toStatus, parsed.reason);
     try {
-      await transitionD1Order({ orderId: parsed.orderId, fromStatus: current.status, toStatus: parsed.toStatus, reason: parsed.reason ?? null, actorId, cancellationReason: data.cancellationReason ?? null, confirmedAt: data.confirmedAt?.toISOString() ?? null, closedAt: data.closedAt?.toISOString() ?? null, verificationStatus, verificationResolvedAt, paymentStatus, paymentConfirmedAt });
+      await transitionD1Order({ orderId: parsed.orderId, fromStatus: current.status, toStatus: parsed.toStatus, reason: parsed.reason ?? null, actorId, cancellationReason: data.cancellationReason ?? null, confirmedAt: data.confirmedAt?.toISOString() ?? null, closedAt: data.closedAt?.toISOString() ?? null, verificationStatus, verificationResolvedAt, paymentStatus, paymentConfirmedAt, requireConfirmedPayment: confirming && isDelivery });
     } catch (error) {
       if (error instanceof Error && (["D1_ORDER_CHANGED", "D1_BATCH_FAILED"].includes(error.message) || /OrderEvent\.sequence|SQLITE_BUSY|database is locked/i.test(error.message))) throw new AppError("ORDER_CHANGED", "El pedido cambió mientras lo actualizabas. Recargá e intentá de nuevo.", 409);
       throw error;
