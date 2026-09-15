@@ -4,7 +4,7 @@ Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
 Status: ORDER_FLOW_STAGES_BCD_IMPLEMENTED / STAGING_ADMISSION_READY
 Active contract: TL-TC-ORDER-FLOW-01 (`STAGE_A_PASS / STAGING_ONLY`)
-Application candidate: `03fa3ce14d51e8ec2017c2a2ff9d00da19d79c04`
+Application candidate: `915dd73492b05c2fe3f679d72ecf63a0b2f30005`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
@@ -82,12 +82,12 @@ For staging manual review only, products without a dedicated asset may temporari
 - Order-flow Stage A implementation: TECHNICAL_PASS; exact candidate `d8d98f7196284ffe0464a562033241aebbaf4c3c`.
 - Stage A Independent Critic: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-independent-critic-d8d98f7.md`.
 - Stage A Integration Review: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-integration-review-d8d98f7.md`.
-- Order-flow Stages B–D implementation: TECHNICAL_PASS after SSE snapshot and one-action delivery rework; evidence `docs/evidence/TL-TC-ORDER-FLOW-STAGES-BCD-ce081a4.md`.
-- Order-flow Stages B–D Independent Critic: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-independent-critic-03fa3ce.md`.
-- Order-flow Stages B–D Integration Review: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-integration-review-03fa3ce.md`.
+- Order-flow Stages B–D implementation: TECHNICAL_PASS after remote D1 placeholder and empty-table insertion rework; exact candidate `915dd73492b05c2fe3f679d72ecf63a0b2f30005`.
+- Order-flow Stages B–D Independent Critic: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-independent-critic-915dd73.md`.
+- Order-flow Stages B–D Integration Review: PASS; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-integration-review-915dd73.md`.
 - Active Task Contract: STAGES_BCD_IMPLEMENTED / STAGING_ONLY.
 - Production: NOT_AUTHORIZED_BY_EXPLICIT_HUMAN_HOLD.
 
 ## Next action
 
-Run bounded staging validation for exact candidate `03fa3ce14d51e8ec2017c2a2ff9d00da19d79c04`. Preserve historical orders, `clientReference`, `OrderEvent`, SSE replay and all current catalog/auth/assets behavior. Stop before any production action.
+Run bounded staging validation for exact candidate `915dd73492b05c2fe3f679d72ecf63a0b2f30005`. Preserve historical orders, `clientReference`, `OrderEvent`, SSE replay and all current catalog/auth/assets behavior. Stop before any production action.
