@@ -32,6 +32,8 @@ As of: 2026-09-13
 - Order-flow Stages B–D Independent Critic: PROVEN PASS — exact candidate `e6f2465d827f853690ebc96d65db7030de5c484e`; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-independent-critic-e6f2465.md`.
 - Order-flow Stages B–D Integration Review: PROVEN PASS — exact candidate `e6f2465d827f853690ebc96d65db7030de5c484e`; evidence `docs/reviews/TL-TC-ORDER-FLOW-STAGES-BCD-integration-review-e6f2465.md`.
 - Order-flow staging DELIVERY/PICKUP validation: PROVEN PASS — exact candidate `e6f2465d827f853690ebc96d65db7030de5c484e`; staging-only fee ARS 3,000, server-side total, address/transfer validation, payment gating, idempotency, events/SSE replay, admin/session and PICKUP regression. Evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465-delivery-2026-09-15.md`. Production remains unauthorized.
-- Corrective workflow review: pending assurance — exact candidate `ea99ca83d7e6831833a97a11e21d5585c0903273`; `/admin` operational entry, `/admin/products` secondary CRUD, two-client pending PICKUP/DELIVERY SSE arrival and reload persistence. Evidence: `docs/evidence/TL-STAGING-MANUAL-REVIEW-WORKFLOW-94719f8-2026-09-15.md`.
+- Corrective workflow review: PROVEN PASS — exact candidate `ea99ca83d7e6831833a97a11e21d5585c0903273`; `/admin` operational entry, `/admin/products` secondary CRUD, two-client pending PICKUP/DELIVERY SSE arrival and reload persistence. Evidence: `docs/evidence/TL-STAGING-MANUAL-REVIEW-WORKFLOW-94719f8-2026-09-15.md`.
+- Corrective workflow Independent Critic: PROVEN PASS — `docs/reviews/TL-STAGING-MANUAL-REVIEW-independent-critic-ea99ca8.md`.
+- Corrective workflow Integration Review: PROVEN PASS — `docs/reviews/TL-STAGING-MANUAL-REVIEW-integration-review-ea99ca8.md`.
 
 Coverage is conservative; no historical process or PASS state is fabricated.

@@ -73,7 +73,9 @@
   "correctiveWorkflowEvidence": "docs/evidence/TL-STAGING-MANUAL-REVIEW-WORKFLOW-94719f8-2026-09-15.md",
   "correctiveWorkflowCandidate": "ea99ca83d7e6831833a97a11e21d5585c0903273",
   "correctiveWorkflowDeploymentVersion": "d6c7627d-9752-4d29-8ab7-0fbdf8091847",
-  "correctiveWorkflowIndependentCritic": "PENDING",
-  "correctiveWorkflowIntegrationReview": "PENDING",
+  "correctiveWorkflowIndependentCritic": "PASS",
+  "correctiveWorkflowIndependentCriticEvidence": "docs/reviews/TL-STAGING-MANUAL-REVIEW-independent-critic-ea99ca8.md",
+  "correctiveWorkflowIntegrationReview": "PASS",
+  "correctiveWorkflowIntegrationReviewEvidence": "docs/reviews/TL-STAGING-MANUAL-REVIEW-integration-review-ea99ca8.md",
   "resumePoint": "Corrected staging operational workflow validated; Independent Critic and Integration Review pending for exact candidate ea99ca8. Production remains NOT_AUTHORIZED."
 }
