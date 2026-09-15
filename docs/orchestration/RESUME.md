@@ -7,7 +7,7 @@ Updated: 2026-09-15
 - Application candidate: `d8d98f7196284ffe0464a562033241aebbaf4c3c`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `ORDER_FLOW_STAGES_BCD_IMPLEMENTED / CRITIC_PENDING`
+- State: `ORDER_FLOW_STAGES_BCD_REWORKED / CRITIC_PENDING`
 - Active contract: `docs/contracts/TL-TC-ORDER-FLOW-01.md`
 - Production: `NOT_AUTHORIZED`
 
@@ -23,7 +23,7 @@ Do not release production yet. Continue in the existing staging environment, res
 
 ## Order-flow Stage A checkpoint
 
-Stages B–D are implemented locally on exact candidate `00ac161dc2532ee21a6bbcf08a9fffeb9d35ec32`; evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGES-BCD-00ac161.md`. Independent Critic for this cross-surface increment is pending. Production remains `NOT_AUTHORIZED`.
+Stages B–D are reworked locally on exact candidate `b8623fd6fee5d0496e665bb718b774b663b82e26`; evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGES-BCD-b8623fd.md`. Independent Critic for this cross-surface increment is pending. Production remains `NOT_AUTHORIZED`.
 
 ## Catalog source
 
