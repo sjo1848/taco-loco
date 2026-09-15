@@ -37,12 +37,13 @@ const order = {
 
 describe("D1 atomic order adapter", () => {
   it("groups order, line, and event writes in one D1 batch", async () => {
-    const { db, sql } = fakeD1();
+    const { db, sql, bindings } = fakeD1();
     await createD1OrderWith(db, order);
     expect(sql).toHaveLength(3);
     expect(sql[0]).toContain("COALESCE(MAX(\"orderNumber\"), 0) + 1");
     expect(sql[1]).toContain("modifiersSnapshot");
     expect(sql[2]).toContain("COALESCE(MAX(\"sequence\"), 0) + 1");
+    expect((sql[0].match(/\?/g) ?? []).length).toBe(bindings[0]?.length);
   });
 
   it("accepts DELIVERY fulfillment through the D1 order writer", async () => {
