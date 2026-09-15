@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { D1Database } from "@cloudflare/workers-types";
-import { createD1OrderWith, transitionD1OrderWith } from "./d1-atomic";
+import { applyD1WorkflowActionWith, createD1OrderWith, transitionD1OrderWith } from "./d1-atomic";
 
 function fakeD1(options: { changes?: number; reject?: boolean } = {}) {
   const sql: string[] = [];
@@ -49,6 +49,8 @@ describe("D1 atomic order adapter", () => {
     const { db, bindings } = fakeD1();
     await createD1OrderWith(db, { ...order, fulfillment: "DELIVERY", verificationStatus: "PENDING", paymentStatus: "PENDING", deliveryAddress: "Calle 1", deliveryFeeAmount: 900, transferHolderName: "Ana" });
     expect(bindings[0]?.slice(1, 9)).toEqual(["DELIVERY", "PENDING", "PENDING", "NOT_REQUIRED", "PUBLIC_MENU", null, null, null]);
+    expect(bindings[0]?.[9]).toBe("test");
+    expect(bindings[0]?.[10]).toBe("Calle 1");
     expect(bindings[0]?.[12]).toBe(900);
     expect(bindings[0]?.[13]).toBe("Ana");
   });
@@ -61,5 +63,11 @@ describe("D1 atomic order adapter", () => {
   it("rejects a conditional transition when the update changed no row", async () => {
     const { db } = fakeD1({ changes: 0 });
     await expect(transitionD1OrderWith(db, { orderId: order.id, fromStatus: "RECEIVED", toStatus: "CONFIRMED", reason: null, actorId: "44444444-4444-4444-8444-444444444444", cancellationReason: null, confirmedAt: new Date().toISOString(), closedAt: null })).rejects.toThrow("D1_ORDER_CHANGED");
+  });
+
+  it("keeps payment rejection available from pending or reported states", async () => {
+    const { db, sql } = fakeD1();
+    await applyD1WorkflowActionWith(db, { orderId: order.id, action: "REJECT_PAYMENT", actorId: "44444444-4444-4444-8444-444444444444", fromStatus: "RECEIVED", reason: "No impact" });
+    expect(sql[0]).toContain('"paymentStatus" IN (\'PENDING\', \'REPORTED\')');
   });
 });
