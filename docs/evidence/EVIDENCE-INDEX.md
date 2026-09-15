@@ -27,6 +27,6 @@ As of: 2026-09-13
 - Order-flow Stage A implementation: PROVEN TECHNICAL_PASS — substantive candidate `d8d98f7196284ffe0464a562033241aebbaf4c3c`; `docs/evidence/TL-TC-ORDER-FLOW-STAGE-A-d8d98f7.md`. PostgreSQL/D1 order-flow dimensions, safe legacy defaults and D1 `DELIVERY` binding coverage are validated locally.
 - Order-flow Stage A Independent Critic: PROVEN PASS — `docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-independent-critic-d8d98f7.md`; fresh independent context, exact candidate, prior binding-test gap reworked and closed.
 - Order-flow Stage A Integration Review: PROVEN PASS — `docs/reviews/TL-TC-ORDER-FLOW-STAGE-A-integration-review-d8d98f7.md`; exact candidate and synchronized governance state.
-- Order-flow Stages B–D: PARTIAL — rework candidate `c0c172e4189f1a53e1cd3dd35e9c504d9810ad44`; local checkout, payment gate, exception actions, D1 binding and queue filters pass; independent assurance and remote staging remain pending. Evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGES-BCD-c0c172e.md`.
+- Order-flow Stages B–D: PARTIAL — rework candidate `65de7048b9fc95e3523ddd73d927c82db72bfe54`; local checkout, payment gate, exception actions, D1 bindings, queue filters and payment rejection pass; independent assurance and remote staging remain pending. Evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGES-BCD-65de704.md`.
 
 Coverage is conservative; no historical process or PASS state is fabricated.
