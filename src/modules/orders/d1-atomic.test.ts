@@ -4,17 +4,18 @@ import { createD1OrderWith, transitionD1OrderWith } from "./d1-atomic";
 
 function fakeD1(options: { changes?: number; reject?: boolean } = {}) {
   const sql: string[] = [];
+  const bindings: unknown[][] = [];
   const db = {
     prepare(query: string) {
       sql.push(query);
-      return { bind: (...values: unknown[]) => { void values; return {}; } };
+      return { bind: (...values: unknown[]) => { bindings.push(values); return {}; } };
     },
     async batch(statements: unknown[]) {
       if (options.reject) throw new Error("D1_ERROR: UNIQUE constraint failed");
       return statements.map((_statement, index) => ({ success: true, meta: { changes: index === 0 ? options.changes ?? 1 : 1 } }));
     },
   } as unknown as D1Database;
-  return { db, sql };
+  return { db, sql, bindings };
 }
 
 const order = {
@@ -45,9 +46,9 @@ describe("D1 atomic order adapter", () => {
   });
 
   it("accepts DELIVERY fulfillment through the D1 order writer", async () => {
-    const { db, sql } = fakeD1();
+    const { db, bindings } = fakeD1();
     await createD1OrderWith(db, { ...order, fulfillment: "DELIVERY" });
-    expect(sql[0]).toContain('"fulfillment"');
+    expect(bindings[0]?.[1]).toBe("DELIVERY");
   });
 
   it("does not convert a failed batch into a partial success", async () => {
