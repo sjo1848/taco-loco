@@ -77,5 +77,5 @@
   "correctiveWorkflowIndependentCriticEvidence": "docs/reviews/TL-STAGING-MANUAL-REVIEW-independent-critic-ea99ca8.md",
   "correctiveWorkflowIntegrationReview": "PASS",
   "correctiveWorkflowIntegrationReviewEvidence": "docs/reviews/TL-STAGING-MANUAL-REVIEW-integration-review-ea99ca8.md",
-  "resumePoint": "Corrected staging operational workflow validated; Independent Critic and Integration Review pending for exact candidate ea99ca8. Production remains NOT_AUTHORIZED."
+  "resumePoint": "Corrected staging operational workflow validated; Independent Critic and Integration Review PASS for exact candidate ea99ca8. Human review remains the next checkpoint; production remains NOT_AUTHORIZED."
 }

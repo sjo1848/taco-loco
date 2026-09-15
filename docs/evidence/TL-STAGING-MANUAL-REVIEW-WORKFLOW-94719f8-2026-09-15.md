@@ -56,4 +56,4 @@ PENDING orders remained outside kitchen work. Existing payment guard, order even
 
 ## Assurance status
 
-Independent Critic and Integration Review are required for this substantive operational-surface correction and are pending against exact candidate `ea99ca8`.
+Independent Critic and Integration Review both returned `PASS` against exact candidate `ea99ca8`; review artifacts are `docs/reviews/TL-STAGING-MANUAL-REVIEW-independent-critic-ea99ca8.md` and `docs/reviews/TL-STAGING-MANUAL-REVIEW-integration-review-ea99ca8.md`.
