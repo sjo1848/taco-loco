@@ -23,7 +23,7 @@ Do not release production yet. Continue in the existing staging environment, res
 
 ## Order-flow Stage A checkpoint
 
-Stages B–D are reworked locally on exact candidate `f7a0983e4738c05ff854c7d928920d20f1c92cea`; evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGES-BCD-f7a0983.md`. Independent Critic for this cross-surface increment is pending. Production remains `NOT_AUTHORIZED`.
+Stages B–D are reworked locally on exact candidate `ce081a40e886d2fbf7afeaf1c04321001faeff0d`; evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGES-BCD-ce081a4.md`. Independent Critic for this cross-surface increment is pending. Production remains `NOT_AUTHORIZED`.
 
 ## Catalog source
 
