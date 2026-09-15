@@ -15,7 +15,7 @@ export type D1OrderLineWrite = {
 export type D1OrderWrite = {
   id: string;
   source: "WHATSAPP" | "PUBLIC_MENU";
-  fulfillment: "PICKUP" | "DINE_IN";
+  fulfillment: "PICKUP" | "DINE_IN" | "DELIVERY";
   customerName: string | null;
   customerPhone: string | null;
   tableLabel: string | null;
