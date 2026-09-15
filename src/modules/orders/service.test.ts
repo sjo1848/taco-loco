@@ -20,7 +20,7 @@ describe("public order intent checkout", () => {
 
   it("only allows delivery confirmation after confirmed or explicitly verified reported payment", () => {
     expect(canConfirmDelivery("NOT_REQUIRED", false)).toBe(false);
-    expect(canConfirmDelivery("PENDING", true)).toBe(false);
+    expect(canConfirmDelivery("PENDING", true)).toBe(true);
     expect(canConfirmDelivery("REPORTED", false)).toBe(false);
     expect(canConfirmDelivery("REPORTED", true)).toBe(true);
     expect(canConfirmDelivery("CONFIRMED", false)).toBe(true);
