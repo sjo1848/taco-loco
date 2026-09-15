@@ -73,6 +73,14 @@ describe("D1 atomic order adapter", () => {
     expect(sql[0]).toContain('"paymentStatus" IN (\'PENDING\', \'REPORTED\')');
   });
 
+  it("gates the one-action delivery confirmation in D1", async () => {
+    const { db, sql } = fakeD1();
+    await applyD1WorkflowActionWith(db, { orderId: order.id, action: "CONFIRM_PAYMENT_AND_ORDER", actorId: "44444444-4444-4444-8444-444444444444", fromStatus: "RECEIVED", reason: "Pago verificado" });
+    expect(sql[0]).toContain('"fulfillment" = \'DELIVERY\'');
+    expect(sql[0]).toContain('"paymentStatus" IN (\'PENDING\', \'REPORTED\')');
+    expect(sql[0]).toContain('"status" = \'CONFIRMED\'');
+  });
+
   it("binds confirmed payment and verification for an atomic delivery transition", async () => {
     const { db, bindings } = fakeD1();
     await transitionD1OrderWith(db, { orderId: order.id, fromStatus: "RECEIVED", toStatus: "CONFIRMED", reason: "Pago verificado", actorId: "44444444-4444-4444-8444-444444444444", cancellationReason: null, confirmedAt: new Date().toISOString(), closedAt: null, verificationStatus: "VERIFIED", verificationResolvedAt: new Date().toISOString(), paymentStatus: "CONFIRMED", paymentConfirmedAt: new Date().toISOString() });

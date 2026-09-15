@@ -15,10 +15,10 @@ export const transitionOrderInputSchema = z.object({
 });
 
 export type TransitionOrderInput = z.infer<typeof transitionOrderInputSchema>;
-export function canConfirmDelivery(paymentStatus: string, confirmPayment: boolean) {
-  return paymentStatus === "CONFIRMED" || (confirmPayment && ["PENDING", "REPORTED"].includes(paymentStatus));
+export function canConfirmDelivery(paymentStatus: string) {
+  return paymentStatus === "CONFIRMED";
 }
-export const orderWorkflowActionSchema = z.object({ orderId: z.uuid(), action: z.enum(["EXPIRE_PENDING", "MARK_NO_SHOW", "REPORT_PAYMENT", "REJECT_PAYMENT", "REQUIRE_REFUND", "MARK_REFUNDED"]) });
+export const orderWorkflowActionSchema = z.object({ orderId: z.uuid(), action: z.enum(["CONFIRM_PAYMENT_AND_ORDER", "EXPIRE_PENDING", "MARK_NO_SHOW", "REPORT_PAYMENT", "REJECT_PAYMENT", "REQUIRE_REFUND", "MARK_REFUNDED"]) });
 export type OrderWorkflowActionInput = z.infer<typeof orderWorkflowActionSchema>;
 
 const databaseUuidSchema = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "UUID inválido");
@@ -177,7 +177,7 @@ export async function transitionOrder(input: unknown, actorId: string) {
 
   const confirming = parsed.toStatus === "CONFIRMED";
   const isDelivery = current.fulfillment === "DELIVERY";
-  if (confirming && isDelivery && !canConfirmDelivery(current.paymentStatus, parsed.confirmPayment)) throw new AppError("PAYMENT_REQUIRED", "Primero verificá el pago informado antes de confirmar este delivery.", 409);
+  if (confirming && isDelivery && !canConfirmDelivery(current.paymentStatus)) throw new AppError("PAYMENT_REQUIRED", "Confirmá el pago y el pedido con la acción operativa correspondiente.", 409);
   const transitionNow = new Date();
   const verificationStatus = confirming ? "VERIFIED" : null;
   const verificationResolvedAt = confirming ? transitionNow.toISOString() : null;
@@ -217,13 +217,14 @@ export async function applyOrderWorkflowAction(input: unknown, actorId: string) 
   const parsed = orderWorkflowActionSchema.parse(input);
   const current = await db.order.findUnique({ where: { id: parsed.orderId } });
   if (!current) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
+  if (parsed.action === "CONFIRM_PAYMENT_AND_ORDER" && (current.fulfillment !== "DELIVERY" || current.status !== "RECEIVED" || current.verificationStatus !== "PENDING" || !["PENDING", "REPORTED"].includes(current.paymentStatus))) throw new AppError("DELIVERY_CONFIRMATION_NOT_AVAILABLE", "Este delivery no admite confirmar pago y pedido.", 409);
   if (parsed.action === "EXPIRE_PENDING" && current.verificationStatus !== "PENDING") throw new AppError("ORDER_NOT_PENDING", "El pedido ya no está pendiente.", 409);
   if (parsed.action === "MARK_NO_SHOW" && (current.fulfillment !== "PICKUP" || !["READY", "DELIVERED"].includes(current.status) || current.noShowAt)) throw new AppError("NO_SHOW_NOT_AVAILABLE", "Este pedido no admite no-show.", 409);
   if (parsed.action === "REPORT_PAYMENT" && (current.fulfillment !== "DELIVERY" || current.paymentStatus !== "PENDING")) throw new AppError("PAYMENT_REPORT_NOT_AVAILABLE", "Este pedido no admite informar pago.", 409);
   if (parsed.action === "REJECT_PAYMENT" && (current.fulfillment !== "DELIVERY" || !["PENDING", "REPORTED"].includes(current.paymentStatus))) throw new AppError("PAYMENT_REJECT_NOT_AVAILABLE", "Este pedido no admite rechazar pago.", 409);
   if (parsed.action === "REQUIRE_REFUND" && (current.fulfillment !== "DELIVERY" || current.paymentStatus !== "CONFIRMED" || current.status !== "CANCELLED" || current.refundStatus !== "NOT_REQUIRED")) throw new AppError("REFUND_NOT_AVAILABLE", "Este pedido no admite solicitar devolución.", 409);
   if (parsed.action === "MARK_REFUNDED" && current.refundStatus !== "REQUIRED") throw new AppError("REFUND_NOT_REQUIRED", "No hay una devolución pendiente.", 409);
-  const reason = parsed.action === "EXPIRE_PENDING" ? "Cierre de jornada: intención pendiente" : parsed.action === "MARK_NO_SHOW" ? "No-show registrado" : parsed.action === "REPORT_PAYMENT" ? "Pago informado para verificación" : parsed.action === "REJECT_PAYMENT" ? "Pago rechazado" : parsed.action === "REQUIRE_REFUND" ? "Devolución manual requerida" : "Devolución manual realizada";
+  const reason = parsed.action === "CONFIRM_PAYMENT_AND_ORDER" ? "Pago verificado y pedido confirmado" : parsed.action === "EXPIRE_PENDING" ? "Cierre de jornada: intención pendiente" : parsed.action === "MARK_NO_SHOW" ? "No-show registrado" : parsed.action === "REPORT_PAYMENT" ? "Pago informado para verificación" : parsed.action === "REJECT_PAYMENT" ? "Pago rechazado" : parsed.action === "REQUIRE_REFUND" ? "Devolución manual requerida" : "Devolución manual realizada";
   const refundStatus = parsed.action === "REQUIRE_REFUND" ? "REQUIRED" : parsed.action === "MARK_REFUNDED" ? "REFUNDED" : undefined;
   if (isD1Runtime) {
     const { applyD1WorkflowAction } = await import("@/modules/orders/d1-atomic.worker");
@@ -231,8 +232,8 @@ export async function applyOrderWorkflowAction(input: unknown, actorId: string) 
   } else {
     await db.$transaction(async (tx: { order: typeof db.order; orderEvent: typeof db.orderEvent }) => {
       const now = new Date();
-      const data = parsed.action === "EXPIRE_PENDING" ? { status: "CANCELLED" as const, verificationStatus: "EXPIRED" as const, verificationResolvedAt: now, closedAt: now } : parsed.action === "MARK_NO_SHOW" ? { noShowAt: now } : parsed.action === "REPORT_PAYMENT" || parsed.action === "REJECT_PAYMENT" ? { paymentStatus: parsed.action === "REPORT_PAYMENT" ? "REPORTED" as const : "REJECTED" as const, paymentReportedAt: now } : { refundStatus, refundRequiredAt: parsed.action === "REQUIRE_REFUND" ? now : undefined, refundedAt: parsed.action === "MARK_REFUNDED" ? now : undefined };
-      const result = await tx.order.updateMany({ where: { id: parsed.orderId, status: current.status, fulfillment: parsed.action === "MARK_NO_SHOW" ? "PICKUP" : undefined, noShowAt: parsed.action === "MARK_NO_SHOW" ? null : undefined, verificationStatus: parsed.action === "EXPIRE_PENDING" ? "PENDING" : undefined, paymentStatus: parsed.action === "REPORT_PAYMENT" ? "PENDING" : parsed.action === "REJECT_PAYMENT" ? { in: ["PENDING", "REPORTED"] } : undefined, refundStatus: parsed.action === "REQUIRE_REFUND" ? "NOT_REQUIRED" : parsed.action === "MARK_REFUNDED" ? "REQUIRED" : undefined }, data: { ...data, updatedById: actorId } });
+      const data = parsed.action === "CONFIRM_PAYMENT_AND_ORDER" ? { status: "CONFIRMED" as const, verificationStatus: "VERIFIED" as const, verificationResolvedAt: now, paymentStatus: "CONFIRMED" as const, paymentConfirmedAt: now, confirmedAt: now } : parsed.action === "EXPIRE_PENDING" ? { status: "CANCELLED" as const, verificationStatus: "EXPIRED" as const, verificationResolvedAt: now, closedAt: now } : parsed.action === "MARK_NO_SHOW" ? { noShowAt: now } : parsed.action === "REPORT_PAYMENT" || parsed.action === "REJECT_PAYMENT" ? { paymentStatus: parsed.action === "REPORT_PAYMENT" ? "REPORTED" as const : "REJECTED" as const, paymentReportedAt: now } : { refundStatus, refundRequiredAt: parsed.action === "REQUIRE_REFUND" ? now : undefined, refundedAt: parsed.action === "MARK_REFUNDED" ? now : undefined };
+      const result = await tx.order.updateMany({ where: { id: parsed.orderId, status: current.status, fulfillment: ["MARK_NO_SHOW", "CONFIRM_PAYMENT_AND_ORDER"].includes(parsed.action) ? parsed.action === "MARK_NO_SHOW" ? "PICKUP" : "DELIVERY" : undefined, noShowAt: parsed.action === "MARK_NO_SHOW" ? null : undefined, verificationStatus: ["EXPIRE_PENDING", "CONFIRM_PAYMENT_AND_ORDER"].includes(parsed.action) ? "PENDING" : undefined, paymentStatus: parsed.action === "CONFIRM_PAYMENT_AND_ORDER" ? { in: ["PENDING", "REPORTED"] } : parsed.action === "REPORT_PAYMENT" ? "PENDING" : parsed.action === "REJECT_PAYMENT" ? { in: ["PENDING", "REPORTED"] } : undefined, refundStatus: parsed.action === "REQUIRE_REFUND" ? "NOT_REQUIRED" : parsed.action === "MARK_REFUNDED" ? "REQUIRED" : undefined }, data: { ...data, updatedById: actorId } });
       if (result.count !== 1) throw new AppError("ORDER_ACTION_CHANGED", "El pedido cambió mientras aplicabas la acción.", 409);
       await tx.orderEvent.create({ data: { orderId: parsed.orderId, fromStatus: current.status, toStatus: parsed.action === "EXPIRE_PENDING" ? "CANCELLED" : current.status, actorId, reason } });
     });

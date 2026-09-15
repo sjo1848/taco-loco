@@ -19,10 +19,9 @@ describe("public order intent checkout", () => {
   });
 
   it("only allows delivery confirmation after confirmed or explicitly verified reported payment", () => {
-    expect(canConfirmDelivery("NOT_REQUIRED", false)).toBe(false);
-    expect(canConfirmDelivery("PENDING", true)).toBe(true);
-    expect(canConfirmDelivery("REPORTED", false)).toBe(false);
-    expect(canConfirmDelivery("REPORTED", true)).toBe(true);
-    expect(canConfirmDelivery("CONFIRMED", false)).toBe(true);
+    expect(canConfirmDelivery("NOT_REQUIRED")).toBe(false);
+    expect(canConfirmDelivery("PENDING")).toBe(false);
+    expect(canConfirmDelivery("REPORTED")).toBe(false);
+    expect(canConfirmDelivery("CONFIRMED")).toBe(true);
   });
 });
