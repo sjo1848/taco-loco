@@ -15,6 +15,8 @@ export const transitionOrderInputSchema = z.object({
 });
 
 export type TransitionOrderInput = z.infer<typeof transitionOrderInputSchema>;
+export const orderWorkflowActionSchema = z.object({ orderId: z.uuid(), action: z.enum(["EXPIRE_PENDING", "MARK_NO_SHOW", "REQUIRE_REFUND", "MARK_REFUNDED"]) });
+export type OrderWorkflowActionInput = z.infer<typeof orderWorkflowActionSchema>;
 
 const databaseUuidSchema = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "UUID inválido");
 const manualModifierSchema = z.object({ group: z.string().trim().min(1).max(120), option: z.string().trim().min(1).max(120) });
@@ -206,4 +208,28 @@ export async function transitionOrder(input: unknown, actorId: string) {
     const order = await tx.order.findUniqueOrThrow({ where: { id: parsed.orderId }, include: { lines: true, events: { orderBy: { createdAt: "asc" } } } });
     return { order, event };
   });
+}
+
+export async function applyOrderWorkflowAction(input: unknown, actorId: string) {
+  const parsed = orderWorkflowActionSchema.parse(input);
+  const current = await db.order.findUnique({ where: { id: parsed.orderId } });
+  if (!current) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
+  if (parsed.action === "EXPIRE_PENDING" && current.verificationStatus !== "PENDING") throw new AppError("ORDER_NOT_PENDING", "El pedido ya no está pendiente.", 409);
+  if (parsed.action === "MARK_NO_SHOW" && (current.fulfillment !== "PICKUP" || !["READY", "DELIVERED"].includes(current.status) || current.noShowAt)) throw new AppError("NO_SHOW_NOT_AVAILABLE", "Este pedido no admite no-show.", 409);
+  if (parsed.action === "REQUIRE_REFUND" && (current.fulfillment !== "DELIVERY" || current.paymentStatus !== "CONFIRMED" || current.status !== "CANCELLED" || current.refundStatus !== "NOT_REQUIRED")) throw new AppError("REFUND_NOT_AVAILABLE", "Este pedido no admite solicitar devolución.", 409);
+  if (parsed.action === "MARK_REFUNDED" && current.refundStatus !== "REQUIRED") throw new AppError("REFUND_NOT_REQUIRED", "No hay una devolución pendiente.", 409);
+  const reason = parsed.action === "EXPIRE_PENDING" ? "Cierre de jornada: intención pendiente" : parsed.action === "MARK_NO_SHOW" ? "No-show registrado" : parsed.action === "REQUIRE_REFUND" ? "Devolución manual requerida" : "Devolución manual realizada";
+  const refundStatus = parsed.action === "REQUIRE_REFUND" ? "REQUIRED" : parsed.action === "MARK_REFUNDED" ? "REFUNDED" : undefined;
+  if (isD1Runtime) {
+    const { applyD1WorkflowAction } = await import("@/modules/orders/d1-atomic.worker");
+    await applyD1WorkflowAction({ orderId: parsed.orderId, action: parsed.action, actorId, fromStatus: current.status, refundStatus, reason });
+  } else {
+    await db.$transaction(async (tx: { order: typeof db.order; orderEvent: typeof db.orderEvent }) => {
+      const now = new Date();
+      const data = parsed.action === "EXPIRE_PENDING" ? { status: "CANCELLED" as const, verificationStatus: "EXPIRED" as const, verificationResolvedAt: now, closedAt: now } : parsed.action === "MARK_NO_SHOW" ? { noShowAt: now } : { refundStatus, refundRequiredAt: parsed.action === "REQUIRE_REFUND" ? now : undefined, refundedAt: parsed.action === "MARK_REFUNDED" ? now : undefined };
+      await tx.order.update({ where: { id: parsed.orderId }, data: { ...data, updatedById: actorId } });
+      await tx.orderEvent.create({ data: { orderId: parsed.orderId, fromStatus: current.status, toStatus: parsed.action === "EXPIRE_PENDING" ? "CANCELLED" : current.status, actorId, reason } });
+    });
+  }
+  return db.order.findUniqueOrThrow({ where: { id: parsed.orderId }, include: { lines: true, events: { orderBy: { createdAt: "asc" } } } });
 }

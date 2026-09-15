@@ -3,7 +3,7 @@ import { z } from "zod";
 import { AppError } from "@/lib/errors";
 import { requireAdmin } from "@/modules/auth/session";
 import { orderRepository } from "@/modules/orders/repository";
-import { transitionOrder } from "@/modules/orders/service";
+import { applyOrderWorkflowAction, transitionOrder } from "@/modules/orders/service";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -22,7 +22,8 @@ export async function GET(_: Request, context: Context) {
 export async function PATCH(request: Request, context: Context) {
   try {
     const admin = await requireAdmin();
-    const result = await transitionOrder({ ...(await request.json()), orderId: (await context.params).id }, admin.id);
+    const payload = await request.json();
+    const result = payload.action ? await applyOrderWorkflowAction({ ...payload, orderId: (await context.params).id }, admin.id) : await transitionOrder({ ...payload, orderId: (await context.params).id }, admin.id);
     return new NextResponse(JSON.stringify(result, (_key, value) => typeof value === "bigint" ? value.toString() : value), { headers: { "content-type": "application/json" } });
   } catch (error) {
     console.error("[admin.orders.transition] request failed", error instanceof Error ? error.message : error);
