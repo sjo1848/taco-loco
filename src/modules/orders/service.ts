@@ -27,7 +27,15 @@ const manualOrderLineSchema = z.object({
 const publicOrderIntentLineSchema = manualOrderLineSchema.omit({ note: true });
 export const createPublicOrderIntentInputSchema = z.object({
   clientReference: z.string().trim().min(16).max(100),
+  fulfillment: orderFulfillmentSchema.extract(["PICKUP", "DELIVERY"]).default("PICKUP"),
+  deliveryAddress: z.string().trim().max(500).nullable().optional(),
+  deliveryReference: z.string().trim().max(200).nullable().optional(),
+  transferHolderName: z.string().trim().max(160).nullable().optional(),
   lines: z.array(publicOrderIntentLineSchema).min(1).max(100),
+}).superRefine((input, context) => {
+  if (input.fulfillment !== "DELIVERY") return;
+  if (!input.deliveryAddress) context.addIssue({ code: "custom", path: ["deliveryAddress"], message: "La dirección de delivery es obligatoria." });
+  if (!input.transferHolderName) context.addIssue({ code: "custom", path: ["transferHolderName"], message: "El titular de la transferencia es obligatorio." });
 });
 
 export const createManualOrderInputSchema = z.object({
@@ -41,6 +49,15 @@ export const createManualOrderInputSchema = z.object({
 });
 
 export type CreateManualOrderInput = z.infer<typeof createManualOrderInputSchema>;
+
+type OrderWorkflow = {
+  verificationStatus: "PENDING" | "VERIFIED";
+  paymentStatus: "NOT_REQUIRED" | "PENDING";
+  deliveryAddress: string | null;
+  deliveryReference: string | null;
+  deliveryFeeAmount: number;
+  transferHolderName: string | null;
+};
 
 export function transitionOrderData(toStatus: OrderStatus, reason: string | null | undefined, now = new Date()) {
   return {
@@ -71,7 +88,7 @@ function resolveModifiers(product: ManualProduct, modifiers: CreateManualOrderIn
   return modifiers.map((modifier) => ({ group: modifier.group, option: grouped.get(modifier.group)?.shift() ?? modifier.option }));
 }
 
-export async function createManualOrder(input: unknown, actorId: string | null, clientReference: string | null = null, reason = "Pedido registrado manualmente", source: "WHATSAPP" | "PUBLIC_MENU" = "WHATSAPP") {
+export async function createManualOrder(input: unknown, actorId: string | null, clientReference: string | null = null, reason = "Pedido registrado manualmente", source: "WHATSAPP" | "PUBLIC_MENU" = "WHATSAPP", workflow: OrderWorkflow = { verificationStatus: "VERIFIED", paymentStatus: "NOT_REQUIRED", deliveryAddress: null, deliveryReference: null, deliveryFeeAmount: 0, transferHolderName: null }) {
   const parsed = createManualOrderInputSchema.parse(input);
   const productIds = [...new Set(parsed.lines.map((line) => line.productId))];
   const products = await db.product.findMany({ where: { id: { in: productIds }, archivedAt: null, published: true, available: true }, include: { modifierGroups: { include: { modifierGroup: { include: { options: true } } } } } }) as ManualProduct[];
@@ -87,7 +104,7 @@ export async function createManualOrder(input: unknown, actorId: string | null, 
   if (isD1Runtime) {
     const { createD1Order } = await import("@/modules/orders/d1-atomic.worker");
     const id = crypto.randomUUID();
-    await createD1Order({ id, source, fulfillment: parsed.fulfillment, customerName: parsed.customerName ?? null, customerPhone: parsed.customerPhone ?? null, tableLabel: parsed.tableLabel ?? null, notes: parsed.notes ?? null, subtotalAmount, adjustmentAmount: parsed.adjustmentAmount, totalAmount, clientReference, createdById: actorId, reason, lines: resolvedLines.map((line) => ({ ...line, id: crypto.randomUUID() })) });
+    await createD1Order({ id, source, fulfillment: parsed.fulfillment, verificationStatus: workflow.verificationStatus, paymentStatus: workflow.paymentStatus, deliveryAddress: workflow.deliveryAddress, deliveryReference: workflow.deliveryReference, deliveryFeeAmount: workflow.deliveryFeeAmount, transferHolderName: workflow.transferHolderName, customerName: parsed.customerName ?? null, customerPhone: parsed.customerPhone ?? null, tableLabel: parsed.tableLabel ?? null, notes: parsed.notes ?? null, subtotalAmount, adjustmentAmount: parsed.adjustmentAmount, totalAmount, clientReference, createdById: actorId, reason, lines: resolvedLines.map((line) => ({ ...line, id: crypto.randomUUID() })) });
     const order = await db.order.findUniqueOrThrow({ where: { id }, include: { lines: true } });
     const event = await db.orderEvent.findFirstOrThrow({ where: { orderId: id }, orderBy: { sequence: "desc" } });
     return { order, event };
@@ -97,6 +114,12 @@ export async function createManualOrder(input: unknown, actorId: string | null, 
       data: {
         source,
         fulfillment: parsed.fulfillment,
+        verificationStatus: workflow.verificationStatus,
+        paymentStatus: workflow.paymentStatus,
+        deliveryAddress: workflow.deliveryAddress,
+        deliveryReference: workflow.deliveryReference,
+        deliveryFeeAmount: workflow.deliveryFeeAmount,
+        transferHolderName: workflow.transferHolderName,
         customerName: parsed.customerName ?? null,
         customerPhone: parsed.customerPhone ?? null,
         tableLabel: parsed.tableLabel ?? null,
@@ -120,8 +143,11 @@ export async function createPublicOrderIntent(input: unknown) {
   const parsed = createPublicOrderIntentInputSchema.parse(input);
   const existing = await db.order.findUnique({ where: { clientReference: parsed.clientReference }, include: { lines: true } });
   if (existing) return { order: existing, event: null, reused: true };
+  const settings = await db.menuSettings.findFirstOrThrow();
+  if (parsed.fulfillment === "DELIVERY" && !settings.deliveryEnabled) throw new AppError("DELIVERY_UNAVAILABLE", "El delivery no está disponible en este momento.", 400);
+  const deliveryFeeAmount = parsed.fulfillment === "DELIVERY" ? settings.deliveryFeeAmount : 0;
   try {
-    return await createManualOrder({ fulfillment: "PICKUP", customerName: null, customerPhone: null, tableLabel: null, notes: "Intención registrada desde el menú. Confirmar recepción por WhatsApp.", adjustmentAmount: 0, lines: parsed.lines }, null, parsed.clientReference, "Intención preparada desde el menú público", "PUBLIC_MENU");
+    return await createManualOrder({ fulfillment: parsed.fulfillment, customerName: null, customerPhone: null, tableLabel: null, notes: "Intención registrada desde el menú. Confirmar recepción por WhatsApp.", adjustmentAmount: deliveryFeeAmount, lines: parsed.lines }, null, parsed.clientReference, "Intención preparada desde el menú público", "PUBLIC_MENU", { verificationStatus: "PENDING", paymentStatus: parsed.fulfillment === "DELIVERY" ? "PENDING" : "NOT_REQUIRED", deliveryAddress: parsed.deliveryAddress ?? null, deliveryReference: parsed.deliveryReference ?? null, deliveryFeeAmount, transferHolderName: parsed.transferHolderName ?? null });
   } catch (error) {
     const isClientReferenceConflict = error && typeof error === "object" && (("code" in error && error.code === "P2002") || ("message" in error && typeof error.message === "string" && error.message.includes("Order.clientReference")));
     if (isClientReferenceConflict) {
