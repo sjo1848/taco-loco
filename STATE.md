@@ -108,3 +108,4 @@ Stop at `HUMAN_TRACKING_WORKFLOW_REVIEW` for human browser/device review. Produc
 - Public cursor is opaque; raw D1 sequence is not exposed. D1 safe-integer boundary is explicit and unsafe values fail safely.
 - Remote staging: `REMOTE_INTEGRATION_PASS`; deployment `ef5cad20-2dbe-4e79-ba44-6a9e110f1143`, D1 migration `0003_order_tracking.sql`, bounded PICKUP/DELIVERY journeys and privacy/cursor/idempotency checks passed. Evidence: `docs/evidence/TL-TC-ORDER-TRACKING-STAGING-2026-09-16.md`.
 - Production: `NOT_AUTHORIZED`.
+- Drive snapshot: `PASS` — canonical state/evidence files and tracking artifacts synchronized to `Taco Loco — Codex / Cloudflare D1 — 2026-09-13`.

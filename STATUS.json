@@ -30,6 +30,7 @@
   "kvResource": "DEFERRED_NOT_REQUIRED",
   "costPosture": "COST_0_FREE_TIER_TARGET",
   "production": "NOT_AUTHORIZED",
+  "driveSync": "PASS_2026-09-16",
   "productionEligibility": "HUMAN_HOLD_NOT_AUTHORIZED",
   "productionUrlDecision": "WORKERS_DEV_ACCEPTED_FOR_FUTURE_INITIAL_RELEASE",
   "keepStaging": "YES",
