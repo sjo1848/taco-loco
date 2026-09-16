@@ -79,7 +79,7 @@ function historyEntry(event: PublicOrderRecord["events"][number], fulfillment: "
 
 export function toPublicOrderHistory(order: Pick<PublicOrderRecord, "fulfillment" | "events">) {
   const history: PublicTrackingEvent[] = [];
-  for (const event of order.events.slice().sort((a, b) => Number(a.sequence) - Number(b.sequence))) {
+  for (const event of order.events.slice().sort((a, b) => a.sequence < b.sequence ? -1 : a.sequence > b.sequence ? 1 : 0)) {
     const entry = historyEntry(event, order.fulfillment === "DINE_IN" ? "PICKUP" : order.fulfillment);
     if (!entry) continue;
     const previous = history.at(-1);
@@ -94,7 +94,7 @@ export function toPublicOrderTracking(order: PublicOrderRecord): PublicOrderTrac
   const currentStage = toPublicTrackingStage(order);
   const [title, message] = stageTitle(currentStage, fulfillment);
   const history = toPublicOrderHistory({ fulfillment, events: order.events });
-  const version = order.events.length ? String(order.events.reduce((max, event) => Math.max(max, Number(event.sequence)), 0)) : "0";
+  const version = order.events.length ? order.events.reduce<bigint>((max, event) => event.sequence > max ? BigInt(event.sequence) : max, BigInt(0)).toString() : "0";
   return {
     orderCode: formatOrderNumber(order.orderNumber), fulfillment, currentStage, title, message,
     totalAmount: order.totalAmount, deliveryFeeAmount: order.deliveryFeeAmount,

@@ -20,6 +20,16 @@ describe("public order tracking projection", () => {
     expect(history.map((item) => item.label)).toEqual(["Pedido enviado", "Pedido confirmado", "Pago y pedido confirmados"]);
   });
 
+  it("preserves large D1 sequence values without Number precision loss", () => {
+    const large = BigInt("9007199254740993");
+    const result = toPublicOrderTracking({ ...base, events: [
+      { sequence: large, kind: "ORDER_CREATED", toStatus: "RECEIVED", createdAt: base.createdAt },
+      { sequence: large + BigInt(1), kind: "STATUS_TRANSITION", toStatus: "CONFIRMED", createdAt: "2026-09-16T20:01:00Z" },
+    ] });
+    expect(result.version).toBe("9007199254740994");
+    expect(result.history.map((item) => item.label)).toEqual(["Pedido enviado", "Pedido confirmado"]);
+  });
+
   it("constructs an allow-listed public object", () => {
     const result = toPublicOrderTracking({ ...base, events: [{ sequence: BigInt(1), kind: "ORDER_CREATED", toStatus: "RECEIVED", createdAt: base.createdAt }] });
     expect(Object.keys(result).sort()).toEqual(["createdAt", "currentStage", "deliveryFeeAmount", "fulfillment", "history", "lines", "message", "orderCode", "title", "totalAmount", "updatedAt", "version"]);
