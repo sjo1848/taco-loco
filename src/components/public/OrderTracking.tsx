@@ -1,37 +1,42 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { PublicOrderTracking, PublicOrderStage } from "@/modules/orders/public-tracking";
-
-const terminalStages: PublicOrderStage[] = ["COMPLETED", "CANCELLED", "EXPIRED", "REFUNDED"];
+import type { PublicOrderTracking } from "@/modules/orders/public-tracking";
+import { initialTrackingPollDelay, nextTrackingPollDelay, terminalTrackingStages } from "./tracking-polling";
 function formatPrice(amount: number) { return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(amount); }
 
 export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
   const [tracking, setTracking] = useState(initial);
   const [error, setError] = useState(false);
   const timer = useRef<number | undefined>(undefined);
-  const delay = useRef(5000);
+  const delay = useRef(initialTrackingPollDelay);
   const visible = useRef(true);
-  const terminal = terminalStages.includes(tracking.currentStage);
+  const currentTracking = useRef(initial);
+  const inFlight = useRef(false);
 
   useEffect(() => {
-    const clear = () => { if (timer.current) window.clearTimeout(timer.current); timer.current = undefined; };
-    const poll = async (immediate = false) => {
-      clear();
-      if (!visible.current || terminal) return;
+    let cancelled = false;
+    const controller = new AbortController();
+    const clear = () => { if (timer.current !== undefined) window.clearTimeout(timer.current); timer.current = undefined; };
+    const schedule = (wait: number, poll: () => Promise<void>) => { clear(); if (!cancelled && visible.current && !terminalTrackingStages.includes(currentTracking.current.currentStage)) timer.current = window.setTimeout(() => void poll(), wait); };
+    const poll = async (immediate = false): Promise<void> => {
+      if (cancelled || !visible.current || terminalTrackingStages.includes(currentTracking.current.currentStage) || inFlight.current) return;
       if (!immediate) await new Promise<void>((resolve) => { timer.current = window.setTimeout(resolve, delay.current); });
+      if (cancelled || !visible.current || terminalTrackingStages.includes(currentTracking.current.currentStage) || inFlight.current) return;
+      inFlight.current = true;
       try {
-        const response = await fetch(`${window.location.pathname.replace(/\/$/, "").replace("/pedido/", "/api/orders/tracking/")}?after=${encodeURIComponent(tracking.version)}`, { cache: "no-store" });
-        if (response.status === 200) { setTracking(await response.json() as PublicOrderTracking); delay.current = 5000; setError(false); }
+        const response = await fetch(`${window.location.pathname.replace(/\/$/, "").replace("/pedido/", "/api/orders/tracking/")}?after=${encodeURIComponent(currentTracking.current.version)}`, { cache: "no-store", signal: controller.signal });
+        if (response.status === 200) { const next = await response.json() as PublicOrderTracking; currentTracking.current = next; setTracking(next); delay.current = nextTrackingPollDelay(delay.current, true); setError(false); }
         else if (response.status !== 204) throw new Error("TRACKING_FAILED");
-        poll();
-      } catch { setError(true); delay.current = Math.min(delay.current * 2, 30000); poll(); }
+        else delay.current = nextTrackingPollDelay(delay.current, true);
+      } catch { if (cancelled || controller.signal.aborted) return; setError(true); delay.current = nextTrackingPollDelay(delay.current, false); }
+      finally { inFlight.current = false; if (!cancelled && visible.current && !terminalTrackingStages.includes(currentTracking.current.currentStage)) schedule(delay.current, poll); }
     };
-    const onVisibility = () => { visible.current = document.visibilityState === "visible"; if (visible.current) { delay.current = 5000; poll(true); } else clear(); };
+    const onVisibility = () => { visible.current = document.visibilityState === "visible"; if (visible.current) { delay.current = initialTrackingPollDelay; void poll(true); } else clear(); };
     document.addEventListener("visibilitychange", onVisibility);
-    poll();
-    return () => { clear(); document.removeEventListener("visibilitychange", onVisibility); };
-  }, [tracking.version, terminal]);
+    void poll(true);
+    return () => { cancelled = true; controller.abort(); clear(); document.removeEventListener("visibilitychange", onVisibility); };
+  }, []);
 
   return <main className="public-menu public-tracking" ref={(node) => { if (node) node.setAttribute("aria-live", "polite"); }}>
     <div className="public-menu__content"><p className="eyebrow">Taco Loco</p><h1>Pedido {tracking.orderCode}</h1>
