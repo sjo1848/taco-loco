@@ -13,6 +13,7 @@ export async function GET(request: Request, context: { params: Promise<{ token: 
   if (!order) return notFound();
   const afterValue = new URL(request.url).searchParams.get("after");
   const after = afterValue && /^\d+$/.test(afterValue) ? BigInt(afterValue) : null;
-  if (after !== null && !(await orderRepository.hasEventAfter(order.id, after))) return new NextResponse(null, { status: 204, headers });
+  const safeAfter = after !== null && after <= BigInt(Number.MAX_SAFE_INTEGER) ? after : null;
+  if (safeAfter !== null && !(await orderRepository.hasEventAfter(order.id, safeAfter))) return new NextResponse(null, { status: 204, headers });
   return NextResponse.json(toPublicOrderTracking(order), { headers });
 }

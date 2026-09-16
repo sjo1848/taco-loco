@@ -24,6 +24,14 @@ type PublicOrderRecord = {
   events: Array<{ sequence: bigint | number; kind?: string; toStatus: string; createdAt: Date | string }>;
 };
 
+const MAX_SAFE_SEQUENCE = BigInt(Number.MAX_SAFE_INTEGER);
+export function sequenceAsBigInt(sequence: bigint | number) {
+  if (typeof sequence === "number" && !Number.isSafeInteger(sequence)) throw new Error("ORDER_EVENT_SEQUENCE_UNSAFE");
+  const normalized = BigInt(sequence);
+  if (normalized > MAX_SAFE_SEQUENCE) throw new Error("ORDER_EVENT_SEQUENCE_UNSAFE");
+  return normalized;
+}
+
 function iso(value: Date | string) { return value instanceof Date ? value.toISOString() : new Date(value).toISOString(); }
 function stageTitle(stage: PublicOrderStage, fulfillment: "PICKUP" | "DELIVERY") {
   const copy: Record<PublicOrderStage, [string, string]> = {
@@ -79,7 +87,7 @@ function historyEntry(event: PublicOrderRecord["events"][number], fulfillment: "
 
 export function toPublicOrderHistory(order: Pick<PublicOrderRecord, "fulfillment" | "events">) {
   const history: PublicTrackingEvent[] = [];
-  for (const event of order.events.slice().sort((a, b) => a.sequence < b.sequence ? -1 : a.sequence > b.sequence ? 1 : 0)) {
+  for (const event of order.events.slice().sort((a, b) => sequenceAsBigInt(a.sequence) < sequenceAsBigInt(b.sequence) ? -1 : sequenceAsBigInt(a.sequence) > sequenceAsBigInt(b.sequence) ? 1 : 0)) {
     const entry = historyEntry(event, order.fulfillment === "DINE_IN" ? "PICKUP" : order.fulfillment);
     if (!entry) continue;
     const previous = history.at(-1);
@@ -94,7 +102,7 @@ export function toPublicOrderTracking(order: PublicOrderRecord): PublicOrderTrac
   const currentStage = toPublicTrackingStage(order);
   const [title, message] = stageTitle(currentStage, fulfillment);
   const history = toPublicOrderHistory({ fulfillment, events: order.events });
-  const version = order.events.length ? order.events.reduce<bigint>((max, event) => event.sequence > max ? BigInt(event.sequence) : max, BigInt(0)).toString() : "0";
+  const version = order.events.length ? order.events.reduce<bigint>((max, event) => { const sequence = sequenceAsBigInt(event.sequence); return sequence > max ? sequence : max; }, BigInt(0)).toString() : "0";
   return {
     orderCode: formatOrderNumber(order.orderNumber), fulfillment, currentStage, title, message,
     totalAmount: order.totalAmount, deliveryFeeAmount: order.deliveryFeeAmount,

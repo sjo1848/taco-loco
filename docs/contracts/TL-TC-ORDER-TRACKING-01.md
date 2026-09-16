@@ -30,6 +30,7 @@ Allow a customer to consult the current state and public history of an order wit
 | Public safety | Central projection and tracking API | Only an allow-listed projection is returned; malformed/unknown tokens have the same generic 404; no order lookup by TL number/client reference | Allow-list/security tests |
 | Public lifecycle | `public-tracking.ts` | Current stage derives from real Order state; history is ordered by sequence, deduplicated and hides operational-only events | Projection tests |
 | Efficient polling | API and customer page | `after` returns 204 when unchanged; visible polling backs off on errors, pauses hidden, resumes immediately, and stops at terminal stages | API/UI tests and staging evidence |
+| Cursor precision | D1 adapter and public projection | Sequence values remain exact within the adapter's safe integer boundary; unsafe values fail explicitly rather than being silently rounded, and unsafe external cursors are not sent to D1 | Precision guard test and runtime evidence |
 | Checkout integration | Intent response, MenuExperience, WhatsApp | Response includes tracking path/URL; success UI exposes tracking; WhatsApp includes the absolute link without making tracking mandatory | Component/route tests and staging journey |
 | Compatibility | Existing order flow/admin SSE | Existing PICKUP/DELIVERY, idempotency, payment guard, admin history/SSE and D1 behavior remain intact | Full QA and regression evidence |
 
@@ -43,6 +44,7 @@ Allow a customer to consult the current state and public history of an order wit
 - The public projection must not expose IDs, token, client reference, actor/admin data, customer contact/address/payment-holder data, internal reason/notes, raw statuses or D1 sequence semantics.
 - No customer account, login, OTP, phone collection, cross-device history, multitenancy, or new Cloudflare product.
 - Additive migrations only; do not rewrite historical events.
+- The current Prisma D1 adapter exposes numeric SQLite sequences within JavaScript's safe-integer range. Taco Loco's expected operational volume is materially below that boundary; the implementation rejects unsafe loaded values explicitly and treats unsafe external cursors as a cache miss/full projection, never as a rounded cursor.
 - Preserve atomic Order/OrderLine/OrderEvent/token creation in both runtimes.
 - Do not modify `products/`, the historical source repository, production resources, production data, production secrets or production DNS.
 

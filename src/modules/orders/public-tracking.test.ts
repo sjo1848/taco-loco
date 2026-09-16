@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toPublicOrderHistory, toPublicOrderTracking, toPublicTrackingStage } from "./public-tracking";
+import { sequenceAsBigInt, toPublicOrderHistory, toPublicOrderTracking, toPublicTrackingStage } from "./public-tracking";
 
 const base = { orderNumber: 27, fulfillment: "PICKUP" as const, status: "RECEIVED", verificationStatus: "PENDING", paymentStatus: "NOT_REQUIRED", refundStatus: "NOT_REQUIRED", totalAmount: 17000, deliveryFeeAmount: 0, createdAt: "2026-09-16T20:00:00.000Z", updatedAt: "2026-09-16T20:00:00.000Z", lines: [{ productName: "Taco", quantity: 2, modifiersSnapshot: [{ group: "Salsa", option: "Guacamole" }] }] };
 
@@ -21,13 +21,17 @@ describe("public order tracking projection", () => {
   });
 
   it("preserves large D1 sequence values without Number precision loss", () => {
-    const large = BigInt("9007199254740993");
+    const large = BigInt("9007199254740990");
     const result = toPublicOrderTracking({ ...base, events: [
       { sequence: large, kind: "ORDER_CREATED", toStatus: "RECEIVED", createdAt: base.createdAt },
       { sequence: large + BigInt(1), kind: "STATUS_TRANSITION", toStatus: "CONFIRMED", createdAt: "2026-09-16T20:01:00Z" },
     ] });
-    expect(result.version).toBe("9007199254740994");
+    expect(result.version).toBe("9007199254740991");
     expect(result.history.map((item) => item.label)).toEqual(["Pedido enviado", "Pedido confirmado"]);
+  });
+
+  it("fails explicitly instead of silently corrupting an unsafe adapter sequence", () => {
+    expect(() => sequenceAsBigInt(Number.MAX_SAFE_INTEGER + 1)).toThrow("ORDER_EVENT_SEQUENCE_UNSAFE");
   });
 
   it("constructs an allow-listed public object", () => {
