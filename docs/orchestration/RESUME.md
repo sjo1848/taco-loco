@@ -3,12 +3,12 @@
 Updated: 2026-09-15
 
 - Repository: `sjo1848/taco-loco`
-- Branch: `rework/tl-order-flow-01`
-- Application candidate: `ea99ca83d7e6831833a97a11e21d5585c0903273`
+- Branch: `rework/tl-order-tracking-01`
+- Application candidate: `1d96410c5b10d5275beaf61943ddde10732ea171`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
 - State: `CORRECTIVE_INTERVENTION / STAGING_MANUAL_REVIEW_PASS`
-- Active contract: `docs/contracts/TL-TC-ORDER-FLOW-01.md`
+- Active contract: `docs/contracts/TL-TC-ORDER-TRACKING-01.md`
 - Production: `NOT_AUTHORIZED`
 
 ## Proven checkpoint
@@ -54,4 +54,8 @@ The corrective workflow on exact candidate `ea99ca8` makes `/admin` redirect to 
 
 ## Next authorized objective
 
-Human review of the corrected staging operational workflow after Independent Critic and Integration Review. Production remains `NOT_AUTHORIZED`.
+Deploy and validate the frozen tracking candidate in the existing staging Worker/D1 only. Required journeys are public tracking for PICKUP and DELIVERY, opaque cursor polling, reload reconstruction, privacy, and regression of admin/order flow. Stop at `HUMAN_TRACKING_WORKFLOW_REVIEW`; production remains `NOT_AUTHORIZED`.
+
+## Tracking local assurance
+
+Candidate `1d96410c5b10d5275beaf61943ddde10732ea171` passed Stages A–D locally. Evidence: `docs/evidence/TL-TC-ORDER-TRACKING-STAGE-A-1d96410.md`, `...STAGE-B...`, `...STAGE-C...`, `...STAGE-D...`. Independent Critic and Integration Review are PASS. The public cursor is an opaque SHA-256 capability-derived value; no raw `OrderEvent.sequence` is exposed.

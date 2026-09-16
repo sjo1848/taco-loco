@@ -37,3 +37,15 @@ As of: 2026-09-13
 - Corrective workflow Integration Review: PROVEN PASS — `docs/reviews/TL-STAGING-MANUAL-REVIEW-integration-review-ea99ca8.md`.
 
 Coverage is conservative; no historical process or PASS state is fabricated.
+
+## Customer tracking — 2026-09-16
+
+- Contract: PROVEN local assurance — `docs/contracts/TL-TC-ORDER-TRACKING-01.md`.
+- Stage A: PROVEN PASS — `docs/evidence/TL-TC-ORDER-TRACKING-STAGE-A-1d96410.md`.
+- Stage B: PROVEN PASS — `docs/evidence/TL-TC-ORDER-TRACKING-STAGE-B-1d96410.md`; opaque SHA-256 cursor, safe allow-list, generic 404/no-store/204 behavior.
+- Stage C: PROVEN PASS — `docs/evidence/TL-TC-ORDER-TRACKING-STAGE-C-1d96410.md`; bounded cancellable polling.
+- Stage D: PROVEN PASS — `docs/evidence/TL-TC-ORDER-TRACKING-STAGE-D-1d96410.md`; intent, success dialog, session UX and WhatsApp integration.
+- Independent Critic: PROVEN PASS — `docs/reviews/TL-TC-ORDER-TRACKING-independent-critic-1d96410.md`.
+- Integration Review: PROVEN PASS — `docs/reviews/TL-TC-ORDER-TRACKING-integration-review-1d96410.md`.
+- Remote staging: UNKNOWN/PENDING for this feature; no remote tracking migration or deployment is claimed yet.
+- Production: NOT_AUTHORIZED.

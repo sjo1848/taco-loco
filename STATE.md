@@ -2,8 +2,9 @@
 Updated: 2026-09-15
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: CORRECTIVE_INTERVENTION / STAGING_MANUAL_REVIEW_PASS
-Active contract: TL-TC-ORDER-FLOW-01 (`STAGE_A_PASS / STAGING_ONLY`)
+Status: TRACKING_LOCAL_ASSURANCE_PASS / STAGING_PENDING
+Active contract: TL-TC-ORDER-TRACKING-01 (`TRACKING_STAGE_D_PASS / STAGING_ONLY`)
+Tracking candidate: `1d96410c5b10d5275beaf61943ddde10732ea171`
 Application candidate: `ea99ca83d7e6831833a97a11e21d5585c0903273`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
@@ -94,4 +95,15 @@ For staging manual review only, products without a dedicated asset may temporari
 
 ## Next action
 
-Human review of the corrected staging operational workflow. Production remains unauthorized.
+Deploy the frozen tracking candidate to the existing staging Worker/D1, apply only the additive tracking migration, validate bounded PICKUP/DELIVERY tracking, then stop at `HUMAN_TRACKING_WORKFLOW_REVIEW`. Production remains unauthorized.
+
+## Customer tracking checkpoint — 2026-09-16
+
+- Contract: `TL-TC-ORDER-TRACKING-01`.
+- Candidate: `1d96410c5b10d5275beaf61943ddde10732ea171`.
+- Stage A/B/C/D: PASS locally; 50 tests, typecheck, affected lint and `build:vinext` PASS.
+- Independent Critic: PASS — `docs/reviews/TL-TC-ORDER-TRACKING-independent-critic-1d96410.md`.
+- Integration Review: PASS — `docs/reviews/TL-TC-ORDER-TRACKING-integration-review-1d96410.md`.
+- Public cursor is opaque; raw D1 sequence is not exposed. D1 safe-integer boundary is explicit and unsafe values fail safely.
+- Remote staging: `PENDING`; no remote migration/deployment performed yet for this feature.
+- Production: `NOT_AUTHORIZED`.
