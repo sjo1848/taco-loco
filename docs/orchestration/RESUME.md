@@ -5,6 +5,7 @@ Updated: 2026-09-15
 - Repository: `sjo1848/taco-loco`
 - Branch: `rework/tl-order-tracking-01`
 - Application candidate: `1d96410c5b10d5275beaf61943ddde10732ea171`
+- Execution HEAD: `e8effcd867e39976d3e8ff96119c01dadf0e7604`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
 - State: `CORRECTIVE_INTERVENTION / STAGING_MANUAL_REVIEW_PASS`

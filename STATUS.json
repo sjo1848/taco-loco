@@ -5,6 +5,7 @@
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
   "targetBranch": "rework/tl-order-tracking-01",
   "technicalCandidate": "1d96410c5b10d5275beaf61943ddde10732ea171",
+  "executionHead": "DYNAMIC_GIT_HEAD",
   "stage": "ORDER_FLOW_STAGES_BCD_IMPLEMENTED_CRITIC_PENDING",
   "remoteIntegration": "PASS_BASELINE",
   "stagingWorker": "taco-loco-staging-20260913",

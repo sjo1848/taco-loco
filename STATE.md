@@ -5,6 +5,7 @@ Phase: IMPLEMENT / VALIDATE
 Status: REMOTE_INTEGRATION_PASS / HUMAN_TRACKING_WORKFLOW_REVIEW
 Active contract: TL-TC-ORDER-TRACKING-01 (`TRACKING_STAGE_D_PASS / STAGING_ONLY`)
 Tracking candidate: `1d96410c5b10d5275beaf61943ddde10732ea171`
+Execution HEAD: resolve dynamically with `git rev-parse HEAD`; last persisted governance checkpoint was `e8effcd867e39976d3e8ff96119c01dadf0e7604`.
 Application candidate: `ea99ca83d7e6831833a97a11e21d5585c0903273`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
