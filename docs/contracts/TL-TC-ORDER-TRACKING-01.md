@@ -44,7 +44,7 @@ Allow a customer to consult the current state and public history of an order wit
 - The public projection must not expose IDs, token, client reference, actor/admin data, customer contact/address/payment-holder data, internal reason/notes, raw statuses or D1 sequence semantics.
 - No customer account, login, OTP, phone collection, cross-device history, multitenancy, or new Cloudflare product.
 - Additive migrations only; do not rewrite historical events.
-- The current Prisma D1 adapter exposes numeric SQLite sequences within JavaScript's safe-integer range. Taco Loco's expected operational volume is materially below that boundary; the implementation rejects unsafe loaded values explicitly and treats unsafe external cursors as a cache miss/full projection, never as a rounded cursor.
+- The current Prisma D1 adapter exposes numeric SQLite sequences within JavaScript's safe-integer range, exactly `Number.MAX_SAFE_INTEGER = 9,007,199,254,740,991`. Taco Loco's bounded operational staging workload is orders of magnitude below this boundary: even one million persisted events per second would take roughly 285 years to reach it. The implementation rejects unsafe loaded values explicitly and treats unsafe external cursors as a cache miss/full projection, never as a rounded cursor.
 - Preserve atomic Order/OrderLine/OrderEvent/token creation in both runtimes.
 - Do not modify `products/`, the historical source repository, production resources, production data, production secrets or production DNS.
 
