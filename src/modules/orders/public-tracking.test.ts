@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sequenceAsBigInt, toPublicOrderHistory, toPublicOrderTracking, toPublicTrackingStage } from "./public-tracking";
+import { publicTrackingCursor, sequenceAsBigInt, toPublicOrderHistory, toPublicOrderTracking, toPublicTrackingStage } from "./public-tracking";
 
 const base = { orderNumber: 27, fulfillment: "PICKUP" as const, status: "RECEIVED", verificationStatus: "PENDING", paymentStatus: "NOT_REQUIRED", refundStatus: "NOT_REQUIRED", totalAmount: 17000, deliveryFeeAmount: 0, createdAt: "2026-09-16T20:00:00.000Z", updatedAt: "2026-09-16T20:00:00.000Z", lines: [{ productName: "Taco", quantity: 2, modifiersSnapshot: [{ group: "Salsa", option: "Guacamole" }] }] };
 
@@ -26,12 +26,19 @@ describe("public order tracking projection", () => {
       { sequence: large, kind: "ORDER_CREATED", toStatus: "RECEIVED", createdAt: base.createdAt },
       { sequence: large + BigInt(1), kind: "STATUS_TRANSITION", toStatus: "CONFIRMED", createdAt: "2026-09-16T20:01:00Z" },
     ] });
-    expect(result.version).toBe("9007199254740991");
+    expect(sequenceAsBigInt(large + BigInt(1)).toString()).toBe("9007199254740991");
+    expect(result.version).toBe("0");
     expect(result.history.map((item) => item.label)).toEqual(["Pedido enviado", "Pedido confirmado"]);
   });
 
   it("fails explicitly instead of silently corrupting an unsafe adapter sequence", () => {
     expect(() => sequenceAsBigInt(Number.MAX_SAFE_INTEGER + 1)).toThrow("ORDER_EVENT_SEQUENCE_UNSAFE");
+  });
+
+  it("uses an opaque cursor rather than exposing the sequence", async () => {
+    const cursor = await publicTrackingCursor("A".repeat(43), BigInt(34));
+    expect(cursor).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(cursor).not.toContain("34");
   });
 
   it("constructs an allow-listed public object", () => {

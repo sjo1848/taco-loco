@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { OrderTracking } from "@/components/public/OrderTracking";
-import { toPublicOrderTracking } from "@/modules/orders/public-tracking";
+import { buildPublicOrderTracking } from "@/modules/orders/public-tracking";
 import { orderRepository } from "@/modules/orders/repository";
 import { isPublicTrackingToken } from "@/modules/orders/tracking-token";
 
@@ -13,5 +13,5 @@ export default async function TrackingPage({ params }: { params: Promise<{ token
   if (!isPublicTrackingToken(token)) notFound();
   const order = await orderRepository.findByTrackingToken(token);
   if (!order) notFound();
-  return <OrderTracking initial={toPublicOrderTracking(order)} />;
+  return <OrderTracking initial={await buildPublicOrderTracking(order, token)} />;
 }

@@ -32,6 +32,17 @@ export function sequenceAsBigInt(sequence: bigint | number) {
   return normalized;
 }
 
+function base64Url(bytes: Uint8Array) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+export async function publicTrackingCursor(token: string, sequence: bigint | number) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`taco-loco:tracking:${token}:${sequenceAsBigInt(sequence).toString()}`));
+  return base64Url(new Uint8Array(digest));
+}
+
 function iso(value: Date | string) { return value instanceof Date ? value.toISOString() : new Date(value).toISOString(); }
 function stageTitle(stage: PublicOrderStage, fulfillment: "PICKUP" | "DELIVERY") {
   const copy: Record<PublicOrderStage, [string, string]> = {
@@ -97,12 +108,11 @@ export function toPublicOrderHistory(order: Pick<PublicOrderRecord, "fulfillment
   return history;
 }
 
-export function toPublicOrderTracking(order: PublicOrderRecord): PublicOrderTracking {
+export function toPublicOrderTracking(order: PublicOrderRecord, version = "0"): PublicOrderTracking {
   const fulfillment = order.fulfillment === "DINE_IN" ? "PICKUP" : order.fulfillment;
   const currentStage = toPublicTrackingStage(order);
   const [title, message] = stageTitle(currentStage, fulfillment);
   const history = toPublicOrderHistory({ fulfillment, events: order.events });
-  const version = order.events.length ? order.events.reduce<bigint>((max, event) => { const sequence = sequenceAsBigInt(event.sequence); return sequence > max ? sequence : max; }, BigInt(0)).toString() : "0";
   return {
     orderCode: formatOrderNumber(order.orderNumber), fulfillment, currentStage, title, message,
     totalAmount: order.totalAmount, deliveryFeeAmount: order.deliveryFeeAmount,
@@ -110,4 +120,9 @@ export function toPublicOrderTracking(order: PublicOrderRecord): PublicOrderTrac
     lines: order.lines.map((line) => ({ name: line.productName, quantity: line.quantity, modifiers: Array.isArray(line.modifiersSnapshot) ? line.modifiersSnapshot.filter((item): item is { group: string; option: string } => Boolean(item) && typeof item === "object" && "group" in item && "option" in item).map((item) => ({ group: item.group, option: item.option })) : [] })),
     version,
   };
+}
+
+export async function buildPublicOrderTracking(order: PublicOrderRecord, token: string) {
+  const lastSequence = order.events.reduce<bigint>((max, event) => { const sequence = sequenceAsBigInt(event.sequence); return sequence > max ? sequence : max; }, BigInt(0));
+  return toPublicOrderTracking(order, await publicTrackingCursor(token, lastSequence));
 }
