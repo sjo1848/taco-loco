@@ -60,10 +60,10 @@ export function buildWhatsAppMessageWithOrder(lines: SelectionLine[], businessNa
   return [`Hola ${businessName}, quiero ordenar:`, `Pedido: TL-${String(orderNumber).padStart(4, "0")}`, "", ...rows, "", "Quedo a la espera de confirmación."] .join("\n");
 }
 
-export function buildWhatsAppMessageWithCheckout(lines: SelectionLine[], businessName: string, orderNumber: number, checkout: CheckoutDetails) {
+export function buildWhatsAppMessageWithCheckout(lines: SelectionLine[], businessName: string, orderNumber: number, checkout: CheckoutDetails, trackingUrl?: string) {
   const base = buildWhatsAppMessageWithOrder(lines, businessName, orderNumber);
-  if (checkout.fulfillment === "PICKUP") return `${base}\n\nModalidad: Retiro`;
-  return `${base}\n\nModalidad: Delivery\nDirección: ${checkout.deliveryAddress ?? ""}${checkout.deliveryReference ? `\nReferencia: ${checkout.deliveryReference}` : ""}\nTitular de la transferencia: ${checkout.transferHolderName ?? ""}`;
+  const details = checkout.fulfillment === "PICKUP" ? `${base}\n\nModalidad: Retiro` : `${base}\n\nModalidad: Delivery\nDirección: ${checkout.deliveryAddress ?? ""}${checkout.deliveryReference ? `\nReferencia: ${checkout.deliveryReference}` : ""}\nTitular de la transferencia: ${checkout.transferHolderName ?? ""}`;
+  return trackingUrl ? `${details}\n\nSeguí el estado de tu pedido:\n${trackingUrl}` : details;
 }
 
 export function buildWhatsAppUrl(baseUrl: string, message: string) {

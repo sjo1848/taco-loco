@@ -12,7 +12,9 @@ export async function POST(request: Request) {
     const limit = publicOrderIntentRateLimit(key);
     if (!limit.allowed) return NextResponse.json({ code: "RATE_LIMITED", message: "Demasiados intentos. Volvé a intentar más tarde." }, { status: 429, headers: { "retry-after": String(limit.retryAfter) } });
     const result = await createPublicOrderIntent(await request.json());
-    return NextResponse.json({ order: { id: result.order.id, orderNumber: result.order.orderNumber, totalAmount: result.order.totalAmount }, reused: result.reused }, { status: result.reused ? 200 : 201 });
+    const trackingPath = result.order.publicTrackingToken ? `/pedido/${result.order.publicTrackingToken}` : null;
+    const trackingUrl = trackingPath ? new URL(trackingPath, request.url).toString() : null;
+    return NextResponse.json({ order: { id: result.order.id, orderNumber: result.order.orderNumber, totalAmount: result.order.totalAmount }, tracking: trackingPath ? { path: trackingPath, url: trackingUrl } : null, reused: result.reused }, { status: result.reused ? 200 : 201 });
   } catch (error) {
     console.error("[orders.intent] request failed", error instanceof Error ? error.message : error);
     if (error instanceof AppError) return NextResponse.json({ code: error.code, message: error.message }, { status: error.status });

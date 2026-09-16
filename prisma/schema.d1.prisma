@@ -64,6 +64,18 @@ enum OrderSource {
   PUBLIC_MENU
 }
 
+enum OrderEventKind {
+  ORDER_CREATED
+  STATUS_TRANSITION
+  PAYMENT_REPORTED
+  PAYMENT_REJECTED
+  PAYMENT_AND_ORDER_CONFIRMED
+  PENDING_EXPIRED
+  NO_SHOW_RECORDED
+  REFUND_REQUIRED
+  REFUNDED
+}
+
 model Order {
   id                     String             @id @default(uuid())
   orderNumber            Int                @unique
@@ -96,6 +108,7 @@ model Order {
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
   clientReference        String?            @unique
+  publicTrackingToken    String?            @unique
   createdById            String?
   updatedById            String?
   createdBy              AdminUser?         @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
@@ -133,6 +146,7 @@ model OrderEvent {
   fromStatus OrderStatus?
   toStatus   OrderStatus
   reason     String?
+  kind       OrderEventKind @default(STATUS_TRANSITION)
   createdAt  DateTime     @default(now())
   actorId    String?
   order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)

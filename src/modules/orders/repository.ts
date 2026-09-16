@@ -20,6 +20,19 @@ export const orderRepository = {
     return db.orderEvent.findMany({ where: { sequence: { gt: sequence } }, orderBy: { sequence: "asc" }, take, select: { sequence: true, orderId: true } });
   },
 
+  async latestEventSequenceForOrder(orderId: string) {
+    const event = await db.orderEvent.findFirst({ where: { orderId }, orderBy: { sequence: "desc" }, select: { sequence: true } });
+    return event?.sequence ?? BigInt(0);
+  },
+
+  async hasEventAfter(orderId: string, sequence: bigint) {
+    return Boolean(await db.orderEvent.findFirst({ where: { orderId, sequence: { gt: sequence } }, select: { id: true } }));
+  },
+
+  async findByTrackingToken(token: string) {
+    return db.order.findUnique({ where: { publicTrackingToken: token }, include: { lines: true, events: { orderBy: { sequence: "asc" } } } });
+  },
+
   async list(filter: OrderListFilter = {}) {
     const query = filter.query?.trim() ?? "";
     const orderNumber = query ? parseOrderNumber(query) : null;

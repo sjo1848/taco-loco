@@ -1,4 +1,5 @@
 import type { D1Database } from "@cloudflare/workers-types";
+import { workflowActionEventKind } from "@/modules/orders/event-kind";
 
 type D1Statement = ReturnType<D1Database["prepare"]>;
 
@@ -31,8 +32,10 @@ export type D1OrderWrite = {
   adjustmentAmount: number;
   totalAmount: number;
   clientReference: string | null;
+  publicTrackingToken?: string | null;
   createdById: string | null;
   reason: string;
+  eventKind?: "ORDER_CREATED" | "STATUS_TRANSITION";
   lines: D1OrderLineWrite[];
 };
 
@@ -51,11 +54,13 @@ export async function createD1OrderWith(db: D1Database, input: D1OrderWrite) {
   const deliveryFeeAmount = input.deliveryFeeAmount ?? 0;
   const transferHolderName = input.transferHolderName ?? null;
   const statements: D1Statement[] = [
-    db.prepare(`INSERT INTO "Order" ("id", "orderNumber", "status", "fulfillment", "verificationStatus", "paymentStatus", "refundStatus", "source", "customerName", "customerPhone", "tableLabel", "notes", "deliveryAddress", "deliveryReference", "deliveryFeeAmount", "transferHolderName", "subtotalAmount", "adjustmentAmount", "totalAmount", "clientReference", "createdById", "createdAt", "updatedAt") VALUES (?, (SELECT COALESCE(MAX("orderNumber"), 0) + 1 FROM "Order"), 'RECEIVED',
-      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-      )`).bind(input.id, input.fulfillment, verificationStatus, paymentStatus, refundStatus, input.source, input.customerName, input.customerPhone, input.tableLabel, input.notes, deliveryAddress, deliveryReference, deliveryFeeAmount, transferHolderName, input.subtotalAmount, input.adjustmentAmount, input.totalAmount, input.clientReference, input.createdById, now, now),
+    db.prepare(`INSERT INTO "Order" ("id", "orderNumber", "status", "fulfillment", "verificationStatus", "paymentStatus", "refundStatus", "source", "customerName", "customerPhone", "tableLabel", "notes", "deliveryAddress", "deliveryReference", "deliveryFeeAmount", "transferHolderName", "subtotalAmount", "adjustmentAmount", "totalAmount", "clientReference", "publicTrackingToken", "createdById", "createdAt", "updatedAt") VALUES (?, (SELECT COALESCE(MAX("orderNumber"), 0) + 1 FROM "Order"), 'RECEIVED',
+      ?, ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, ?, ?
+      )`).bind(input.id, input.fulfillment, verificationStatus, paymentStatus, refundStatus, input.source, input.customerName, input.customerPhone, input.tableLabel, input.notes, deliveryAddress, deliveryReference, deliveryFeeAmount, transferHolderName, input.subtotalAmount, input.adjustmentAmount, input.totalAmount, input.clientReference, input.publicTrackingToken, input.createdById, now, now),
     ...input.lines.map((line) => db.prepare(`INSERT INTO "OrderLine" ("id", "orderId", "productId", "productName", "unitPriceAmount", "quantity", "modifiersSnapshot", "note", "createdAt") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(line.id, input.id, line.productId, line.productName, line.unitPriceAmount, line.quantity, JSON.stringify(line.modifiersSnapshot), line.note, now)),
-    db.prepare(`INSERT INTO "OrderEvent" ("id", "sequence", "orderId", "fromStatus", "toStatus", "reason", "createdAt", "actorId") VALUES (?, (SELECT COALESCE(MAX("sequence"), 0) + 1 FROM "OrderEvent"), ?, NULL, 'RECEIVED', ?, ?, ?)`).bind(crypto.randomUUID(), input.id, input.reason, now, input.createdById),
+    db.prepare(`INSERT INTO "OrderEvent" ("id", "sequence", "orderId", "fromStatus", "toStatus", "reason", "kind", "createdAt", "actorId") VALUES (?, (SELECT COALESCE(MAX("sequence"), 0) + 1 FROM "OrderEvent"), ?, NULL, 'RECEIVED', ?, ?, ?, ?)`).bind(crypto.randomUUID(), input.id, input.reason, input.eventKind ?? "STATUS_TRANSITION", now, input.createdById),
   ];
   const results = await db.batch(statements);
   assertBatchSucceeded(results);
@@ -76,13 +81,14 @@ export type D1TransitionWrite = {
   paymentStatus?: string | null;
   paymentConfirmedAt?: string | null;
   requireConfirmedPayment?: boolean;
+  eventKind?: "STATUS_TRANSITION";
 };
 
 export async function transitionD1OrderWith(db: D1Database, input: D1TransitionWrite) {
   const now = new Date().toISOString();
   const paymentGuard = input.requireConfirmedPayment ? ` AND "paymentStatus" = 'CONFIRMED'` : "";
   const update = db.prepare(`UPDATE "Order" SET "status" = ?, "verificationStatus" = COALESCE(?, "verificationStatus"), "verificationResolvedAt" = COALESCE(?, "verificationResolvedAt"), "paymentStatus" = COALESCE(?, "paymentStatus"), "paymentConfirmedAt" = COALESCE(?, "paymentConfirmedAt"), "confirmedAt" = COALESCE(?, "confirmedAt"), "closedAt" = COALESCE(?, "closedAt"), "cancellationReason" = COALESCE(?, "cancellationReason"), "updatedById" = ?, "updatedAt" = ? WHERE "id" = ? AND "status" = ?${paymentGuard}`).bind(input.toStatus, input.verificationStatus, input.verificationResolvedAt, input.paymentStatus, input.paymentConfirmedAt, input.confirmedAt, input.closedAt, input.cancellationReason, input.actorId, now, input.orderId, input.fromStatus);
-  const event = db.prepare(`INSERT INTO "OrderEvent" ("id", "sequence", "orderId", "fromStatus", "toStatus", "reason", "createdAt", "actorId") SELECT ?, "nextSequence", ?, ?, ?, ?, ?, ? FROM (SELECT COALESCE(MAX("sequence"), 0) + 1 AS "nextSequence" FROM "OrderEvent") WHERE changes() = 1`).bind(crypto.randomUUID(), input.orderId, input.fromStatus, input.toStatus, input.reason, now, input.actorId);
+  const event = db.prepare(`INSERT INTO "OrderEvent" ("id", "sequence", "orderId", "fromStatus", "toStatus", "reason", "kind", "createdAt", "actorId") SELECT ?, "nextSequence", ?, ?, ?, ?, ?, ?, ? FROM (SELECT COALESCE(MAX("sequence"), 0) + 1 AS "nextSequence" FROM "OrderEvent") WHERE changes() = 1`).bind(crypto.randomUUID(), input.orderId, input.fromStatus, input.toStatus, input.reason, input.eventKind ?? "STATUS_TRANSITION", now, input.actorId);
   const results = await db.batch([update, event]);
   assertBatchSucceeded(results);
   const changed = Number(results[0]?.meta?.changes ?? 0);
@@ -107,7 +113,8 @@ export async function applyD1WorkflowActionWith(db: D1Database, input: D1Workflo
       : isPaymentReport
         ? db.prepare(`UPDATE "Order" SET "paymentStatus" = ?, "paymentReportedAt" = ?, "updatedById" = ?, "updatedAt" = ? WHERE "id" = ? AND "status" = ? AND ${input.action === "REPORT_PAYMENT" ? '"paymentStatus" = \'PENDING\'' : '"paymentStatus" IN (\'PENDING\', \'REPORTED\')'}`).bind(input.action === "REPORT_PAYMENT" ? "REPORTED" : "REJECTED", now, input.actorId, now, input.orderId, input.fromStatus)
         : db.prepare(`UPDATE "Order" SET "refundStatus" = ?, "refundRequiredAt" = COALESCE("refundRequiredAt", ?), "refundedAt" = CASE WHEN ? = 'REFUNDED' THEN ? ELSE "refundedAt" END, "updatedById" = ?, "updatedAt" = ? WHERE "id" = ? AND "status" = ? AND "refundStatus" = ?`).bind(input.refundStatus, now, input.refundStatus, now, input.actorId, now, input.orderId, input.fromStatus, isRefundRequired ? "NOT_REQUIRED" : "REQUIRED");
-  const event = db.prepare(`INSERT INTO "OrderEvent" ("id", "sequence", "orderId", "fromStatus", "toStatus", "reason", "createdAt", "actorId") SELECT ?, COALESCE(MAX("sequence"), 0) + 1, ?, ?, ?, ?, ?, ? FROM "OrderEvent" WHERE changes() = 1`).bind(crypto.randomUUID(), input.orderId, input.fromStatus, isDeliveryConfirmation ? "CONFIRMED" : isExpiry ? "CANCELLED" : input.fromStatus, input.reason, now, input.actorId);
+  const eventKind = workflowActionEventKind(input.action);
+  const event = db.prepare(`INSERT INTO "OrderEvent" ("id", "sequence", "orderId", "fromStatus", "toStatus", "reason", "kind", "createdAt", "actorId") SELECT ?, COALESCE(MAX("sequence"), 0) + 1, ?, ?, ?, ?, ?, ?, ? FROM "OrderEvent" WHERE changes() = 1`).bind(crypto.randomUUID(), input.orderId, input.fromStatus, isDeliveryConfirmation ? "CONFIRMED" : isExpiry ? "CANCELLED" : input.fromStatus, input.reason, eventKind, now, input.actorId);
   const results = await db.batch([update, event]);
   assertBatchSucceeded(results);
   if (Number(results[0]?.meta?.changes ?? 0) !== 1) throw new Error("D1_WORKFLOW_ACTION_REJECTED");

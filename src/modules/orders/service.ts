@@ -4,6 +4,8 @@ import { assertValidTransition, orderFulfillmentSchema, orderStatusSchema, type 
 import { z } from "zod";
 import { publishOrderEvent } from "@/modules/orders/live-events";
 import { isD1Runtime } from "@/lib/runtime";
+import { createPublicTrackingToken } from "@/modules/orders/tracking-token";
+import { workflowActionEventKind } from "@/modules/orders/event-kind";
 
 export const transitionOrderInputSchema = z.object({
   orderId: z.uuid(),
@@ -63,6 +65,7 @@ type OrderWorkflow = {
   deliveryReference: string | null;
   deliveryFeeAmount: number;
   transferHolderName: string | null;
+  publicTrackingToken?: string | null;
 };
 
 export function transitionOrderData(toStatus: OrderStatus, reason: string | null | undefined, now = new Date()) {
@@ -110,7 +113,7 @@ export async function createManualOrder(input: unknown, actorId: string | null, 
   if (isD1Runtime) {
     const { createD1Order } = await import("@/modules/orders/d1-atomic.worker");
     const id = crypto.randomUUID();
-    await createD1Order({ id, source, fulfillment: parsed.fulfillment, verificationStatus: workflow.verificationStatus, paymentStatus: workflow.paymentStatus, deliveryAddress: workflow.deliveryAddress, deliveryReference: workflow.deliveryReference, deliveryFeeAmount: workflow.deliveryFeeAmount, transferHolderName: workflow.transferHolderName, customerName: parsed.customerName ?? null, customerPhone: parsed.customerPhone ?? null, tableLabel: parsed.tableLabel ?? null, notes: parsed.notes ?? null, subtotalAmount, adjustmentAmount: parsed.adjustmentAmount, totalAmount, clientReference, createdById: actorId, reason, lines: resolvedLines.map((line) => ({ ...line, id: crypto.randomUUID() })) });
+    await createD1Order({ id, source, fulfillment: parsed.fulfillment, verificationStatus: workflow.verificationStatus, paymentStatus: workflow.paymentStatus, deliveryAddress: workflow.deliveryAddress, deliveryReference: workflow.deliveryReference, deliveryFeeAmount: workflow.deliveryFeeAmount, transferHolderName: workflow.transferHolderName, customerName: parsed.customerName ?? null, customerPhone: parsed.customerPhone ?? null, tableLabel: parsed.tableLabel ?? null, notes: parsed.notes ?? null, subtotalAmount, adjustmentAmount: parsed.adjustmentAmount, totalAmount, clientReference, publicTrackingToken: workflow.publicTrackingToken ?? null, createdById: actorId, reason, eventKind: source === "PUBLIC_MENU" ? "ORDER_CREATED" : "STATUS_TRANSITION", lines: resolvedLines.map((line) => ({ ...line, id: crypto.randomUUID() })) });
     const order = await db.order.findUniqueOrThrow({ where: { id }, include: { lines: true } });
     const event = await db.orderEvent.findFirstOrThrow({ where: { orderId: id }, orderBy: { sequence: "desc" } });
     return { order, event };
@@ -134,12 +137,13 @@ export async function createManualOrder(input: unknown, actorId: string | null, 
         adjustmentAmount: parsed.adjustmentAmount,
         totalAmount,
         clientReference,
+        publicTrackingToken: workflow.publicTrackingToken ?? null,
         createdById: actorId,
         lines: { create: resolvedLines },
       },
       include: { lines: true },
     });
-    const event = await tx.orderEvent.create({ data: { orderId: order.id, toStatus: "RECEIVED", actorId, reason } });
+    const event = await tx.orderEvent.create({ data: { orderId: order.id, toStatus: "RECEIVED", actorId, reason, kind: source === "PUBLIC_MENU" ? "ORDER_CREATED" : "STATUS_TRANSITION" } });
     await publishOrderEvent(tx, event);
     return { order, event };
   });
@@ -153,7 +157,7 @@ export async function createPublicOrderIntent(input: unknown) {
   if (parsed.fulfillment === "DELIVERY" && !settings.deliveryEnabled) throw new AppError("DELIVERY_UNAVAILABLE", "El delivery no está disponible en este momento.", 400);
   const deliveryFeeAmount = parsed.fulfillment === "DELIVERY" ? settings.deliveryFeeAmount : 0;
   try {
-    return await createManualOrder({ fulfillment: parsed.fulfillment, customerName: null, customerPhone: null, tableLabel: null, notes: "Intención registrada desde el menú. Confirmar recepción por WhatsApp.", adjustmentAmount: deliveryFeeAmount, lines: parsed.lines }, null, parsed.clientReference, "Intención preparada desde el menú público", "PUBLIC_MENU", { verificationStatus: "PENDING", paymentStatus: parsed.fulfillment === "DELIVERY" ? "PENDING" : "NOT_REQUIRED", deliveryAddress: parsed.deliveryAddress ?? null, deliveryReference: parsed.deliveryReference ?? null, deliveryFeeAmount, transferHolderName: parsed.transferHolderName ?? null });
+    return await createManualOrder({ fulfillment: parsed.fulfillment, customerName: null, customerPhone: null, tableLabel: null, notes: "Intención registrada desde el menú. Confirmar recepción por WhatsApp.", adjustmentAmount: deliveryFeeAmount, lines: parsed.lines }, null, parsed.clientReference, "Intención preparada desde el menú público", "PUBLIC_MENU", { verificationStatus: "PENDING", paymentStatus: parsed.fulfillment === "DELIVERY" ? "PENDING" : "NOT_REQUIRED", deliveryAddress: parsed.deliveryAddress ?? null, deliveryReference: parsed.deliveryReference ?? null, deliveryFeeAmount, transferHolderName: parsed.transferHolderName ?? null, publicTrackingToken: createPublicTrackingToken() });
   } catch (error) {
     const isClientReferenceConflict = error && typeof error === "object" && (("code" in error && error.code === "P2002") || ("message" in error && typeof error.message === "string" && error.message.includes("Order.clientReference")));
     if (isClientReferenceConflict) {
@@ -206,7 +210,7 @@ export async function transitionOrder(input: unknown, actorId: string) {
     });
     if (result.count !== 1) throw new AppError("ORDER_CHANGED", "El pedido cambió mientras lo actualizabas. Recargá e intentá de nuevo.", 409);
 
-    const event = await tx.orderEvent.create({ data: { orderId: parsed.orderId, fromStatus: txCurrent.status, toStatus: parsed.toStatus, reason: parsed.reason ?? null, actorId } });
+      const event = await tx.orderEvent.create({ data: { orderId: parsed.orderId, fromStatus: txCurrent.status, toStatus: parsed.toStatus, reason: parsed.reason ?? null, actorId, kind: "STATUS_TRANSITION" } });
     await publishOrderEvent(tx, event);
     const order = await tx.order.findUniqueOrThrow({ where: { id: parsed.orderId }, include: { lines: true, events: { orderBy: { createdAt: "asc" } } } });
     return { order, event };
@@ -235,7 +239,7 @@ export async function applyOrderWorkflowAction(input: unknown, actorId: string) 
       const data = parsed.action === "CONFIRM_PAYMENT_AND_ORDER" ? { status: "CONFIRMED" as const, verificationStatus: "VERIFIED" as const, verificationResolvedAt: now, paymentStatus: "CONFIRMED" as const, paymentConfirmedAt: now, confirmedAt: now } : parsed.action === "EXPIRE_PENDING" ? { status: "CANCELLED" as const, verificationStatus: "EXPIRED" as const, verificationResolvedAt: now, closedAt: now } : parsed.action === "MARK_NO_SHOW" ? { noShowAt: now } : parsed.action === "REPORT_PAYMENT" || parsed.action === "REJECT_PAYMENT" ? { paymentStatus: parsed.action === "REPORT_PAYMENT" ? "REPORTED" as const : "REJECTED" as const, paymentReportedAt: now } : { refundStatus, refundRequiredAt: parsed.action === "REQUIRE_REFUND" ? now : undefined, refundedAt: parsed.action === "MARK_REFUNDED" ? now : undefined };
       const result = await tx.order.updateMany({ where: { id: parsed.orderId, status: current.status, fulfillment: ["MARK_NO_SHOW", "CONFIRM_PAYMENT_AND_ORDER"].includes(parsed.action) ? parsed.action === "MARK_NO_SHOW" ? "PICKUP" : "DELIVERY" : undefined, noShowAt: parsed.action === "MARK_NO_SHOW" ? null : undefined, verificationStatus: ["EXPIRE_PENDING", "CONFIRM_PAYMENT_AND_ORDER"].includes(parsed.action) ? "PENDING" : undefined, paymentStatus: parsed.action === "CONFIRM_PAYMENT_AND_ORDER" ? { in: ["PENDING", "REPORTED"] } : parsed.action === "REPORT_PAYMENT" ? "PENDING" : parsed.action === "REJECT_PAYMENT" ? { in: ["PENDING", "REPORTED"] } : undefined, refundStatus: parsed.action === "REQUIRE_REFUND" ? "NOT_REQUIRED" : parsed.action === "MARK_REFUNDED" ? "REQUIRED" : undefined }, data: { ...data, updatedById: actorId } });
       if (result.count !== 1) throw new AppError("ORDER_ACTION_CHANGED", "El pedido cambió mientras aplicabas la acción.", 409);
-      await tx.orderEvent.create({ data: { orderId: parsed.orderId, fromStatus: current.status, toStatus: parsed.action === "EXPIRE_PENDING" ? "CANCELLED" : current.status, actorId, reason } });
+      await tx.orderEvent.create({ data: { orderId: parsed.orderId, fromStatus: current.status, toStatus: parsed.action === "EXPIRE_PENDING" ? "CANCELLED" : current.status, actorId, reason, kind: workflowActionEventKind(parsed.action) } });
     });
   }
   return db.order.findUniqueOrThrow({ where: { id: parsed.orderId }, include: { lines: true, events: { orderBy: { createdAt: "asc" } } } });
