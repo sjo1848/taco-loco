@@ -16,26 +16,29 @@ export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
 
   useEffect(() => {
     let cancelled = false;
-    const controller = new AbortController();
+    let generation = 0;
+    const requestController = { current: null as AbortController | null };
     const clear = () => { if (timer.current !== undefined) window.clearTimeout(timer.current); timer.current = undefined; };
     const schedule = (wait: number, poll: () => Promise<void>) => { clear(); if (!cancelled && visible.current && !terminalTrackingStages.includes(currentTracking.current.currentStage)) timer.current = window.setTimeout(() => void poll(), wait); };
     const poll = async (immediate = false): Promise<void> => {
       if (cancelled || !visible.current || terminalTrackingStages.includes(currentTracking.current.currentStage) || inFlight.current) return;
-      if (!immediate) await new Promise<void>((resolve) => { timer.current = window.setTimeout(resolve, delay.current); });
-      if (cancelled || !visible.current || terminalTrackingStages.includes(currentTracking.current.currentStage) || inFlight.current) return;
+      if (!immediate) { schedule(delay.current, () => poll(true)); return; }
+      const requestGeneration = generation;
       inFlight.current = true;
+      const controller = new AbortController();
+      requestController.current = controller;
       try {
         const response = await fetch(`${window.location.pathname.replace(/\/$/, "").replace("/pedido/", "/api/orders/tracking/")}?after=${encodeURIComponent(currentTracking.current.version)}`, { cache: "no-store", signal: controller.signal });
         if (response.status === 200) { const next = await response.json() as PublicOrderTracking; currentTracking.current = next; setTracking(next); delay.current = nextTrackingPollDelay(delay.current, true); setError(false); }
         else if (response.status !== 204) throw new Error("TRACKING_FAILED");
         else delay.current = nextTrackingPollDelay(delay.current, true);
-      } catch { if (cancelled || controller.signal.aborted) return; setError(true); delay.current = nextTrackingPollDelay(delay.current, false); }
-      finally { inFlight.current = false; if (!cancelled && visible.current && !terminalTrackingStages.includes(currentTracking.current.currentStage)) schedule(delay.current, poll); }
+      } catch { if (cancelled || controller.signal.aborted || requestGeneration !== generation) return; setError(true); delay.current = nextTrackingPollDelay(delay.current, false); }
+      finally { if (requestGeneration !== generation) return; inFlight.current = false; requestController.current = null; if (!cancelled && visible.current && !terminalTrackingStages.includes(currentTracking.current.currentStage)) schedule(delay.current, () => poll(true)); }
     };
-    const onVisibility = () => { visible.current = document.visibilityState === "visible"; if (visible.current) { delay.current = initialTrackingPollDelay; void poll(true); } else clear(); };
+    const onVisibility = () => { visible.current = document.visibilityState === "visible"; generation += 1; if (visible.current) { requestController.current?.abort(); inFlight.current = false; delay.current = initialTrackingPollDelay; void poll(true); } else { clear(); requestController.current?.abort(); inFlight.current = false; } };
     document.addEventListener("visibilitychange", onVisibility);
-    void poll(true);
-    return () => { cancelled = true; controller.abort(); clear(); document.removeEventListener("visibilitychange", onVisibility); };
+    if (document.visibilityState === "visible") void poll(true);
+    return () => { cancelled = true; generation += 1; requestController.current?.abort(); clear(); document.removeEventListener("visibilitychange", onVisibility); };
   }, []);
 
   return <main className="public-menu public-tracking" ref={(node) => { if (node) node.setAttribute("aria-live", "polite"); }}>
