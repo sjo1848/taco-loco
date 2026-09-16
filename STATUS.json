@@ -64,7 +64,7 @@
   "orderFlowStagesBCD": "STAGING_VALIDATION_HUMAN_INPUT",
   "orderFlowStagingValidation": "STAGING_MANUAL_REVIEW_PASS",
   "trackingContract": "TL-TC-ORDER-TRACKING-01",
-  "trackingStatus": "TRACKING_LOCAL_ASSURANCE_PASS_STAGING_PENDING",
+  "trackingStatus": "REMOTE_INTEGRATION_PASS_HUMAN_TRACKING_WORKFLOW_REVIEW",
   "trackingCandidate": "1d96410c5b10d5275beaf61943ddde10732ea171",
   "trackingStageA": "PASS",
   "trackingStageAEvidence": "docs/evidence/TL-TC-ORDER-TRACKING-STAGE-A-1d96410.md",
@@ -78,7 +78,10 @@
   "trackingIndependentCriticEvidence": "docs/reviews/TL-TC-ORDER-TRACKING-independent-critic-1d96410.md",
   "trackingIntegrationReview": "PASS",
   "trackingIntegrationReviewEvidence": "docs/reviews/TL-TC-ORDER-TRACKING-integration-review-1d96410.md",
-  "trackingRemoteStaging": "PENDING_NOT_STARTED",
+  "trackingRemoteStaging": "REMOTE_INTEGRATION_PASS",
+  "trackingRemoteStagingEvidence": "docs/evidence/TL-TC-ORDER-TRACKING-STAGING-2026-09-16.md",
+  "trackingStagingDeploymentVersion": "ef5cad20-2dbe-4e79-ba44-6a9e110f1143",
+  "trackingStagingMigration": "0003_order_tracking.sql",
   "orderFlowStagingEvidence": "docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465-delivery-2026-09-15.md",
   "orderFlowStagingDeploymentVersion": "f88fab8a-779b-410c-a7d8-4d0fc7127ef4",
   "orderFlowStagingDeliveryFee": 3000,
@@ -93,5 +96,5 @@
   "correctiveWorkflowIndependentCriticEvidence": "docs/reviews/TL-STAGING-MANUAL-REVIEW-independent-critic-ea99ca8.md",
   "correctiveWorkflowIntegrationReview": "PASS",
   "correctiveWorkflowIntegrationReviewEvidence": "docs/reviews/TL-STAGING-MANUAL-REVIEW-integration-review-ea99ca8.md",
-  "resumePoint": "Customer tracking local assurance PASS for exact candidate 1d96410; deploy additive migration and validate only existing staging next. Production remains NOT_AUTHORIZED."
+  "resumePoint": "Customer tracking REMOTE_INTEGRATION_PASS for exact candidate 1d96410; human workflow review is next. Production remains NOT_AUTHORIZED."
 }

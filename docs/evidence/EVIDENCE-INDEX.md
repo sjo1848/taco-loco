@@ -48,4 +48,5 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Independent Critic: PROVEN PASS — `docs/reviews/TL-TC-ORDER-TRACKING-independent-critic-1d96410.md`.
 - Integration Review: PROVEN PASS — `docs/reviews/TL-TC-ORDER-TRACKING-integration-review-1d96410.md`.
 - Remote staging: UNKNOWN/PENDING for this feature; no remote tracking migration or deployment is claimed yet.
+- Remote staging: PROVEN PASS — `docs/evidence/TL-TC-ORDER-TRACKING-STAGING-2026-09-16.md`; deployment `ef5cad20-2dbe-4e79-ba44-6a9e110f1143`, D1 migration, opaque token/cursor, PICKUP/DELIVERY, admin/session, idempotency and privacy checks passed. Production remains unauthorized.
 - Production: NOT_AUTHORIZED.

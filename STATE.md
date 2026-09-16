@@ -2,7 +2,7 @@
 Updated: 2026-09-15
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: TRACKING_LOCAL_ASSURANCE_PASS / STAGING_PENDING
+Status: REMOTE_INTEGRATION_PASS / HUMAN_TRACKING_WORKFLOW_REVIEW
 Active contract: TL-TC-ORDER-TRACKING-01 (`TRACKING_STAGE_D_PASS / STAGING_ONLY`)
 Tracking candidate: `1d96410c5b10d5275beaf61943ddde10732ea171`
 Application candidate: `ea99ca83d7e6831833a97a11e21d5585c0903273`
@@ -95,7 +95,7 @@ For staging manual review only, products without a dedicated asset may temporari
 
 ## Next action
 
-Deploy the frozen tracking candidate to the existing staging Worker/D1, apply only the additive tracking migration, validate bounded PICKUP/DELIVERY tracking, then stop at `HUMAN_TRACKING_WORKFLOW_REVIEW`. Production remains unauthorized.
+Stop at `HUMAN_TRACKING_WORKFLOW_REVIEW` for human browser/device review. Production remains unauthorized.
 
 ## Customer tracking checkpoint — 2026-09-16
 
@@ -105,5 +105,5 @@ Deploy the frozen tracking candidate to the existing staging Worker/D1, apply on
 - Independent Critic: PASS — `docs/reviews/TL-TC-ORDER-TRACKING-independent-critic-1d96410.md`.
 - Integration Review: PASS — `docs/reviews/TL-TC-ORDER-TRACKING-integration-review-1d96410.md`.
 - Public cursor is opaque; raw D1 sequence is not exposed. D1 safe-integer boundary is explicit and unsafe values fail safely.
-- Remote staging: `PENDING`; no remote migration/deployment performed yet for this feature.
+- Remote staging: `REMOTE_INTEGRATION_PASS`; deployment `ef5cad20-2dbe-4e79-ba44-6a9e110f1143`, D1 migration `0003_order_tracking.sql`, bounded PICKUP/DELIVERY journeys and privacy/cursor/idempotency checks passed. Evidence: `docs/evidence/TL-TC-ORDER-TRACKING-STAGING-2026-09-16.md`.
 - Production: `NOT_AUTHORIZED`.
