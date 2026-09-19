@@ -1,15 +1,15 @@
 # Taco Loco — Resume / Orchestration State
 
-Updated: 2026-09-15
+Updated: 2026-09-19
 
 - Repository: `sjo1848/taco-loco`
-- Branch: `rework/tl-order-tracking-01`
-- Application candidate: `1d96410c5b10d5275beaf61943ddde10732ea171`
-- Execution HEAD: `e8effcd867e39976d3e8ff96119c01dadf0e7604`
+- Branch: `feature/tl-brand-visual-01`
+- Application candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c`
+- Execution HEAD: resolve dynamically with `git rev-parse HEAD`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `CORRECTIVE_INTERVENTION / STAGING_MANUAL_REVIEW_PASS`
-- Active contract: `docs/contracts/TL-TC-ORDER-TRACKING-01.md`
+- State: `REMOTE_INTEGRATION_PASS / HUMAN_BRAND_WORKFLOW_REVIEW`
+- Active contract: `docs/contracts/TL-TC-BRAND-VISUAL-01.md`
 - Production: `NOT_AUTHORIZED`
 
 ## Proven checkpoint
@@ -64,3 +64,11 @@ Candidate `1d96410c5b10d5275beaf61943ddde10732ea171` passed Stages A–D locally
 Remote evidence: `docs/evidence/TL-TC-ORDER-TRACKING-STAGING-2026-09-16.md`; classification `REMOTE_INTEGRATION_PASS`. Production is not authorized.
 
 Drive snapshot synchronization: PASS; GitHub remains canonical authority.
+
+## Brand visual checkpoint — 2026-09-19
+
+Candidate `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` adds the approved green Taco Loco pattern as a reusable visual layer, brand tokens and public-facing menu/success/tracking treatment while keeping admin restrained. No business logic, database schema, payment/auth behavior or infrastructure architecture changed.
+
+Local visual QA, Independent Critic and Integration Review are PASS. The existing staging Worker was deployed as version `989ad8ef-48aa-4c57-a3c7-f94fff7ffd5d`; the Static Asset returned HTTP 200 as WebP and the deployment exposed only existing D1/Static Assets/version metadata bindings. Evidence: `docs/evidence/TL-TC-BRAND-VISUAL-01-STAGING-2026-09-19.md`.
+
+Next action: stop at `HUMAN_BRAND_WORKFLOW_REVIEW`. Production remains `NOT_AUTHORIZED`.

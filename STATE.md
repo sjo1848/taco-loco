@@ -1,10 +1,10 @@
 # Taco Loco — Current Authoritative Project State
-Updated: 2026-09-15
+Updated: 2026-09-19
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: REMOTE_INTEGRATION_PASS / HUMAN_TRACKING_WORKFLOW_REVIEW
-Active contract: TL-TC-ORDER-TRACKING-01 (`TRACKING_STAGE_D_PASS / STAGING_ONLY`)
-Tracking candidate: `1d96410c5b10d5275beaf61943ddde10732ea171`
+Status: REMOTE_INTEGRATION_PASS / HUMAN_BRAND_WORKFLOW_REVIEW
+Active contract: TL-TC-BRAND-VISUAL-01 (`STAGING_VISUAL_VALIDATION_PASS / STAGING_ONLY`)
+Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c`
 Execution HEAD: resolve dynamically with `git rev-parse HEAD`; last persisted governance checkpoint was `e8effcd867e39976d3e8ff96119c01dadf0e7604`.
 Application candidate: `ea99ca83d7e6831833a97a11e21d5585c0903273`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
@@ -96,7 +96,19 @@ For staging manual review only, products without a dedicated asset may temporari
 
 ## Next action
 
-Stop at `HUMAN_TRACKING_WORKFLOW_REVIEW` for human browser/device review. Production remains unauthorized.
+Stop at `HUMAN_BRAND_WORKFLOW_REVIEW` for human browser/device visual review. Production remains unauthorized.
+
+## Brand visual checkpoint — 2026-09-19
+
+- Source: supplied `manual tacoloco.pdf`; primary pattern is the approved green skull pattern.
+- Asset: `public/brand/taco-loco-pattern-green.webp`; 302×336 WebP, extracted from the clean green pattern swatch without manual text or attribution.
+- Tokens/docs: `docs/brand/TL-BRAND-SOURCE.md` and `docs/brand/TL-BRAND-TOKENS.md`.
+- Local assurance: tests 50/50 PASS, typecheck PASS, lint PASS with three pre-existing warnings, `build:vinext` PASS; conventional `pnpm build` retains the known Worker-only `cloudflare:workers` health-route limitation.
+- Critic: PASS — `docs/reviews/TL-TC-BRAND-VISUAL-01-independent-critic.md`.
+- Integration: PASS — `docs/reviews/TL-TC-BRAND-VISUAL-01-integration-review.md`.
+- Staging: PASS — existing Worker deployment `989ad8ef-48aa-4c57-a3c7-f94fff7ffd5d`; existing D1 and Static Assets only; no R2/Images/new resource.
+- Evidence: `docs/evidence/TL-TC-BRAND-VISUAL-01-STAGING-2026-09-19.md`.
+- Production: `NOT_AUTHORIZED`.
 
 ## Customer tracking checkpoint — 2026-09-16
 

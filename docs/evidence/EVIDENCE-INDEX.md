@@ -50,3 +50,14 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Remote staging: UNKNOWN/PENDING for this feature; no remote tracking migration or deployment is claimed yet.
 - Remote staging: PROVEN PASS — `docs/evidence/TL-TC-ORDER-TRACKING-STAGING-2026-09-16.md`; deployment `ef5cad20-2dbe-4e79-ba44-6a9e110f1143`, D1 migration, opaque token/cursor, PICKUP/DELIVERY, admin/session, idempotency and privacy checks passed. Production remains unauthorized.
 - Production: NOT_AUTHORIZED.
+
+## Brand visual system — 2026-09-19
+
+- Contract: PROVEN staging-only visual implementation — `docs/contracts/TL-TC-BRAND-VISUAL-01.md`.
+- Brand source: PROVEN — `docs/brand/TL-BRAND-SOURCE.md`; supplied `manual tacoloco.pdf`, green skull pattern selected as primary.
+- Brand tokens: PROVEN — `docs/brand/TL-BRAND-TOKENS.md`; approved manual-derived digital values documented.
+- Local visual QA: PROVEN — `docs/evidence/TL-TC-BRAND-VISUAL-01-local-qa.md`; 17 test files/50 tests, typecheck, lint and vinext build pass; conventional Next build remains blocked by the pre-existing Worker-only `cloudflare:workers` health route.
+- Independent Critic: PROVEN PASS — `docs/reviews/TL-TC-BRAND-VISUAL-01-independent-critic.md`.
+- Integration Review: PROVEN PASS — `docs/reviews/TL-TC-BRAND-VISUAL-01-integration-review.md`.
+- Staging visual validation: PROVEN PASS — `docs/evidence/TL-TC-BRAND-VISUAL-01-STAGING-2026-09-19.md`; exact candidate `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c`, existing Worker/D1, static asset HTTP 200, no new infrastructure.
+- Production: NOT_AUTHORIZED; stop at `HUMAN_BRAND_WORKFLOW_REVIEW`.

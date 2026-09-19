@@ -3,8 +3,8 @@
   "status": "STAGING_ORDER_FLOW_PASS",
   "sourceRepo": "sjo1848/taco-loco-foodtrack",
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
-  "targetBranch": "rework/tl-order-tracking-01",
-  "technicalCandidate": "1d96410c5b10d5275beaf61943ddde10732ea171",
+  "targetBranch": "feature/tl-brand-visual-01",
+  "technicalCandidate": "23c1a6622f0b91d3a0ca2a95b0585a01acaef27c",
   "executionHead": "DYNAMIC_GIT_HEAD",
   "stage": "ORDER_FLOW_STAGES_BCD_IMPLEMENTED_CRITIC_PENDING",
   "remoteIntegration": "PASS_BASELINE",
@@ -98,5 +98,16 @@
   "correctiveWorkflowIndependentCriticEvidence": "docs/reviews/TL-STAGING-MANUAL-REVIEW-independent-critic-ea99ca8.md",
   "correctiveWorkflowIntegrationReview": "PASS",
   "correctiveWorkflowIntegrationReviewEvidence": "docs/reviews/TL-STAGING-MANUAL-REVIEW-integration-review-ea99ca8.md",
-  "resumePoint": "Customer tracking REMOTE_INTEGRATION_PASS for exact candidate 1d96410; human workflow review is next. Production remains NOT_AUTHORIZED."
+  "brandVisualContract": "TL-TC-BRAND-VISUAL-01",
+  "brandVisualStatus": "STAGING_VISUAL_VALIDATION_PASS_HUMAN_BRAND_WORKFLOW_REVIEW",
+  "brandVisualCandidate": "23c1a6622f0b91d3a0ca2a95b0585a01acaef27c",
+  "brandVisualPattern": "public/brand/taco-loco-pattern-green.webp",
+  "brandVisualStagingDeploymentVersion": "989ad8ef-48aa-4c57-a3c7-f94fff7ffd5d",
+  "brandVisualEvidence": "docs/evidence/TL-TC-BRAND-VISUAL-01-STAGING-2026-09-19.md",
+  "brandVisualIndependentCritic": "PASS",
+  "brandVisualIndependentCriticEvidence": "docs/reviews/TL-TC-BRAND-VISUAL-01-independent-critic.md",
+  "brandVisualIntegrationReview": "PASS",
+  "brandVisualIntegrationReviewEvidence": "docs/reviews/TL-TC-BRAND-VISUAL-01-integration-review.md",
+  "brandVisualDriveSync": "PENDING",
+  "resumePoint": "Brand visual staging validation PASS for exact candidate 23c1a662; stop at HUMAN_BRAND_WORKFLOW_REVIEW. Production remains NOT_AUTHORIZED."
 }
