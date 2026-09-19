@@ -71,4 +71,6 @@ Candidate `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` adds the approved green Tac
 
 Local visual QA, Independent Critic and Integration Review are PASS. The existing staging Worker was deployed as version `989ad8ef-48aa-4c57-a3c7-f94fff7ffd5d`; the Static Asset returned HTTP 200 as WebP and the deployment exposed only existing D1/Static Assets/version metadata bindings. Evidence: `docs/evidence/TL-TC-BRAND-VISUAL-01-STAGING-2026-09-19.md`.
 
+Drive synchronization: `PASS_2026-09-19`; canonical brand contract, source/tokens, QA, reviews, evidence index and staging evidence synchronized to the existing Taco Loco Drive package.
+
 Next action: stop at `HUMAN_BRAND_WORKFLOW_REVIEW`. Production remains `NOT_AUTHORIZED`.
