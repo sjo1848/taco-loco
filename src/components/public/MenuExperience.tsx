@@ -50,6 +50,15 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   const whatsappHref = useMemo(() => lines.length > 0 ? buildWhatsAppUrl(menu.settings.whatsappUrl, buildWhatsAppMessage(lines, menu.settings.businessName)) : menu.settings.whatsappUrl, [lines, menu.settings.businessName, menu.settings.whatsappUrl]);
   const whatsappAppHref = useMemo(() => lines.length > 0 ? buildWhatsAppAppUrl(menu.settings.whatsappUrl, buildWhatsAppMessage(lines, menu.settings.businessName)) : menu.settings.whatsappUrl, [lines, menu.settings.businessName, menu.settings.whatsappUrl]);
 
+  function hasNewSelectionInStorage() {
+    try {
+      const selection = JSON.parse(window.sessionStorage.getItem("taco-loco-selection") ?? "null") as unknown;
+      return Array.isArray(selection) && selection.length > 0;
+    } catch {
+      return false;
+    }
+  }
+
   useEffect(() => {
     let timer: number | undefined;
     try {
@@ -69,6 +78,10 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       const resume = readActiveTrackingResume(window.localStorage);
       const handoff = handoffRef.current;
       if (!resume || !handoff?.sawBackground) return;
+      if (hasNewSelectionInStorage()) {
+        clearActiveTrackingResume(window.localStorage);
+        return;
+      }
       const consumed = { ...resume, handoffPending: false };
       writeActiveTrackingResume(window.localStorage, consumed);
       window.location.assign(resume.path);
@@ -93,14 +106,9 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     const initialResumeTimer = window.setTimeout(() => {
       const resume = readActiveTrackingResume(window.localStorage);
       if (!resume || window.location.pathname !== "/menu") return;
-      try {
-        const selection = JSON.parse(window.sessionStorage.getItem("taco-loco-selection") ?? "null") as unknown;
-        if (Array.isArray(selection) && selection.length > 0) {
-          clearActiveTrackingResume(window.localStorage);
-          return;
-        }
-      } catch {
-        // A malformed optional cart must not prevent the tracking route from working.
+      if (hasNewSelectionInStorage()) {
+        clearActiveTrackingResume(window.localStorage);
+        return;
       }
       const consumed = { ...resume, handoffPending: false };
       writeActiveTrackingResume(window.localStorage, consumed);
