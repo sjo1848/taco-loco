@@ -336,6 +336,11 @@ export function MenuExperience({ menu }: { menu: Menu }) {
         // El pedido ya quedó persistido en el servidor; solo se pierde el resumen al recargar.
       }
       setLines([]);
+      // Clear the submitted cart synchronously before any return handler can
+      // inspect storage while the React state effect is still pending.
+      try { window.sessionStorage.setItem("taco-loco-selection", "[]"); } catch {
+        // The in-memory selection is already cleared; storage is optional.
+      }
       setShowSummary(false);
       setOrderIntent({ reference: clientReference, signature: selectionSignature, number: result.order.orderNumber });
       setFeedbackMessage(`Pedido TL-${String(result.order.orderNumber).padStart(4, "0")} preparado. Confirmá el mensaje en WhatsApp.`);
