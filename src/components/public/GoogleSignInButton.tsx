@@ -24,8 +24,18 @@ export function GoogleSignInButton() {
     if (!config?.enabled || !config.clientId || !config.csrfToken || !containerRef.current) return;
     const handleCredential = (response: { credential: string }) => {
       void fetch("/api/customer/auth/google", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ credential: response.credential, csrfToken: config.csrfToken }) })
-        .then(async (result) => { if (!result.ok) throw new Error("GOOGLE_AUTH_FAILED"); router.push("/cuenta"); router.refresh(); })
-        .catch(() => setError("No pudimos iniciar sesión con Google."));
+        .then(async (result) => {
+          if (!result.ok) {
+            if (result.status === 401 || result.status === 403) {
+              const refreshed = await fetch("/api/customer/auth/google/config", { credentials: "same-origin" }).then((configResponse) => configResponse.json() as Promise<Config>);
+              setConfig(refreshed);
+              throw new Error("GOOGLE_CSRF_EXPIRED");
+            }
+            throw new Error("GOOGLE_AUTH_FAILED");
+          }
+          router.push("/cuenta"); router.refresh();
+        })
+        .catch((error: unknown) => setError(error instanceof Error && error.message === "GOOGLE_CSRF_EXPIRED" ? "La sesión de acceso venció. Volvé a tocar el botón de Google." : "No pudimos iniciar sesión con Google."));
     };
     const render = () => { if (!window.google || !containerRef.current) return; window.google.accounts.id.initialize({ client_id: config.clientId!, callback: handleCredential, ux_mode: "popup" }); window.google.accounts.id.renderButton(containerRef.current, { theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: 280 }); };
     if (window.google) { render(); return; }

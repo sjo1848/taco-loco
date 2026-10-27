@@ -2,6 +2,7 @@
 
 Date: 2026-10-27  
 Branch: `feature/tl-taco-club-p1a`  
+Candidate: `fff06bdc92d708dfac8065f0c4359efa30e7bf99` plus local REWORK pending commit  
 Production: `NOT_AUTHORIZED`
 
 ## Candidate surfaces
@@ -18,7 +19,7 @@ Production: `NOT_AUTHORIZED`
 - Prisma D1 schema validation: PASS.
 - D1 local migration `0004_taco_club_identity.sql`: PASS; 11 commands applied.
 - D1 local schema inspection: `Customer`, `CustomerIdentity`, `CustomerSession` present; `Order.customerId` present and nullable.
-- Tests: PASS — 20 files, 57 tests.
+- Tests: PASS — 21 files, 63 tests.
 - Typecheck: PASS.
 - Lint: PASS with three pre-existing warnings only.
 - `build:vinext`: PASS.
@@ -31,6 +32,8 @@ Production: `NOT_AUTHORIZED`
 - Without both values, config returns disabled and the browser does not load `accounts.google.com/gsi/client`.
 - Server verification checks RS256 signature against Google JWKs, issuer, audience, expiry, verified email and `sub`.
 - No Client ID, OAuth secret, Google token, access token or refresh token was created, stored or logged.
+- D1 customer/identity creation is covered by a batch writer test; PostgreSQL provisioning uses a transaction and uniqueness conflicts recover the winner.
+- GIS CSRF refresh behavior is covered by the client implementation; a real browser/provider flow remains pending OAuth configuration.
 
 ## Compatibility
 
@@ -43,4 +46,4 @@ Production: `NOT_AUTHORIZED`
 
 `LOCAL_TECHNICAL_PASS / STAGING_BLOCKED_HUMAN_INPUT`
 
-Next: Independent Critic and Integration Review, then draft PR. Human Input is required before real Google staging validation.
+The first candidate received Independent Critic and Integration Review `REWORK`; the findings were corrected locally: atomic customer/identity provisioning, truthful account copy, negative token checks and CSRF refresh. A fresh review of the corrected candidate is required before PR creation. Human Input is required before real Google staging validation.

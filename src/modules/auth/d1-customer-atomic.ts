@@ -1,0 +1,14 @@
+import type { D1Database } from "@cloudflare/workers-types";
+
+type CustomerIdentityWrite = { customerId: string; identityId: string; email: string | null; displayName: string | null; avatarUrl: string | null; provider: string; providerSubject: string };
+
+export async function createD1CustomerIdentityWith(db: D1Database, input: CustomerIdentityWrite) {
+  const now = new Date().toISOString();
+  const results = await db.batch([
+    db.prepare(`INSERT INTO "Customer" ("id", "email", "displayName", "avatarUrl", "active", "createdAt", "updatedAt") VALUES (?, ?, ?, ?, 1, ?, ?)`)
+      .bind(input.customerId, input.email, input.displayName, input.avatarUrl, now, now),
+    db.prepare(`INSERT INTO "CustomerIdentity" ("id", "customerId", "provider", "providerSubject", "emailAtLogin", "createdAt", "updatedAt") VALUES (?, ?, ?, ?, ?, ?, ?)`)
+      .bind(input.identityId, input.customerId, input.provider, input.providerSubject, input.email, now, now),
+  ]);
+  if (results.some((result) => !result.success)) throw new Error("D1_CUSTOMER_IDENTITY_FAILED");
+}

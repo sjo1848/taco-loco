@@ -24,6 +24,8 @@ Add the minimum optional customer identity structure for Taco Club using Google 
 - Google ID-token verifier prepared for RS256/JWK validation, with issuer/audience/expiry/signature/email checks.
 - Google config endpoint and `/cuenta` button prepared but disabled unless both `GOOGLE_SIGN_IN_ENABLED=true` and a valid `GOOGLE_CLIENT_ID` are present.
 - Same-origin and double-submit CSRF checks on the Google login endpoint.
+- D1 customer/identity creation uses one batch; PostgreSQL uses one transaction; uniqueness conflicts recover the winning identity.
+- The browser refreshes its GIS CSRF bootstrap after an expired or superseded token.
 - No Google access/refresh tokens, no localStorage credentials, no order history/claim, no rewards.
 
 ## Requirements → surfaces → acceptance → evidence

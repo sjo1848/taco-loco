@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { isD1Runtime } from "@/lib/runtime";
 import { createCustomerSession, revokeCurrentCustomerSession } from "@/modules/auth/customer-session";
 import type { GoogleIdentityProfile } from "@/modules/auth/google-identity";
 
@@ -11,13 +12,26 @@ export async function signInWithGoogle(profile: GoogleIdentityProfile) {
     return customer;
   }
 
-  const customer = await db.customer.create({ data: { email: profile.email, displayName: profile.displayName, avatarUrl: profile.avatarUrl, lastLoginAt: new Date() } });
+  const customerId = crypto.randomUUID();
+  const identityId = crypto.randomUUID();
   try {
-    await db.customerIdentity.create({ data: { customerId: customer.id, provider: "google", providerSubject: profile.subject, emailAtLogin: profile.email } });
+    if (isD1Runtime) {
+      const { createD1CustomerIdentity } = await import("@/modules/auth/d1-customer-atomic.worker");
+      await createD1CustomerIdentity({ customerId, identityId, email: profile.email, displayName: profile.displayName, avatarUrl: profile.avatarUrl, provider: "google", providerSubject: profile.subject });
+    } else {
+      await db.$transaction([
+        db.customer.create({ data: { id: customerId, email: profile.email, displayName: profile.displayName, avatarUrl: profile.avatarUrl, lastLoginAt: new Date() } }),
+        db.customerIdentity.create({ data: { id: identityId, customerId, provider: "google", providerSubject: profile.subject, emailAtLogin: profile.email } }),
+      ]);
+    }
   } catch (error) {
-    await db.customer.delete({ where: { id: customer.id } }).catch(() => undefined);
-    throw error;
+    const winningIdentity = await db.customerIdentity.findUnique({ where: { provider_providerSubject: { provider: "google", providerSubject: profile.subject } } });
+    if (!winningIdentity) throw error;
+    const winningCustomer = await db.customer.update({ where: { id: winningIdentity.customerId }, data: { lastLoginAt: new Date() } });
+    await createCustomerSession(winningCustomer.id);
+    return winningCustomer;
   }
+  const customer = await db.customer.update({ where: { id: customerId }, data: { lastLoginAt: new Date() } });
   await createCustomerSession(customer.id);
   return customer;
 }
