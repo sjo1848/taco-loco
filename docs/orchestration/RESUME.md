@@ -86,7 +86,7 @@ The optional customer identity/fidelity design is recorded as GitHub planning au
 - P1c repeat/favorites/addresses: #7
 - P2 commercial rules: #8
 
-P1a is locally implemented on `feature/tl-taco-club-p1a`. Substantive candidate `2beb582f80c1326736fc95164ebdb1f8b807db99`; current governance checkpoint `2e5a14f06e8f54a5b289432f9de8125ed3ce8831`.
+P1a is locally implemented on `feature/tl-taco-club-p1a`. Substantive candidate `2beb582f80c1326736fc95164ebdb1f8b807db99`; current governance checkpoint `4c5dffb`.
 
 - Local evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-LOCAL-2026-10-27.md`.
 - Independent Critic: `PASS` — `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-2026-10-27.md`.

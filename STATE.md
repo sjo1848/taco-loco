@@ -102,7 +102,7 @@ Stop at `HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION`: provide the Google OAuth Web C
 
 - Contract: `docs/contracts/TL-TC-TACO-CLUB-P1A.md`.
 - Branch: `feature/tl-taco-club-p1a`.
-- Substantive candidate: `2beb582f80c1326736fc95164ebdb1f8b807db99`; governance checkpoint: `2e5a14f06e8f54a5b289432f9de8125ed3ce8831`.
+- Substantive candidate: `2beb582f80c1326736fc95164ebdb1f8b807db99`; governance checkpoint: `4c5dffb` (`4c5dffb` is the current execution HEAD).
 - Local implementation: `TECHNICAL_PASS`; evidence `docs/evidence/TL-TC-TACO-CLUB-P1A-LOCAL-2026-10-27.md`.
 - Independent Critic: `PASS`; Integration Review: `PASS`.
 - Added additive Customer, CustomerIdentity, CustomerSession and nullable Order.customerId structures for future optional identity. Added separate hashed-token customer sessions and server-side Google ID-token verification keyed by Google `sub`.
