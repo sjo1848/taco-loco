@@ -2,7 +2,7 @@
 
 Date: 2026-10-27  
 Branch: `feature/tl-taco-club-p1a`  
-Candidate: final SHA recorded after the corrective assurance commit below  
+Candidate: `2beb582f80c1326736fc95164ebdb1f8b807db99`  
 Production: `NOT_AUTHORIZED`
 
 ## Candidate surfaces
@@ -46,4 +46,4 @@ Production: `NOT_AUTHORIZED`
 
 `LOCAL_TECHNICAL_PASS / STAGING_BLOCKED_HUMAN_INPUT`
 
-The first candidate received Independent Critic and Integration Review `REWORK`; the findings were corrected locally: atomic customer/identity provisioning, truthful account copy, negative token checks and CSRF refresh. A fresh review of the corrected candidate is required before PR creation. Human Input is required before real Google staging validation.
+The first candidate received Independent Critic and Integration Review `REWORK`; the findings were corrected locally: atomic customer/identity provisioning, truthful account copy, negative token checks, disabled-customer conflict handling and CSRF refresh. Final candidate `2beb582f80c1326736fc95164ebdb1f8b807db99` was then revalidated with 22 test files / 64 tests, typecheck and lint. Human Input is required before real Google staging validation.
