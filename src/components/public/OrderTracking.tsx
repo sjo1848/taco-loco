@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { PublicOrderTracking } from "@/modules/orders/public-tracking";
+import { clearActiveTrackingResume } from "@/modules/orders/tracking-resume";
 import { initialTrackingPollDelay, nextTrackingPollDelay, terminalTrackingStages } from "./tracking-polling";
 function formatPrice(amount: number) { return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(amount); }
 
@@ -13,6 +14,10 @@ export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
   const visible = useRef(true);
   const currentTracking = useRef(initial);
   const inFlight = useRef(false);
+
+  useEffect(() => {
+    clearActiveTrackingResume(window.localStorage);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;

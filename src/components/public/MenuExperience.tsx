@@ -7,6 +7,7 @@ import { FeaturedProductCard } from "@/components/public/FeaturedProductCard";
 import { ProductCard } from "@/components/public/ProductCard";
 import { SaucesInfo } from "@/components/public/SaucesInfo";
 import { filterCatalog } from "@/modules/catalog/discovery";
+import { clearActiveTrackingResume, createActiveTrackingResume, readActiveTrackingResume, writeActiveTrackingResume } from "@/modules/orders/tracking-resume";
 import { buildWhatsAppAppUrl, buildWhatsAppMessage, buildWhatsAppMessageWithCheckout, buildWhatsAppUrl, createClientReference, addSelectionLine, lineId, removeSelectionLine, selectionCount, selectionTotal, updateSelectionQuantity, type CheckoutDetails, type SelectionLine } from "@/modules/selection/model";
 
 type Product = { id: string; name: string; description: string | null; priceAmount: number; available: boolean; featured: boolean; imageKey: string | null; imageAlt: string | null; modifiers: Array<{ name: string; required: boolean; minSelections: number | null; maxSelections: number | null; options: string[] }> };
@@ -36,6 +37,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   const [completedOrder, setCompletedOrder] = useState<CompletedOrder | null>(null);
   const [checkout, setCheckout] = useState<CheckoutDetails>({ fulfillment: "PICKUP" });
   const [orderIntent, setOrderIntent] = useState<{ reference: string; signature: string; number: number } | null>(null);
+  const handoffRef = useRef<{ startedAt: number; sawBackground: boolean } | null>(null);
   const dialogCloseRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
   const visibleCategories = filterCatalog(menu.categories, searchQuery);
@@ -59,6 +61,60 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       // La selección es opcional: si storage está bloqueado, el menú sigue funcionando.
     }
     return () => { if (timer) window.clearTimeout(timer); };
+  }, []);
+
+  useEffect(() => {
+    const resumeTracking = () => {
+      const resume = readActiveTrackingResume(window.localStorage);
+      const handoff = handoffRef.current;
+      if (!resume || !handoff || !handoff.sawBackground || Date.now() - handoff.startedAt < 500) return;
+      const consumed = { ...resume, handoffPending: false };
+      writeActiveTrackingResume(window.localStorage, consumed);
+      window.location.assign(resume.path);
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        if (handoffRef.current) handoffRef.current.sawBackground = true;
+        return;
+      }
+      resumeTracking();
+    };
+    const onBlur = () => {
+      if (handoffRef.current) handoffRef.current.sawBackground = true;
+    };
+    const onFocus = () => resumeTracking();
+    const onPageShow = () => {
+      const resume = readActiveTrackingResume(window.localStorage);
+      if (!resume) return;
+      if (handoffRef.current?.sawBackground) resumeTracking();
+    };
+    const initialResumeTimer = window.setTimeout(() => {
+      const resume = readActiveTrackingResume(window.localStorage);
+      if (!resume || window.location.pathname !== "/menu") return;
+      try {
+        const selection = JSON.parse(window.sessionStorage.getItem("taco-loco-selection") ?? "null") as unknown;
+        if (Array.isArray(selection) && selection.length > 0) {
+          clearActiveTrackingResume(window.localStorage);
+          return;
+        }
+      } catch {
+        // A malformed optional cart must not prevent the tracking route from working.
+      }
+      const consumed = { ...resume, handoffPending: false };
+      writeActiveTrackingResume(window.localStorage, consumed);
+      window.location.assign(resume.path);
+    }, 0);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      window.clearTimeout(initialResumeTimer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("pageshow", onPageShow);
+    };
   }, []);
 
   useEffect(() => {
@@ -193,6 +249,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   }
 
   function openMobileWhatsApp(appUrl = whatsappAppHref, webUrl = whatsappHref) {
+    handoffRef.current = { startedAt: Date.now(), sawBackground: false };
     setShowWhatsAppWebFallback(false);
     setWhatsappWebFallbackHref(webUrl);
     let appSwitchDetected = false;
@@ -221,6 +278,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
 
   function startAnotherOrder() {
     setCompletedOrder(null);
+    clearActiveTrackingResume(window.localStorage);
     setFeedbackMessage("Podés armar otro pedido.");
     try { window.sessionStorage.removeItem("taco-loco-completed-order"); } catch {
       // El estado visual continúa siendo suficiente para esta navegación.
@@ -229,6 +287,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
 
   function dismissCompletedOrder() {
     setCompletedOrder(null);
+    clearActiveTrackingResume(window.localStorage);
     try { window.sessionStorage.removeItem("taco-loco-completed-order"); } catch {
       // El cierre visual no depende de storage.
     }
@@ -256,6 +315,9 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       const preparedWhatsappHref = buildWhatsAppUrl(menu.settings.whatsappUrl, preparedMessage);
       const preparedWhatsappAppHref = buildWhatsAppAppUrl(menu.settings.whatsappUrl, preparedMessage);
       const preparedOrder: CompletedOrder = { number: result.order.orderNumber, lines, total: result.order.totalAmount, whatsappHref: preparedWhatsappHref, whatsappAppHref: preparedWhatsappAppHref, trackingHref: result.tracking.path };
+      const trackingResume = createActiveTrackingResume(result.tracking.path, result.order.orderNumber);
+      if (!trackingResume) throw new Error("TRACKING_RESUME_UNAVAILABLE");
+      writeActiveTrackingResume(window.localStorage, trackingResume);
       setCompletedOrder(preparedOrder);
       try { window.sessionStorage.setItem("taco-loco-completed-order", JSON.stringify(preparedOrder)); } catch {
         // El pedido ya quedó persistido en el servidor; solo se pierde el resumen al recargar.
@@ -265,8 +327,11 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       setOrderIntent({ reference: clientReference, signature: selectionSignature, number: result.order.orderNumber });
       setFeedbackMessage(`Pedido TL-${String(result.order.orderNumber).padStart(4, "0")} preparado. Confirmá el mensaje en WhatsApp.`);
       if (isMobileDevice) openMobileWhatsApp(preparedWhatsappAppHref, preparedWhatsappHref);
-      else if (popup) popup.location.href = preparedWhatsappHref;
-      else window.location.assign(preparedWhatsappHref);
+      else {
+        handoffRef.current = { startedAt: Date.now(), sawBackground: false };
+        if (popup) popup.location.href = preparedWhatsappHref;
+        else window.location.assign(preparedWhatsappHref);
+      }
     } catch {
       popup?.close();
       setFeedbackMessage("No pudimos registrar el pedido. Revisá la conexión e intentá nuevamente.");
