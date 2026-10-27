@@ -118,5 +118,9 @@
   "trackingReturnIntegrationReview": "PASS",
   "trackingReturnIntegrationReviewEvidence": "docs/reviews/TL-TC-ORDER-TRACKING-RETURN-P0-integration-review-2026-10-27.md",
   "trackingReturnWhatsAppValidation": "HUMAN_TRACKING_WORKFLOW_REVIEW_PENDING",
+  "tacoClubDesign": "HUMAN_GATE_PENDING",
+  "tacoClubEpic": "https://github.com/sjo1848/taco-loco/issues/3",
+  "tacoClubIssues": [4, 5, 6, 7, 8],
+  "tacoClubImplementation": "NOT_AUTHORIZED",
   "resumePoint": "P0 tracking return technical staging PASS for exact candidate de368359; stop at HUMAN_TRACKING_WORKFLOW_REVIEW for real WhatsApp mobile/desktop return validation. Production remains NOT_AUTHORIZED."
 }

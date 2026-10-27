@@ -75,6 +75,19 @@ Drive synchronization: `PASS_2026-09-19`; canonical brand contract, source/token
 
 Next action: stop at `HUMAN_TRACKING_WORKFLOW_REVIEW` for real WhatsApp mobile/desktop return validation. Production remains `NOT_AUTHORIZED`.
 
+## Taco Club design checkpoint — 2026-10-27
+
+The optional customer identity/fidelity design is recorded as GitHub planning authority, not duplicated in a competing implementation contract:
+
+- Epic: https://github.com/sjo1848/taco-loco/issues/3
+- P0 WhatsApp review: #4
+- P1a accounts/sessions/recovery: #5
+- P1b history/guest claim: #6
+- P1c repeat/favorites/addresses: #7
+- P2 commercial rules: #8
+
+Status: `HUMAN_GATE_PENDING`. No account, email-provider, loyalty or production changes are authorized. Guest checkout, bearer tracking and the existing P0 remain preserved.
+
 ## Customer tracking return P0 — 2026-10-27
 
 The prior return flow left the customer on `/menu` after WhatsApp because `trackingHref` lived only in the success-dialog session record and no pending handoff was resumed on return. Candidate `de368359ea18ced8571b8a36e20cd8f73f2f8d7a` adds bounded localStorage handoff state, strict path/expiry checks, return/reload recovery, desktop pre-popup initialization, stale/new-cart protection and synchronous clearing of the submitted cart. Existing tracking/order architecture is unchanged.

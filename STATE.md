@@ -113,6 +113,16 @@ Stop at `HUMAN_TRACKING_WORKFLOW_REVIEW` for real mobile/desktop WhatsApp return
 - Evidence: `docs/evidence/TL-TC-ORDER-TRACKING-RETURN-P0-2026-10-27.md`.
 - Production: `NOT_AUTHORIZED`.
 
+## Taco Club design checkpoint — 2026-10-27
+
+- Planning authority: GitHub Epic #3 — `https://github.com/sjo1848/taco-loco/issues/3`.
+- Independent issues: P0 #4, P1a #5, P1b #6, P1c #7, P2 #8.
+- Design status: `HUMAN_GATE_PENDING`; no customer-account code, schema migration, external email provider or loyalty implementation authorized.
+- Proposed P1 base: optional email/password identity with a separate hashed-token customer session, nullable `Order.customerId`, explicit claim from the existing tracking capability, and the existing `Order` + `OrderEvent` history as the only order history.
+- Guest checkout and public tracking remain first-class and unchanged.
+- Recovery email/provider, retention/erasure policy, guest-claim policy and commercial loyalty rules require explicit approval before implementation.
+- Production remains `NOT_AUTHORIZED`.
+
 ## Brand visual checkpoint — 2026-09-19
 
 - Source: supplied `manual tacoloco.pdf`; primary pattern is the approved green skull pattern.
