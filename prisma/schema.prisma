@@ -21,6 +21,49 @@ model AdminUser {
   orderEvents   OrderEvent[]
 }
 
+model Customer {
+  id             String             @id @default(uuid()) @db.Uuid
+  email          String?
+  displayName    String?
+  avatarUrl      String?
+  active         Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  lastLoginAt    DateTime?
+  identities     CustomerIdentity[]
+  sessions       CustomerSession[]
+  orders         Order[]
+
+  @@index([email])
+}
+
+model CustomerIdentity {
+  id              String   @id @default(uuid()) @db.Uuid
+  customerId      String   @db.Uuid
+  provider        String
+  providerSubject String
+  emailAtLogin    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerSubject])
+  @@index([customerId])
+}
+
+model CustomerSession {
+  id         String   @id @default(uuid()) @db.Uuid
+  tokenHash  String   @unique
+  customerId String   @db.Uuid
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime?
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([expiresAt])
+}
+
 enum OrderStatus {
   RECEIVED
   CONFIRMED
@@ -107,10 +150,12 @@ model Order {
   updatedAt              DateTime           @updatedAt
   clientReference        String?            @unique
   publicTrackingToken    String?            @unique
+  customerId             String?            @db.Uuid
   createdById            String?            @db.Uuid
   updatedById            String?            @db.Uuid
   createdBy              AdminUser?         @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   updatedBy              AdminUser?         @relation("OrderUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  customer               Customer?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
   lines                  OrderLine[]
   events                 OrderEvent[]
 
@@ -119,6 +164,7 @@ model Order {
   @@index([paymentStatus, createdAt])
   @@index([fulfillment, status, createdAt])
   @@index([customerPhone])
+  @@index([customerId, createdAt])
 }
 
 model OrderLine {
