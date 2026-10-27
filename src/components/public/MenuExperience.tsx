@@ -37,7 +37,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   const [completedOrder, setCompletedOrder] = useState<CompletedOrder | null>(null);
   const [checkout, setCheckout] = useState<CheckoutDetails>({ fulfillment: "PICKUP" });
   const [orderIntent, setOrderIntent] = useState<{ reference: string; signature: string; number: number } | null>(null);
-  const handoffRef = useRef<{ startedAt: number; sawBackground: boolean } | null>(null);
+  const handoffRef = useRef<{ sawBackground: boolean } | null>(null);
   const resumeTrackingRef = useRef<(() => void) | null>(null);
   const dialogCloseRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
@@ -68,7 +68,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     const resumeTracking = () => {
       const resume = readActiveTrackingResume(window.localStorage);
       const handoff = handoffRef.current;
-      if (!resume || !handoff || !handoff.sawBackground || Date.now() - handoff.startedAt < 500) return;
+      if (!resume || !handoff?.sawBackground) return;
       const consumed = { ...resume, handoffPending: false };
       writeActiveTrackingResume(window.localStorage, consumed);
       window.location.assign(resume.path);
@@ -252,7 +252,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   }
 
   function openMobileWhatsApp(appUrl = whatsappAppHref, webUrl = whatsappHref) {
-    handoffRef.current = { startedAt: Date.now(), sawBackground: false };
+    handoffRef.current = { sawBackground: false };
     setShowWhatsAppWebFallback(false);
     setWhatsappWebFallbackHref(webUrl);
     let appSwitchDetected = false;
@@ -306,7 +306,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     }
     // Register before opening the desktop popup: opening it can blur this page
     // while the order-intent request is still in flight.
-    handoffRef.current = { startedAt: Date.now(), sawBackground: false };
+    handoffRef.current = { sawBackground: false };
     const popup = isMobileDevice ? null : window.open("about:blank", "_blank", "noopener,noreferrer");
     const clientReference = currentOrderIntent?.reference ?? createClientReference();
     setSubmittingOrder(true);
