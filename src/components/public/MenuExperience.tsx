@@ -38,6 +38,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   const [checkout, setCheckout] = useState<CheckoutDetails>({ fulfillment: "PICKUP" });
   const [orderIntent, setOrderIntent] = useState<{ reference: string; signature: string; number: number } | null>(null);
   const handoffRef = useRef<{ startedAt: number; sawBackground: boolean } | null>(null);
+  const resumeTrackingRef = useRef<(() => void) | null>(null);
   const dialogCloseRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
   const visibleCategories = filterCatalog(menu.categories, searchQuery);
@@ -72,6 +73,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       writeActiveTrackingResume(window.localStorage, consumed);
       window.location.assign(resume.path);
     };
+    resumeTrackingRef.current = resumeTracking;
     const onVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
         if (handoffRef.current) handoffRef.current.sawBackground = true;
@@ -114,6 +116,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       window.removeEventListener("blur", onBlur);
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("pageshow", onPageShow);
+      resumeTrackingRef.current = null;
     };
   }, []);
 
@@ -296,13 +299,15 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   async function submitOrderIntent(event: MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
     if (submittingOrder) return;
-    const popup = isMobileDevice ? null : window.open("about:blank", "_blank", "noopener,noreferrer");
     if (!menu.settings.operatingContext.isOpen || count === 0) {
       if (isMobileDevice) openMobileWhatsApp();
-      else if (popup) popup.location.href = whatsappHref;
       else window.location.assign(whatsappHref);
       return;
     }
+    // Register before opening the desktop popup: opening it can blur this page
+    // while the order-intent request is still in flight.
+    handoffRef.current = { startedAt: Date.now(), sawBackground: false };
+    const popup = isMobileDevice ? null : window.open("about:blank", "_blank", "noopener,noreferrer");
     const clientReference = currentOrderIntent?.reference ?? createClientReference();
     setSubmittingOrder(true);
     setFeedbackMessage("Preparando tu pedido para WhatsApp…");
@@ -326,14 +331,13 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       setShowSummary(false);
       setOrderIntent({ reference: clientReference, signature: selectionSignature, number: result.order.orderNumber });
       setFeedbackMessage(`Pedido TL-${String(result.order.orderNumber).padStart(4, "0")} preparado. Confirmá el mensaje en WhatsApp.`);
+      if (handoffRef.current?.sawBackground) window.setTimeout(() => resumeTrackingRef.current?.(), 0);
       if (isMobileDevice) openMobileWhatsApp(preparedWhatsappAppHref, preparedWhatsappHref);
-      else {
-        handoffRef.current = { startedAt: Date.now(), sawBackground: false };
-        if (popup) popup.location.href = preparedWhatsappHref;
-        else window.location.assign(preparedWhatsappHref);
-      }
+      else if (popup) popup.location.href = preparedWhatsappHref;
+      else window.location.assign(preparedWhatsappHref);
     } catch {
       popup?.close();
+      handoffRef.current = null;
       setFeedbackMessage("No pudimos registrar el pedido. Revisá la conexión e intentá nuevamente.");
     } finally {
       setSubmittingOrder(false);
