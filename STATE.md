@@ -1,12 +1,12 @@
 # Taco Loco — Current Authoritative Project State
-Updated: 2026-09-19
+Updated: 2026-10-27
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: REMOTE_INTEGRATION_PASS / HUMAN_BRAND_WORKFLOW_REVIEW
-Active contract: TL-TC-BRAND-VISUAL-01 (`STAGING_VISUAL_VALIDATION_PASS / STAGING_ONLY`)
-Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c`
+Status: STAGING_TECHNICAL_PASS / HUMAN_TRACKING_WORKFLOW_REVIEW
+Active contract: TL-TC-ORDER-TRACKING-RETURN-P0 (`STAGING_TECHNICAL_PASS / HUMAN_TRACKING_WORKFLOW_REVIEW`)
+Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
 Execution HEAD: resolve dynamically with `git rev-parse HEAD`; last persisted governance checkpoint was `e8effcd867e39976d3e8ff96119c01dadf0e7604`.
-Application candidate: `ea99ca83d7e6831833a97a11e21d5585c0903273`
+Application candidate: `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
@@ -96,7 +96,22 @@ For staging manual review only, products without a dedicated asset may temporari
 
 ## Next action
 
-Stop at `HUMAN_BRAND_WORKFLOW_REVIEW` for human browser/device visual review. Production remains unauthorized.
+Stop at `HUMAN_TRACKING_WORKFLOW_REVIEW` for real mobile/desktop WhatsApp return validation. Production remains unauthorized.
+
+## Customer tracking return P0 — 2026-10-27
+
+- Contract: `TL-TC-ORDER-TRACKING-RETURN-P0`.
+- Root cause: the previous handoff existed only in the success-dialog session record; return events did not persist a pending tracking capability or navigate back to it.
+- Candidate: `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`.
+- Local assurance: 53 tests PASS, typecheck PASS, lint PASS with three pre-existing warnings, `build:vinext` PASS. Conventional Next build retains the known Worker-only `cloudflare:workers` limitation.
+- Staging deployment: `1a27db08-8753-4e17-8ded-238ad99a0a8c` on existing Worker/D1 only.
+- Technical behavior: bounded 24-hour localStorage handoff, strict opaque path validation, return/reload recovery, desktop handoff initialization before popup, synchronous submitted-cart cleanup and stale/new-cart protection.
+- Existing order creation, idempotency, D1, events, auth, payment, admin SSE and tracking polling were not changed.
+- Independent Critic: PASS — `docs/reviews/TL-TC-ORDER-TRACKING-RETURN-P0-independent-critic-2026-10-27.md`.
+- Integration Review: PASS — `docs/reviews/TL-TC-ORDER-TRACKING-RETURN-P0-integration-review-2026-10-27.md`.
+- Browser staging simulation: PASS at 390×844 and 1440×900. Actual WhatsApp app/Web return remains human validation pending; message delivery is not claimed.
+- Evidence: `docs/evidence/TL-TC-ORDER-TRACKING-RETURN-P0-2026-10-27.md`.
+- Production: `NOT_AUTHORIZED`.
 
 ## Brand visual checkpoint — 2026-09-19
 

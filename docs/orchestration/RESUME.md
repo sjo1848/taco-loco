@@ -1,15 +1,15 @@
 # Taco Loco — Resume / Orchestration State
 
-Updated: 2026-09-19
+Updated: 2026-10-27
 
 - Repository: `sjo1848/taco-loco`
-- Branch: `feature/tl-brand-visual-01`
-- Application candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c`
+- Branch: `rework/tl-order-tracking-return-p0`
+- Application candidate: `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`
 - Execution HEAD: resolve dynamically with `git rev-parse HEAD`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `REMOTE_INTEGRATION_PASS / HUMAN_BRAND_WORKFLOW_REVIEW`
-- Active contract: `docs/contracts/TL-TC-BRAND-VISUAL-01.md`
+- State: `STAGING_TECHNICAL_PASS / HUMAN_TRACKING_WORKFLOW_REVIEW`
+- Active contract: `docs/contracts/TL-TC-ORDER-TRACKING-RETURN-P0.md`
 - Production: `NOT_AUTHORIZED`
 
 ## Proven checkpoint
@@ -73,4 +73,12 @@ Local visual QA, Independent Critic and Integration Review are PASS. The existin
 
 Drive synchronization: `PASS_2026-09-19`; canonical brand contract, source/tokens, QA, reviews, evidence index and staging evidence synchronized to the existing Taco Loco Drive package.
 
-Next action: stop at `HUMAN_BRAND_WORKFLOW_REVIEW`. Production remains `NOT_AUTHORIZED`.
+Next action: stop at `HUMAN_TRACKING_WORKFLOW_REVIEW` for real WhatsApp mobile/desktop return validation. Production remains `NOT_AUTHORIZED`.
+
+## Customer tracking return P0 — 2026-10-27
+
+The prior return flow left the customer on `/menu` after WhatsApp because `trackingHref` lived only in the success-dialog session record and no pending handoff was resumed on return. Candidate `de368359ea18ced8571b8a36e20cd8f73f2f8d7a` adds bounded localStorage handoff state, strict path/expiry checks, return/reload recovery, desktop pre-popup initialization, stale/new-cart protection and synchronous clearing of the submitted cart. Existing tracking/order architecture is unchanged.
+
+Staging deployment: `1a27db08-8753-4e17-8ded-238ad99a0a8c`. Chrome CDP simulations passed at 390×844 and 1440×900. Independent Critic and Integration Review are PASS. Actual WhatsApp app/Web return and no-app fallback remain pending human device review; no message delivery is claimed.
+
+Evidence: `docs/evidence/TL-TC-ORDER-TRACKING-RETURN-P0-2026-10-27.md`.

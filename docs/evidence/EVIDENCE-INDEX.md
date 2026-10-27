@@ -1,6 +1,8 @@
 # Evidence Index — Taco Loco
 As of: 2026-09-13
 
+Latest durable checkpoint: 2026-10-27 — P0 tracking return correction on `rework/tl-order-tracking-return-p0`, candidate `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`, staging deployment `1a27db08-8753-4e17-8ded-238ad99a0a8c`; technical staging PASS, stopped at `HUMAN_TRACKING_WORKFLOW_REVIEW`, production unauthorized.
+
 - Problem: PROVEN — Cloudflare-native/USD-0 objective and current product baseline.
 - Design: PROVEN for D1 target; initial media strategy updated by explicit Human Decision `MEDIA_STATIC_ASSETS_INITIAL`.
 - Prior D1 implementation: PROVEN — candidate `5d0a1bf582a5bd9f061b7c6121a03d757397fcb4`, Independent Critic PASS and Integration Review PASS.
@@ -61,3 +63,15 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Integration Review: PROVEN PASS — `docs/reviews/TL-TC-BRAND-VISUAL-01-integration-review.md`.
 - Staging visual validation: PROVEN PASS — `docs/evidence/TL-TC-BRAND-VISUAL-01-STAGING-2026-09-19.md`; exact candidate `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c`, existing Worker/D1, static asset HTTP 200, no new infrastructure.
 - Production: NOT_AUTHORIZED; stop at `HUMAN_BRAND_WORKFLOW_REVIEW`.
+
+## Customer tracking return P0 — 2026-10-27
+
+- Contract: PROVEN — `docs/contracts/TL-TC-ORDER-TRACKING-RETURN-P0.md`.
+- Root cause: post-WhatsApp return had no durable pending handoff/resume path; the prior success-dialog session record was insufficient.
+- Implementation: PROVEN — candidate `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`; bounded browser handoff state, strict opaque-path validation, expiry, return/reload recovery, desktop pre-popup initialization, stale/new-cart protection and synchronous submitted-cart cleanup.
+- Local QA: PROVEN — 53 tests, typecheck, lint and `build:vinext` PASS; conventional Next build remains limited by the known Worker-only `cloudflare:workers` health-route issue.
+- Staging: PROVEN technical validation — existing Worker/D1, deployment `1a27db08-8753-4e17-8ded-238ad99a0a8c`, Chrome simulations at 390×844 and 1440×900, existing idempotency/tracking checks PASS.
+- Independent Critic: PROVEN PASS — `docs/reviews/TL-TC-ORDER-TRACKING-RETURN-P0-independent-critic-2026-10-27.md`.
+- Integration Review: PROVEN PASS — `docs/reviews/TL-TC-ORDER-TRACKING-RETURN-P0-integration-review-2026-10-27.md`.
+- Human boundary: actual WhatsApp mobile-app/deep-link, WhatsApp Web and no-app behavior remain `HUMAN_TRACKING_WORKFLOW_REVIEW`; no message delivery is asserted.
+- Production: NOT_AUTHORIZED.
