@@ -26,7 +26,7 @@ export function GoogleSignInButton() {
       void fetch("/api/customer/auth/google", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ credential: response.credential, csrfToken: config.csrfToken }) })
         .then(async (result) => {
           if (!result.ok) {
-            if (result.status === 401 || result.status === 403) {
+            if (result.status === 403) {
               const refreshed = await fetch("/api/customer/auth/google/config", { credentials: "same-origin" }).then((configResponse) => configResponse.json() as Promise<Config>);
               setConfig(refreshed);
               throw new Error("GOOGLE_CSRF_EXPIRED");

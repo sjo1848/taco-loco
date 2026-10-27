@@ -2,7 +2,7 @@
 
 Date: 2026-10-27  
 Branch: `feature/tl-taco-club-p1a`  
-Candidate: `fff06bdc92d708dfac8065f0c4359efa30e7bf99` plus local REWORK pending commit  
+Candidate: final SHA recorded after the corrective assurance commit below  
 Production: `NOT_AUTHORIZED`
 
 ## Candidate surfaces

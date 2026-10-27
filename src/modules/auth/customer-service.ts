@@ -3,6 +3,10 @@ import { isD1Runtime } from "@/lib/runtime";
 import { createCustomerSession, revokeCurrentCustomerSession } from "@/modules/auth/customer-session";
 import type { GoogleIdentityProfile } from "@/modules/auth/google-identity";
 
+export function isCustomerIdentityConflict(error: unknown) {
+  return error instanceof Error && (error.message === "D1_CUSTOMER_IDENTITY_CONFLICT" || error.message.includes("P2002") || /UNIQUE|unique constraint/i.test(error.message));
+}
+
 export async function signInWithGoogle(profile: GoogleIdentityProfile) {
   const existingIdentity = await db.customerIdentity.findUnique({ where: { provider_providerSubject: { provider: "google", providerSubject: profile.subject } }, include: { customer: true } });
   if (existingIdentity) {
@@ -25,9 +29,12 @@ export async function signInWithGoogle(profile: GoogleIdentityProfile) {
       ]);
     }
   } catch (error) {
+    if (!isCustomerIdentityConflict(error)) throw error;
     const winningIdentity = await db.customerIdentity.findUnique({ where: { provider_providerSubject: { provider: "google", providerSubject: profile.subject } } });
     if (!winningIdentity) throw error;
-    const winningCustomer = await db.customer.update({ where: { id: winningIdentity.customerId }, data: { lastLoginAt: new Date() } });
+    const winningCustomer = await db.customer.findUnique({ where: { id: winningIdentity.customerId } });
+    if (!winningCustomer || !winningCustomer.active) throw new Error("CUSTOMER_DISABLED");
+    await db.customer.update({ where: { id: winningCustomer.id }, data: { lastLoginAt: new Date() } });
     await createCustomerSession(winningCustomer.id);
     return winningCustomer;
   }
