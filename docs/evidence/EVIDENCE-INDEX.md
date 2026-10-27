@@ -1,5 +1,5 @@
 # Evidence Index — Taco Loco
-As of: 2026-09-13
+As of: 2026-10-27
 
 Latest durable checkpoint: 2026-10-27 — P0 tracking return correction on `rework/tl-order-tracking-return-p0`, candidate `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`, staging deployment `1a27db08-8753-4e17-8ded-238ad99a0a8c`; technical staging PASS, stopped at `HUMAN_TRACKING_WORKFLOW_REVIEW`, production unauthorized.
 
@@ -74,4 +74,16 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Independent Critic: PROVEN PASS — `docs/reviews/TL-TC-ORDER-TRACKING-RETURN-P0-independent-critic-2026-10-27.md`.
 - Integration Review: PROVEN PASS — `docs/reviews/TL-TC-ORDER-TRACKING-RETURN-P0-integration-review-2026-10-27.md`.
 - Human boundary: actual WhatsApp mobile-app/deep-link, WhatsApp Web and no-app behavior remain `HUMAN_TRACKING_WORKFLOW_REVIEW`; no message delivery is asserted.
+- Production: NOT_AUTHORIZED.
+
+## Taco Club P1a — optional Google identity foundation — 2026-10-27
+
+- Contract: PROVEN local implementation — `docs/contracts/TL-TC-TACO-CLUB-P1A.md`.
+- Candidate: `2beb582f80c1326736fc95164ebdb1f8b807db99`; execution/governance checkpoint: `2e5a14f06e8f54a5b289432f9de8125ed3ce8831`.
+- Design/Implementation: PROVEN locally — additive Customer, CustomerIdentity, CustomerSession and nullable Order.customerId schema/migrations; separate hashed-token customer sessions; Google ID-token verification keyed by `sub`; GIS disabled by default.
+- Validation: PROVEN locally — 22 test files/64 tests, typecheck, lint and `build:vinext` PASS. Lint has three pre-existing warnings; conventional Next build retains the known Worker-only `cloudflare:workers` limitation.
+- Independent Critic: PROVEN PASS — `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-2026-10-27.md`.
+- Integration Review: PROVEN PASS — `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-2026-10-27.md`.
+- Remote/provider validation: HUMAN_INPUT — no OAuth Client ID, authorized origin/redirect, consent/domain configuration or staging test account supplied; no remote migration, secret or deployment performed.
+- Guest checkout, public tracking, WhatsApp-return recovery and admin authentication remain preserved. Issue #6 history/claim and loyalty are deferred.
 - Production: NOT_AUTHORIZED.

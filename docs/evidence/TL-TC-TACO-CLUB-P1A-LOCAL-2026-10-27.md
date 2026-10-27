@@ -19,7 +19,7 @@ Production: `NOT_AUTHORIZED`
 - Prisma D1 schema validation: PASS.
 - D1 local migration `0004_taco_club_identity.sql`: PASS; 11 commands applied.
 - D1 local schema inspection: `Customer`, `CustomerIdentity`, `CustomerSession` present; `Order.customerId` present and nullable.
-- Tests: PASS — 21 files, 63 tests.
+- Tests: PASS — 22 files, 64 tests.
 - Typecheck: PASS.
 - Lint: PASS with three pre-existing warnings only.
 - `build:vinext`: PASS.

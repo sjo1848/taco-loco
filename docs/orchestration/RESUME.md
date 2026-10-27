@@ -3,13 +3,13 @@
 Updated: 2026-10-27
 
 - Repository: `sjo1848/taco-loco`
-- Branch: `rework/tl-order-tracking-return-p0`
-- Application candidate: `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`
+- Branch: `feature/tl-taco-club-p1a`
+- Application candidate: `2beb582f80c1326736fc95164ebdb1f8b807db99`
 - Execution HEAD: resolve dynamically with `git rev-parse HEAD`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `STAGING_TECHNICAL_PASS / HUMAN_TRACKING_WORKFLOW_REVIEW`
-- Active contract: `docs/contracts/TL-TC-ORDER-TRACKING-RETURN-P0.md`
+- State: `LOCAL_TECHNICAL_PASS / HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION`
+- Active contract: `docs/contracts/TL-TC-TACO-CLUB-P1A.md`
 - Production: `NOT_AUTHORIZED`
 
 ## Proven checkpoint
@@ -75,7 +75,7 @@ Drive synchronization: `PASS_2026-09-19`; canonical brand contract, source/token
 
 Next action: stop at `HUMAN_TRACKING_WORKFLOW_REVIEW` for real WhatsApp mobile/desktop return validation. Production remains `NOT_AUTHORIZED`.
 
-## Taco Club design checkpoint — 2026-10-27
+## Taco Club P1a implementation checkpoint — 2026-10-27
 
 The optional customer identity/fidelity design is recorded as GitHub planning authority, not duplicated in a competing implementation contract:
 
@@ -86,7 +86,16 @@ The optional customer identity/fidelity design is recorded as GitHub planning au
 - P1c repeat/favorites/addresses: #7
 - P2 commercial rules: #8
 
-Status: `HUMAN_GATE_PENDING`. No account, email-provider, loyalty or production changes are authorized. Guest checkout, bearer tracking and the existing P0 remain preserved.
+P1a is locally implemented on `feature/tl-taco-club-p1a`. Substantive candidate `2beb582f80c1326736fc95164ebdb1f8b807db99`; current governance checkpoint `2e5a14f06e8f54a5b289432f9de8125ed3ce8831`.
+
+- Local evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-LOCAL-2026-10-27.md`.
+- Independent Critic: `PASS` — `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-2026-10-27.md`.
+- Integration Review: `PASS` — `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-2026-10-27.md`.
+- Added additive customer identity/session persistence and Google ID-token verification; GIS remains disabled by default.
+- Guest checkout, tracking, WhatsApp-return recovery and admin auth remain preserved. Issue #6 history/claim and loyalty remain deferred.
+- No remote migration, secret, OAuth credential or deployment was performed.
+
+Next action: `HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION` — supply the OAuth Web Client ID, authorized origin/redirect and consent/domain configuration plus a disposable staging test account before remote validation. Production remains `NOT_AUTHORIZED`.
 
 ## Customer tracking return P0 — 2026-10-27
 

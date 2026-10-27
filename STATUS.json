@@ -1,10 +1,10 @@
 {
-  "contract": "TL-TC-ORDER-TRACKING-RETURN-P0",
-  "status": "STAGING_TECHNICAL_PASS_HUMAN_TRACKING_WORKFLOW_REVIEW",
+  "contract": "TL-TC-TACO-CLUB-P1A",
+  "status": "LOCAL_TECHNICAL_PASS_HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION",
   "sourceRepo": "sjo1848/taco-loco-foodtrack",
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
-  "targetBranch": "rework/tl-order-tracking-return-p0",
-  "technicalCandidate": "de368359ea18ced8571b8a36e20cd8f73f2f8d7a",
+  "targetBranch": "feature/tl-taco-club-p1a",
+  "technicalCandidate": "2beb582f80c1326736fc95164ebdb1f8b807db99",
   "executionHead": "DYNAMIC_GIT_HEAD",
   "stage": "BRAND_VISUAL_STAGING_VALIDATED",
   "remoteIntegration": "PASS_BASELINE",
@@ -121,6 +121,15 @@
   "tacoClubDesign": "HUMAN_GATE_PENDING",
   "tacoClubEpic": "https://github.com/sjo1848/taco-loco/issues/3",
   "tacoClubIssues": [4, 5, 6, 7, 8],
-  "tacoClubImplementation": "NOT_AUTHORIZED",
-  "resumePoint": "P0 tracking return technical staging PASS for exact candidate de368359; stop at HUMAN_TRACKING_WORKFLOW_REVIEW for real WhatsApp mobile/desktop return validation. Production remains NOT_AUTHORIZED."
+  "tacoClubImplementation": "P1A_LOCAL_TECHNICAL_PASS",
+  "tacoClubP1aContract": "docs/contracts/TL-TC-TACO-CLUB-P1A.md",
+  "tacoClubP1aGovernanceHead": "2e5a14f06e8f54a5b289432f9de8125ed3ce8831",
+  "tacoClubP1aEvidence": "docs/evidence/TL-TC-TACO-CLUB-P1A-LOCAL-2026-10-27.md",
+  "tacoClubP1aIndependentCritic": "PASS",
+  "tacoClubP1aIndependentCriticEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-2026-10-27.md",
+  "tacoClubP1aIntegrationReview": "PASS",
+  "tacoClubP1aIntegrationReviewEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-2026-10-27.md",
+  "tacoClubP1aRemoteValidation": "HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION",
+  "tacoClubP1aRemoteBlocker": "OAuth Web Client ID, authorized origin/redirect and consent/domain configuration plus disposable staging test account",
+  "resumePoint": "Taco Club P1a local technical PASS for exact candidate 2beb582; Independent Critic and Integration Review PASS. Stop at HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION before enabling or remotely validating Google Sign-In. Production remains NOT_AUTHORIZED."
 }

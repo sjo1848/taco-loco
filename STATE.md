@@ -2,11 +2,11 @@
 Updated: 2026-10-27
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: STAGING_TECHNICAL_PASS / HUMAN_TRACKING_WORKFLOW_REVIEW
-Active contract: TL-TC-ORDER-TRACKING-RETURN-P0 (`STAGING_TECHNICAL_PASS / HUMAN_TRACKING_WORKFLOW_REVIEW`)
+Status: LOCAL_TECHNICAL_PASS / HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION
+Active contract: TL-TC-TACO-CLUB-P1A (`LOCAL_TECHNICAL_PASS / HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
-Execution HEAD: resolve dynamically with `git rev-parse HEAD`; last persisted governance checkpoint was `e8effcd867e39976d3e8ff96119c01dadf0e7604`.
-Application candidate: `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`
+Execution HEAD: resolve dynamically with `git rev-parse HEAD`; current checkpoint is `2e5a14f06e8f54a5b289432f9de8125ed3ce8831`.
+Application candidate: `2beb582f80c1326736fc95164ebdb1f8b807db99`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
@@ -96,7 +96,19 @@ For staging manual review only, products without a dedicated asset may temporari
 
 ## Next action
 
-Stop at `HUMAN_TRACKING_WORKFLOW_REVIEW` for real mobile/desktop WhatsApp return validation. Production remains unauthorized.
+Stop at `HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION`: provide the Google OAuth Web Client ID, authorized origin/redirect configuration, consent/domain configuration and a disposable staging test account before enabling or remotely validating Google Sign-In. Production remains unauthorized.
+
+## Taco Club P1a — optional Google identity foundation — 2026-10-27
+
+- Contract: `docs/contracts/TL-TC-TACO-CLUB-P1A.md`.
+- Branch: `feature/tl-taco-club-p1a`.
+- Substantive candidate: `2beb582f80c1326736fc95164ebdb1f8b807db99`; governance checkpoint: `2e5a14f06e8f54a5b289432f9de8125ed3ce8831`.
+- Local implementation: `TECHNICAL_PASS`; evidence `docs/evidence/TL-TC-TACO-CLUB-P1A-LOCAL-2026-10-27.md`.
+- Independent Critic: `PASS`; Integration Review: `PASS`.
+- Added additive Customer, CustomerIdentity, CustomerSession and nullable Order.customerId structures for future optional identity. Added separate hashed-token customer sessions and server-side Google ID-token verification keyed by Google `sub`.
+- Google Identity Services is disabled by default and does not load without an explicitly valid OAuth Client ID. Guest checkout, public tracking, WhatsApp-return recovery and admin authentication remain separate and unchanged.
+- No Google credentials, remote migration, staging secret or deployment was created. The next gate is `HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION`, not production authorization.
+- Issue #6 history/claim, loyalty, promotions, guest-order claiming and account recovery are not implemented.
 
 ## Customer tracking return P0 — 2026-10-27
 
