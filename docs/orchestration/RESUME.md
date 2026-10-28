@@ -77,9 +77,9 @@ Next action: stop at `HUMAN_TRACKING_WORKFLOW_REVIEW` for real WhatsApp mobile/d
 
 ## Taco Club P1a identity validation checkpoint — 2026-10-28
 
-Candidate `fb4fbd4ac2d9dd25b07b98839fb7a7fdde2ffb7f` is deployed to staging as `abd27dc9-c1b6-4b48-8314-b3fb54ad7916`. Read-only D1 aggregate evidence is stable at 2 Customer, 2 CustomerIdentity, 4 CustomerSession, zero duplicate provider/subject keys and zero orphan customers. Human same-account login/logout/relogin is recorded as human-reported only.
+Candidate `0160ab3ecde59011b39ade25ead4ab6a2a55589c` is deployed to staging as `3848a5bc-f97c-46ed-b827-aa41167ad93f`. Read-only D1 aggregate evidence is 2 Customer, 2 CustomerIdentity, 5 active CustomerSession, zero duplicate provider/subject keys and zero orphan customers. Human same-account login/logout/relogin is not yet reproduced in the prepared browser.
 
-Nonce binding is now mandatory at the API and token-verification layers. Local QA is 25 files/70 tests, typecheck, lint and `build:vinext` PASS, with three pre-existing lint warnings. The exact fresh reviews are `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-fb4fbd4.md` (`REWORK`) and `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-fb4fbd4.md` (`HUMAN_GATE`), because authenticated candidate-bound browser evidence, cross-session isolation and real D1 provider concurrency are not independently available. P1a is not ready for integration. PR #9 remains draft and production remains `NOT_AUTHORIZED`.
+Nonce binding is now server-issued through an HttpOnly cookie and required at the API/token-verification layers. Local QA is 25 files/70 tests, typecheck, lint and `build:vinext` PASS, with three pre-existing lint warnings. Exact reviews are `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-0160ab3.md` (`HUMAN_GATE`) and `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-0160ab3.md` (`HUMAN_GATE`), because authenticated candidate-bound browser evidence and real D1 provider concurrency are not independently available. P1a is not ready for integration. PR #9 remains draft and production remains `NOT_AUTHORIZED`.
 
 The Issue #6/P1b-A contract is prepared at `docs/contracts/TL-TC-TACO-CLUB-P1B.md`, but implementation is blocked until P1a receives integration approval.
 

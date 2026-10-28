@@ -55,14 +55,14 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 
 ## Taco Club P1a — identity uniqueness and staging rework — 2026-10-28
 
-- Exact candidate: `fb4fbd4ac2d9dd25b07b98839fb7a7fdde2ffb7f`; staging deployment `abd27dc9-c1b6-4b48-8314-b3fb54ad7916`.
-- D1 aggregate: 2 Customer, 2 CustomerIdentity, 4 CustomerSession, 0 duplicate provider/subject keys, 0 orphan customers, 2 Google identities backing 2 customers.
+- Exact candidate: `0160ab3ecde59011b39ade25ead4ab6a2a55589c`; staging deployment `3848a5bc-f97c-46ed-b827-aa41167ad93f`.
+- D1 aggregate: 2 Customer, 2 CustomerIdentity, 5 active CustomerSession, 0 duplicate provider/subject keys, 0 orphan customers, 2 Google identities backing 2 customers.
 - Human same-account login/logout/relogin: `HUMAN_REPORTED`; exact raw Customer.id reuse is not independently persisted.
 - Local QA: 25 files/70 tests, typecheck, lint and `build:vinext` PASS; nonce binding is mandatory and covered by tests.
 - Candidate-bound smoke: health/menu/account reachable; unauthenticated customer session 401.
-- Independent Critic: `REWORK` — authenticated candidate-bound staging proof and real D1 concurrency remain missing.
+- Independent Critic: `HUMAN_GATE` — prepared browser still needs authenticated evidence; real D1 concurrency remains unproven.
 - Integration Review: `HUMAN_GATE` — same missing evidence; no P1A_READY_FOR_INTEGRATION.
-- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-IDENTITY-VALIDATION-2026-10-28.md`; exact reviews `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-fb4fbd4.md` (`REWORK`) and `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-fb4fbd4.md` (`HUMAN_GATE`).
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-AUTHENTICATED-STAGING-2026-10-28.md`; exact reviews `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-0160ab3.md` (`HUMAN_GATE`) and `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-0160ab3.md` (`HUMAN_GATE`).
 - Issue #6/P1b-A contract prepared at `docs/contracts/TL-TC-TACO-CLUB-P1B.md`; implementation not started.
 - Production: NOT_AUTHORIZED.
 
