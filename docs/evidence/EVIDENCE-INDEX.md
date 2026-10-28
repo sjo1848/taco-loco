@@ -1,6 +1,14 @@
 # Evidence Index — Taco Loco
 As of: 2026-10-27
 
+## Taco Club P1a current staging deployment — 2026-10-28
+
+- Candidate `48744dd5850ece461f3c2841b401da6797467b0a`; Worker version `2b0a11a7-cb99-45c1-930b-e2240a62419a`.
+- Existing staging D1 applied and verified `0005_google_auth_challenge.sql`; no new remote database or production resource.
+- Sanitized smoke: health/menu/account 200, anonymous customer session 401, Google config enabled, challenge/cookies emitted without values.
+- Browser human proof pending in prepared Google chooser. Real D1 identity concurrency recovery and bounded challenge cleanup remain non-PASS gates.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-ATOMIC-CHALLENGE-2026-10-28.md`.
+
 Latest durable checkpoint: 2026-10-27 — P0 tracking return correction on `rework/tl-order-tracking-return-p0`, candidate `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`, staging deployment `1a27db08-8753-4e17-8ded-238ad99a0a8c`; technical staging PASS, stopped at `HUMAN_TRACKING_WORKFLOW_REVIEW`, production unauthorized.
 
 - Problem: PROVEN — Cloudflare-native/USD-0 objective and current product baseline.

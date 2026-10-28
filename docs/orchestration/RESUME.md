@@ -12,6 +12,14 @@ Updated: 2026-10-28
 - Active contract: `docs/contracts/TL-TC-TACO-CLUB-P1A.md`
 - Production: `NOT_AUTHORIZED`
 
+## Current P1a staging checkpoint — 2026-10-28
+
+- `0005_google_auth_challenge.sql` is applied and verified on the existing staging D1.
+- Exact application candidate `48744dd5850ece461f3c2841b401da6797467b0a` is deployed as Worker version `2b0a11a7-cb99-45c1-930b-e2240a62419a`.
+- Smoke: health/menu/account pass; anonymous customer session is 401; Google config is enabled and emits challenge/cookies with values withheld.
+- Browser is prepared at the real Google account chooser. The only immediate human interaction is selecting the authorized Google account and completing the Google consent/return flow.
+- Do not call P1a ready: real D1 identity conflict recovery and bounded GoogleAuthChallenge cleanup remain unresolved review gates. No P1b, merge or production.
+
 ## Proven checkpoint
 
 The existing remote staging baseline remains historical evidence for the prior application candidate. Candidate `e6f2465` separates the explicit atomic payment-and-order confirmation action, enforces the generic confirmed-payment guard in both runtimes, and passes local validation, Independent Critic and Integration Review. Production remains `NOT_AUTHORIZED`.

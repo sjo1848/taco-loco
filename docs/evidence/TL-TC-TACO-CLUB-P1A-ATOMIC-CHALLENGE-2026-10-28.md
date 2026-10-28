@@ -3,7 +3,8 @@
 Current PR HEAD before this work: `c6bada89774848cf14aaad777b4bf8abeae9864c`.  
 New exact candidate: `48744dd5850ece461f3c2841b401da6797467b0a`.  
 CI run: `40713513428` (`success`, exact candidate).  
-Staging deployment: not performed for this candidate.
+Staging deployment: completed after explicit authorization. Worker version `2b0a11a7-cb99-45c1-930b-e2240a62419a`.
+D1 staging: `0005_google_auth_challenge.sql` applied and verified on `taco-loco-staging-20260913` (`266d23b2-4056-41c0-82d9-4f063ba48d78`).
 
 ## Implementation
 
@@ -24,6 +25,23 @@ Staging deployment: not performed for this candidate.
 - `build:vinext`: PASS.
 - CI: PASS for exact candidate, including PostgreSQL migration/seed, lint, typecheck, tests, audit and vinext build.
 
+## Staging smoke evidence
+
+- `/api/health`: HTTP 200.
+- `/menu`: HTTP 200.
+- `/cuenta`: HTTP 200.
+- Anonymous `/api/customer/auth/session`: HTTP 401.
+- Google config: enabled, public client ID present, CSRF and nonce lengths 64; values were not persisted.
+- Cookies observed by name only: `taco_loco_google_csrf`, `taco_loco_google_nonce`.
+- Remote schema verification: `GoogleAuthChallenge` table, unique nonce-hash index and expiry/consumption indexes present.
+- A real Google account selection has not yet been completed; no authenticated PASS is claimed.
+
+## Remaining gates
+
+- HUMAN_INPUT: select the authorized Google account in the already-open Google chooser. This is the only human interaction needed for the browser proof.
+- Real D1 identity conflict recovery under parallel provider writes remains unproven; the local evidence observed `UNIQUE` and `SQLITE_BUSY` and is not promoted to a concurrency PASS.
+- Challenge cleanup policy is not yet production-ready: consumed/expired rows are retained by the current implementation. A bounded cleanup decision is required before integration; no cleanup job or extra infrastructure was introduced in staging.
+
 ## Gates
 
-The candidate has not been deployed to staging because applying `0005` and deploying are external writes requiring explicit authorization. Authenticated browser evidence is still pending. Production remains `NOT_AUTHORIZED`.
+Production remains `NOT_AUTHORIZED`; PR #9 remains draft and no merge or P1b work was performed.

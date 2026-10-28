@@ -10,6 +10,15 @@ Application candidate: `48744dd5850ece461f3c2841b401da6797467b0a`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
+## Taco Club P1a staging deployment checkpoint — 2026-10-28
+
+- Exact application candidate: `48744dd5850ece461f3c2841b401da6797467b0a`; current HEAD descendants are governance-only for application surfaces.
+- Existing staging D1 `taco-loco-staging-20260913` (`266d23b2-4056-41c0-82d9-4f063ba48d78`) applied `0005_google_auth_challenge.sql`; table, unique nonce-hash index and expiry/consumption indexes verified remotely.
+- Staging Worker deployment: `2b0a11a7-cb99-45c1-930b-e2240a62419a`; health, menu, account shell and anonymous session smoke checks pass.
+- Google config smoke: enabled, client ID present, challenge/cookies emitted without persisting values. Authenticated browser proof is pending one human account selection in the prepared Google chooser.
+- Challenge race is proven locally and the persisted consume predicate is atomic. Real provider identity conflict recovery is not claimed after local `UNIQUE`/`SQLITE_BUSY` observations. Challenge cleanup is unresolved for integration: consumed/expired rows currently remain without a bounded cleanup job.
+- Independent Critic and Integration Review remain `HUMAN_GATE`; evidence: `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-48744dd.md` and `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-48744dd.md`.
+
 ## Objective
 
 Execute `TL-TC-ORDER-FLOW-01` only in staging: separate pending intent from kitchen operation, add RETIRO/DELIVERY branching, manual transfer verification for DELIVERY, a low-friction operator console, end-of-day pending closure, no-show evidence and manual refund tracking. Do not reopen production eligibility.
