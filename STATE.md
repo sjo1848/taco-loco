@@ -2,11 +2,11 @@
 Updated: 2026-10-27
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: REMOTE_VALIDATION_PARTIAL / HUMAN_INPUT_REAL_GOOGLE_ACCOUNT
+Status: REWORK_STAGING_VALIDATION / HUMAN_INPUT_REAL_GOOGLE_ACCOUNT
 Active contract: TL-TC-TACO-CLUB-P1A (`REMOTE_VALIDATION_PARTIAL / HUMAN_INPUT_REAL_GOOGLE_ACCOUNT`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
 Execution HEAD: resolve dynamically with `git rev-parse HEAD`; current checkpoint is `f6a6faa9a54e73b1bb09cdfab07031f74a3ccb11`.
-Application candidate: `2beb582f80c1326736fc95164ebdb1f8b807db99`
+Application candidate: `c9dc733d9dd6fdd12655c36786aae1c783ff53de`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
@@ -97,6 +97,14 @@ For staging manual review only, products without a dedicated asset may temporari
 ## Next action
 
 Stop at `HUMAN_INPUT_REAL_GOOGLE_ACCOUNT`: complete the Google chooser with a disposable test account so customer creation, cookie session, logout, repeat login and admin/customer isolation can be verified. Production remains unauthorized.
+
+## Taco Club P1a UX correction — 2026-10-28
+
+- Root cause confirmed: remote D1 had prior customer/identity/session rows, while `/cuenta` always rendered the login button and never queried the customer session after a successful POST.
+- Candidate `c9dc733d9dd6fdd12655c36786aae1c783ff53de` adds explicit visitor/authenticating/authenticated/error UI states, welcome/logout, response validation and bounded customer-auth attempt limiting.
+- Local validation: 23 test files/66 tests, typecheck, lint and `build:vinext` PASS; lint warnings remain pre-existing.
+- Staging deployment: `360a1217-1a8f-4495-9c1a-b0cf364e6e18` on the existing Worker/D1 only.
+- Real Google account journey remains pending human interaction; no staging PASS or critic PASS is claimed for this corrective candidate yet.
 
 ## Taco Club P1a — optional Google identity foundation — 2026-10-27
 

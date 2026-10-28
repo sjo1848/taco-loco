@@ -8,7 +8,7 @@ Updated: 2026-10-27
 - Execution HEAD: resolve dynamically with `git rev-parse HEAD`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `REMOTE_VALIDATION_PARTIAL / HUMAN_INPUT_REAL_GOOGLE_ACCOUNT`
+- State: `REWORK_STAGING_VALIDATION / HUMAN_INPUT_REAL_GOOGLE_ACCOUNT`
 - Active contract: `docs/contracts/TL-TC-TACO-CLUB-P1A.md`
 - Production: `NOT_AUTHORIZED`
 
@@ -86,7 +86,7 @@ The optional customer identity/fidelity design is recorded as GitHub planning au
 - P1c repeat/favorites/addresses: #7
 - P2 commercial rules: #8
 
-P1a is implemented on `feature/tl-taco-club-p1a`. Substantive candidate `2beb582f80c1326736fc95164ebdb1f8b807db99`; current governance checkpoint `f6a6faa9a54e73b1bb09cdfab07031f74a3ccb11`.
+P1a corrective candidate `c9dc733d9dd6fdd12655c36786aae1c783ff53de` is implemented on `feature/tl-taco-club-p1a`; current governance checkpoint is this follow-up state commit.
 
 - Local evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-LOCAL-2026-10-27.md`.
 - Independent Critic: `PASS` — `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-2026-10-27.md`.
@@ -95,9 +95,9 @@ P1a is implemented on `feature/tl-taco-club-p1a`. Substantive candidate `2beb582
 - Guest checkout, tracking, WhatsApp-return recovery and admin auth remain preserved. Issue #6 history/claim and loyalty remain deferred.
 - No remote migration, secret, OAuth credential or deployment was performed.
 
-Remote checkpoint: deployment `c18694e2-24c9-4144-a342-439ba74ea86a` on the existing Worker/D1; migration `0004_taco_club_identity.sql` and enabled GIS config pass. Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-STAGING-2026-10-28.md`.
+Root cause: D1 contained prior customer/identity/session rows, but `/cuenta` always rendered the login button and did not query the session after the POST. Candidate `c9dc733` adds explicit account states, welcome/logout, response validation and bounded auth-attempt limiting. Deployment: `360a1217-1a8f-4495-9c1a-b0cf364e6e18`. Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-UX-FIX-2026-10-28.md`.
 
-Next action: `HUMAN_INPUT_REAL_GOOGLE_ACCOUNT` — complete the Google chooser with a disposable test account, then validate customer creation/session/logout/repeated login and admin/customer isolation. Production remains `NOT_AUTHORIZED`.
+Next action: `HUMAN_INPUT_REAL_GOOGLE_ACCOUNT` — complete the Google chooser with a disposable test account, then validate customer creation/session/logout/repeated login, admin/customer isolation and guest checkout/tracking. No staging PASS is claimed yet. Production remains `NOT_AUTHORIZED`.
 
 ## Customer tracking return P0 — 2026-10-27
 

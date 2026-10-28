@@ -53,6 +53,16 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Remote staging: PROVEN PASS — `docs/evidence/TL-TC-ORDER-TRACKING-STAGING-2026-09-16.md`; deployment `ef5cad20-2dbe-4e79-ba44-6a9e110f1143`, D1 migration, opaque token/cursor, PICKUP/DELIVERY, admin/session, idempotency and privacy checks passed. Production remains unauthorized.
 - Production: NOT_AUTHORIZED.
 
+## Taco Club P1a — Google Sign-In UX correction — 2026-10-28
+
+- Root cause: PROVEN — remote D1 already had customer/identity/session rows; `/cuenta` always rendered the login button and did not query/render the customer session after successful auth.
+- Corrective candidate: `c9dc733d9dd6fdd12655c36786aae1c783ff53de`.
+- Implementation: PROVEN locally — explicit visitor/authenticating/authenticated/error states, welcome/logout, response validation and bounded customer-auth attempt limiting.
+- Local validation: PROVEN — 23 test files/66 tests, typecheck, lint and `build:vinext` PASS; three lint warnings remain pre-existing.
+- Staging deployment: PARTIAL — existing Worker/D1, version `360a1217-1a8f-4495-9c1a-b0cf364e6e18`.
+- Human validation: PENDING — real Google login/logout/relogin, isolation and guest checkout/tracking regression.
+- PR #9 remains draft; production remains NOT_AUTHORIZED.
+
 ## Taco Club P1a — remote staging checkpoint — 2026-10-28
 
 - Remote validation: PARTIAL — existing Worker `taco-loco-staging-20260913`, deployment `c18694e2-24c9-4144-a342-439ba74ea86a`, existing D1 only.

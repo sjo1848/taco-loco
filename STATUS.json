@@ -1,10 +1,10 @@
 {
   "contract": "TL-TC-TACO-CLUB-P1A",
-  "status": "REMOTE_VALIDATION_PARTIAL_HUMAN_INPUT_REAL_GOOGLE_ACCOUNT",
+  "status": "REWORK_STAGING_VALIDATION_HUMAN_INPUT_REAL_GOOGLE_ACCOUNT",
   "sourceRepo": "sjo1848/taco-loco-foodtrack",
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
   "targetBranch": "feature/tl-taco-club-p1a",
-  "technicalCandidate": "2beb582f80c1326736fc95164ebdb1f8b807db99",
+  "technicalCandidate": "c9dc733d9dd6fdd12655c36786aae1c783ff53de",
   "executionHead": "DYNAMIC_GIT_HEAD",
   "stage": "BRAND_VISUAL_STAGING_VALIDATED",
   "remoteIntegration": "PASS_BASELINE",
@@ -129,12 +129,14 @@
   "tacoClubP1aIndependentCriticEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-2026-10-27.md",
   "tacoClubP1aIntegrationReview": "PASS",
   "tacoClubP1aIntegrationReviewEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-2026-10-27.md",
-  "tacoClubP1aRemoteValidation": "REMOTE_VALIDATION_PARTIAL_HUMAN_INPUT_REAL_GOOGLE_ACCOUNT",
+  "tacoClubP1aRemoteValidation": "REWORK_STAGING_VALIDATION_HUMAN_INPUT_REAL_GOOGLE_ACCOUNT",
   "tacoClubP1aRemoteBlocker": "Disposable Google test account must complete the real chooser/login flow; no credential value is persisted",
   "tacoClubP1aStagingWorker": "taco-loco-staging-20260913",
   "tacoClubP1aStagingDeploymentVersion": "c18694e2-24c9-4144-a342-439ba74ea86a",
   "tacoClubP1aStagingD1": "taco-loco-staging-20260913",
   "tacoClubP1aStagingMigration": "0004_taco_club_identity.sql",
-  "tacoClubP1aStagingEvidence": "docs/evidence/TL-TC-TACO-CLUB-P1A-STAGING-2026-10-28.md",
-  "resumePoint": "Taco Club P1a remote staging partial validation on deployment c18694e2-24c9-4144-a342-439ba74ea86a; D1 migration and enabled GIS config PASS. Stop at HUMAN_INPUT_REAL_GOOGLE_ACCOUNT for real customer login/session/isolation validation. Production remains NOT_AUTHORIZED."
+  "tacoClubP1aStagingEvidence": "docs/evidence/TL-TC-TACO-CLUB-P1A-UX-FIX-2026-10-28.md",
+  "tacoClubP1aUxFixCandidate": "c9dc733d9dd6fdd12655c36786aae1c783ff53de",
+  "tacoClubP1aUxFixDeploymentVersion": "360a1217-1a8f-4495-9c1a-b0cf364e6e18",
+  "resumePoint": "Taco Club P1a UX correction candidate c9dc733 deployed as 360a1217-1a8f-4495-9c1a-b0cf364e6e18. Local QA PASS. Stop at HUMAN_INPUT_REAL_GOOGLE_ACCOUNT for real login/session/logout/relogin/isolation and guest regression; do not claim staging PASS yet. Production remains NOT_AUTHORIZED."
 }
