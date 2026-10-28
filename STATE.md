@@ -101,7 +101,7 @@ For staging manual review only, products without a dedicated asset may temporari
 - Human reports same-account login/logout/relogin completed. This remains `HUMAN_REPORTED`; exact raw Customer.id reuse was not persisted in evidence.
 - Local QA: 25 files/70 tests, typecheck, lint and `build:vinext` PASS; lint retains three pre-existing warnings.
 - Nonce hardening: request nonce is mandatory and token nonce must match; missing/mismatched nonce tests PASS.
-- Independent Critic: `REWORK`; Integration Review: `HUMAN_GATE`. Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-IDENTITY-VALIDATION-2026-10-28.md` and the corresponding review files.
+- Independent Critic: `REWORK`; Integration Review: `HUMAN_GATE`. Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-IDENTITY-VALIDATION-2026-10-28.md`, `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-fb4fbd4.md` and `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-fb4fbd4.md`.
 - P1a is not `P1A_READY_FOR_INTEGRATION`: authenticated candidate-bound browser evidence and real D1 provider-concurrency evidence remain incomplete. PR #9 remains draft.
 
 ## Next action

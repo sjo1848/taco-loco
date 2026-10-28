@@ -62,7 +62,7 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Candidate-bound smoke: health/menu/account reachable; unauthenticated customer session 401.
 - Independent Critic: `REWORK` — authenticated candidate-bound staging proof and real D1 concurrency remain missing.
 - Integration Review: `HUMAN_GATE` — same missing evidence; no P1A_READY_FOR_INTEGRATION.
-- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-IDENTITY-VALIDATION-2026-10-28.md` and review files.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-IDENTITY-VALIDATION-2026-10-28.md`; exact reviews `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-fb4fbd4.md` (`REWORK`) and `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-fb4fbd4.md` (`HUMAN_GATE`).
 - Issue #6/P1b-A contract prepared at `docs/contracts/TL-TC-TACO-CLUB-P1B.md`; implementation not started.
 - Production: NOT_AUTHORIZED.
 

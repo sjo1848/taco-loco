@@ -139,9 +139,9 @@
   "tacoClubP1aUxFixCandidate": "fb4fbd4ac2d9dd25b07b98839fb7a7fdde2ffb7f",
   "tacoClubP1aUxFixDeploymentVersion": "abd27dc9-c1b6-4b48-8314-b3fb54ad7916",
   "tacoClubP1aIndependentCritic": "REWORK",
-  "tacoClubP1aIndependentCriticEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-b961b82.md",
+  "tacoClubP1aIndependentCriticEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-fb4fbd4.md",
   "tacoClubP1aIntegrationReview": "HUMAN_GATE",
-  "tacoClubP1aIntegrationReviewEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-b961b82.md",
+  "tacoClubP1aIntegrationReviewEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-fb4fbd4.md",
   "tacoClubP1bContract": "docs/contracts/TL-TC-TACO-CLUB-P1B.md",
   "resumePoint": "P1a candidate fb4fbd4 deployed as abd27dc9. D1 aggregate uniqueness/orphan checks PASS; human same-account login/logout/relogin is HUMAN_REPORTED. Local 25-file/70-test QA PASS with required nonce hardening. Independent Critic REWORK and Integration Review HUMAN_GATE because authenticated candidate-bound evidence and real D1 provider concurrency remain incomplete. Keep PR #9 draft; prepare P1b contract only, no implementation or production."
 }
