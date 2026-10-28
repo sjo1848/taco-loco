@@ -7,7 +7,7 @@ import { publicCustomer, signInWithGoogle } from "@/modules/auth/customer-servic
 import { verifyGoogleIdToken } from "@/modules/auth/google-identity";
 import { checkCustomerAuthRateLimit, customerAuthRateLimitKey } from "@/lib/customer-auth-rate-limit";
 
-const inputSchema = z.object({ credential: z.string().min(100), csrfToken: z.string().min(32).max(128), nonce: z.string().min(16).max(128).optional() });
+const inputSchema = z.object({ credential: z.string().min(100), csrfToken: z.string().min(32).max(128), nonce: z.string().min(16).max(128) });
 
 export async function POST(request: Request) {
   try {

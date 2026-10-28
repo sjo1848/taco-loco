@@ -34,7 +34,7 @@ async function getGoogleKeys() {
   return jwksCache.keys;
 }
 
-export async function verifyGoogleIdToken(credential: string, audience: string, expectedNonce?: string): Promise<GoogleIdentityProfile> {
+export async function verifyGoogleIdToken(credential: string, audience: string, expectedNonce: string): Promise<GoogleIdentityProfile> {
   const parts = credential.split(".");
   if (parts.length !== 3) throw new Error("GOOGLE_TOKEN_INVALID");
   const header = decodeJson<GoogleJwtHeader>(parts[0]);
@@ -43,7 +43,7 @@ export async function verifyGoogleIdToken(credential: string, audience: string, 
   const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
   if (!audiences.includes(audience) || typeof payload.exp !== "number" || payload.exp < Math.floor(Date.now() / 1000) - CLOCK_SKEW_SECONDS) throw new Error("GOOGLE_TOKEN_INVALID");
   if (typeof payload.iat === "number" && payload.iat > Math.floor(Date.now() / 1000) + CLOCK_SKEW_SECONDS) throw new Error("GOOGLE_TOKEN_INVALID");
-  if (expectedNonce && payload.nonce !== expectedNonce) throw new Error("GOOGLE_TOKEN_INVALID");
+  if (!payload.nonce || payload.nonce !== expectedNonce) throw new Error("GOOGLE_TOKEN_INVALID");
   if (!payload.email || payload.email_verified !== true) throw new Error("GOOGLE_EMAIL_UNVERIFIED");
   const keyData = (await getGoogleKeys()).find((key) => (key as JsonWebKey & { kid?: string }).kid === header.kid);
   if (!keyData) throw new Error("GOOGLE_KEY_NOT_FOUND");

@@ -25,7 +25,7 @@ function stubKeys(publicJwk: JsonWebKey) {
   vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ keys: [{ ...publicJwk, kid: "test-key", alg: "RS256", use: "sig" }] }), { headers: { "cache-control": "max-age=300" } })));
 }
 
-const basePayload = () => ({ iss: "https://accounts.google.com", aud: "client.apps.googleusercontent.com", sub: "google-sub-1", email: "customer@example.com", email_verified: true, name: "Customer", exp: Math.floor(Date.now() / 1000) + 300, iat: Math.floor(Date.now() / 1000) });
+const basePayload = () => ({ iss: "https://accounts.google.com", aud: "client.apps.googleusercontent.com", sub: "google-sub-1", email: "customer@example.com", email_verified: true, name: "Customer", exp: Math.floor(Date.now() / 1000) + 300, iat: Math.floor(Date.now() / 1000), nonce: "nonce-for-test-123456" });
 
 describe("Google ID token verification", () => {
   afterEach(() => { vi.unstubAllGlobals(); resetGoogleKeyCacheForTests(); });
@@ -33,7 +33,17 @@ describe("Google ID token verification", () => {
   it("validates signature, issuer, audience, expiry and verified email", async () => {
     const token = await signedToken(basePayload());
     stubKeys(token.publicJwk);
-    await expect(verifyGoogleIdToken(token.credential, "client.apps.googleusercontent.com")).resolves.toMatchObject({ subject: "google-sub-1", email: "customer@example.com" });
+    await expect(verifyGoogleIdToken(token.credential, "client.apps.googleusercontent.com", "nonce-for-test-123456")).resolves.toMatchObject({ subject: "google-sub-1", email: "customer@example.com" });
+  });
+
+  it("requires a matching nonce", async () => {
+    const token = await signedToken(basePayload());
+    stubKeys(token.publicJwk);
+    await expect(verifyGoogleIdToken(token.credential, "client.apps.googleusercontent.com", "nonce-for-test-123456")).resolves.toMatchObject({ subject: "google-sub-1", email: "customer@example.com" });
+    await expect(verifyGoogleIdToken(token.credential, "client.apps.googleusercontent.com", "different-nonce-123456")).rejects.toThrow("GOOGLE_TOKEN_INVALID");
+    const { credential: withoutNonce, publicJwk } = await signedToken({ ...basePayload(), nonce: undefined });
+    stubKeys(publicJwk);
+    await expect(verifyGoogleIdToken(withoutNonce, "client.apps.googleusercontent.com", "nonce-for-test-123456")).rejects.toThrow("GOOGLE_TOKEN_INVALID");
   });
 
   it.each([
@@ -44,7 +54,7 @@ describe("Google ID token verification", () => {
   ])("rejects invalid %s claims", async (_name, override) => {
     const token = await signedToken({ ...basePayload(), ...override });
     stubKeys(token.publicJwk);
-    await expect(verifyGoogleIdToken(token.credential, "client.apps.googleusercontent.com")).rejects.toThrow(/GOOGLE_(TOKEN_INVALID|EMAIL_UNVERIFIED)/);
+    await expect(verifyGoogleIdToken(token.credential, "client.apps.googleusercontent.com", "nonce-for-test-123456")).rejects.toThrow(/GOOGLE_(TOKEN_INVALID|EMAIL_UNVERIFIED)/);
   });
 
   it("rejects a tampered signature", async () => {
@@ -52,6 +62,6 @@ describe("Google ID token verification", () => {
     stubKeys(token.publicJwk);
     const [header, body, signature] = token.credential.split(".");
     const tampered = `${header}.${body}.${signature[0] === "A" ? "B" : "A"}${signature.slice(1)}`;
-    await expect(verifyGoogleIdToken(tampered, "client.apps.googleusercontent.com")).rejects.toThrow("GOOGLE_TOKEN_INVALID");
+    await expect(verifyGoogleIdToken(tampered, "client.apps.googleusercontent.com", "nonce-for-test-123456")).rejects.toThrow("GOOGLE_TOKEN_INVALID");
   });
 });
