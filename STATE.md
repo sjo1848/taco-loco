@@ -2,10 +2,10 @@
 Updated: 2026-10-27
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: LOCAL_TECHNICAL_PASS / HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION
-Active contract: TL-TC-TACO-CLUB-P1A (`LOCAL_TECHNICAL_PASS / HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION`)
+Status: REMOTE_VALIDATION_PARTIAL / HUMAN_INPUT_REAL_GOOGLE_ACCOUNT
+Active contract: TL-TC-TACO-CLUB-P1A (`REMOTE_VALIDATION_PARTIAL / HUMAN_INPUT_REAL_GOOGLE_ACCOUNT`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
-Execution HEAD: resolve dynamically with `git rev-parse HEAD`; current checkpoint is `2e5a14f06e8f54a5b289432f9de8125ed3ce8831`.
+Execution HEAD: resolve dynamically with `git rev-parse HEAD`; current checkpoint is `f6a6faa9a54e73b1bb09cdfab07031f74a3ccb11`.
 Application candidate: `2beb582f80c1326736fc95164ebdb1f8b807db99`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
@@ -96,7 +96,7 @@ For staging manual review only, products without a dedicated asset may temporari
 
 ## Next action
 
-Stop at `HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION`: provide the Google OAuth Web Client ID, authorized origin/redirect configuration, consent/domain configuration and a disposable staging test account before enabling or remotely validating Google Sign-In. Production remains unauthorized.
+Stop at `HUMAN_INPUT_REAL_GOOGLE_ACCOUNT`: complete the Google chooser with a disposable test account so customer creation, cookie session, logout, repeat login and admin/customer isolation can be verified. Production remains unauthorized.
 
 ## Taco Club P1a — optional Google identity foundation — 2026-10-27
 
@@ -107,7 +107,7 @@ Stop at `HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION`: provide the Google OAuth Web C
 - Independent Critic: `PASS`; Integration Review: `PASS`.
 - Added additive Customer, CustomerIdentity, CustomerSession and nullable Order.customerId structures for future optional identity. Added separate hashed-token customer sessions and server-side Google ID-token verification keyed by Google `sub`.
 - Google Identity Services is disabled by default and does not load without an explicitly valid OAuth Client ID. Guest checkout, public tracking, WhatsApp-return recovery and admin authentication remain separate and unchanged.
-- No Google credentials, remote migration, staging secret or deployment was created. The next gate is `HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION`, not production authorization.
+- OAuth Client ID is configured only as a public staging variable. No client secret was used or uploaded. Remote migration and deployment are complete for the bounded staging checkpoint; real Google account validation remains pending. The next gate is `HUMAN_INPUT_REAL_GOOGLE_ACCOUNT`, not production authorization.
 - Issue #6 history/claim, loyalty, promotions, guest-order claiming and account recovery are not implemented.
 
 ## Customer tracking return P0 — 2026-10-27

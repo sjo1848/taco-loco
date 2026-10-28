@@ -53,6 +53,16 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Remote staging: PROVEN PASS — `docs/evidence/TL-TC-ORDER-TRACKING-STAGING-2026-09-16.md`; deployment `ef5cad20-2dbe-4e79-ba44-6a9e110f1143`, D1 migration, opaque token/cursor, PICKUP/DELIVERY, admin/session, idempotency and privacy checks passed. Production remains unauthorized.
 - Production: NOT_AUTHORIZED.
 
+## Taco Club P1a — remote staging checkpoint — 2026-10-28
+
+- Remote validation: PARTIAL — existing Worker `taco-loco-staging-20260913`, deployment `c18694e2-24c9-4144-a342-439ba74ea86a`, existing D1 only.
+- D1 migration: PROVEN — `0004_taco_club_identity.sql` applied; `Customer`, `CustomerIdentity` and `CustomerSession` tables verified remotely.
+- GIS configuration: PROVEN — exact staging origin accepted by Google; config endpoint returns enabled and expected client ID; no client secret uploaded.
+- Runtime: PROVEN — health 200, `/cuenta` 200, GIS chooser opened, unauthenticated customer session returns 401.
+- Remaining gate: HUMAN_INPUT — disposable Google account required for real first login, persistent cookie, logout, repeated login without duplication, customer/admin isolation, and guest regression.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-STAGING-2026-10-28.md`.
+- Production: NOT_AUTHORIZED.
+
 ## Brand visual system — 2026-09-19
 
 - Contract: PROVEN staging-only visual implementation — `docs/contracts/TL-TC-BRAND-VISUAL-01.md`.

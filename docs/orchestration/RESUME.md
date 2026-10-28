@@ -8,7 +8,7 @@ Updated: 2026-10-27
 - Execution HEAD: resolve dynamically with `git rev-parse HEAD`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `LOCAL_TECHNICAL_PASS / HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION`
+- State: `REMOTE_VALIDATION_PARTIAL / HUMAN_INPUT_REAL_GOOGLE_ACCOUNT`
 - Active contract: `docs/contracts/TL-TC-TACO-CLUB-P1A.md`
 - Production: `NOT_AUTHORIZED`
 
@@ -86,7 +86,7 @@ The optional customer identity/fidelity design is recorded as GitHub planning au
 - P1c repeat/favorites/addresses: #7
 - P2 commercial rules: #8
 
-P1a is locally implemented on `feature/tl-taco-club-p1a`. Substantive candidate `2beb582f80c1326736fc95164ebdb1f8b807db99`; current governance checkpoint `4c5dffb`.
+P1a is implemented on `feature/tl-taco-club-p1a`. Substantive candidate `2beb582f80c1326736fc95164ebdb1f8b807db99`; current governance checkpoint `f6a6faa9a54e73b1bb09cdfab07031f74a3ccb11`.
 
 - Local evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-LOCAL-2026-10-27.md`.
 - Independent Critic: `PASS` — `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-2026-10-27.md`.
@@ -95,7 +95,9 @@ P1a is locally implemented on `feature/tl-taco-club-p1a`. Substantive candidate 
 - Guest checkout, tracking, WhatsApp-return recovery and admin auth remain preserved. Issue #6 history/claim and loyalty remain deferred.
 - No remote migration, secret, OAuth credential or deployment was performed.
 
-Next action: `HUMAN_INPUT_GOOGLE_OAUTH_CONFIGURATION` — supply the OAuth Web Client ID, authorized origin/redirect and consent/domain configuration plus a disposable staging test account before remote validation. Production remains `NOT_AUTHORIZED`.
+Remote checkpoint: deployment `c18694e2-24c9-4144-a342-439ba74ea86a` on the existing Worker/D1; migration `0004_taco_club_identity.sql` and enabled GIS config pass. Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-STAGING-2026-10-28.md`.
+
+Next action: `HUMAN_INPUT_REAL_GOOGLE_ACCOUNT` — complete the Google chooser with a disposable test account, then validate customer creation/session/logout/repeated login and admin/customer isolation. Production remains `NOT_AUTHORIZED`.
 
 ## Customer tracking return P0 — 2026-10-27
 
