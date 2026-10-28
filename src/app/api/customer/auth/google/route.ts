@@ -5,6 +5,7 @@ import { isSameOrigin } from "@/lib/request-security";
 import { getGoogleSignInConfig } from "@/lib/google-sign-in-config";
 import { publicCustomer, signInWithGoogle } from "@/modules/auth/customer-service";
 import { verifyGoogleIdToken } from "@/modules/auth/google-identity";
+import { consumeGoogleAuthChallenge } from "@/modules/auth/google-auth-challenge";
 import { checkCustomerAuthRateLimit, customerAuthRateLimitKey } from "@/lib/customer-auth-rate-limit";
 
 const inputSchema = z.object({ credential: z.string().min(100), csrfToken: z.string().min(32).max(128), nonce: z.string().min(16).max(128) });
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
     const cookieNonce = requestCookies.get("taco_loco_google_nonce")?.value;
     if (!cookieToken || cookieToken !== input.csrfToken || !cookieNonce || cookieNonce !== input.nonce) return NextResponse.json({ code: "CSRF_REJECTED" }, { status: 403 });
     const profile = await verifyGoogleIdToken(input.credential, config.clientId, input.nonce);
+    if (!await consumeGoogleAuthChallenge(input.nonce)) return NextResponse.json({ code: "CSRF_REJECTED" }, { status: 403 });
     const customer = await signInWithGoogle(profile);
     const response = NextResponse.json({ authenticated: true, customer: publicCustomer(customer) });
     response.cookies.set("taco_loco_google_nonce", "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });

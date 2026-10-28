@@ -64,6 +64,17 @@ model CustomerSession {
   @@index([expiresAt])
 }
 
+model GoogleAuthChallenge {
+  id         String    @id @default(uuid()) @db.Uuid
+  nonceHash  String    @unique
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  consumedAt DateTime?
+
+  @@index([expiresAt])
+  @@index([consumedAt])
+}
+
 enum OrderStatus {
   RECEIVED
   CONFIRMED
