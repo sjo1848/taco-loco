@@ -17,11 +17,15 @@ export async function POST(request: Request) {
     const config = getGoogleSignInConfig();
     if (!config.enabled || !config.clientId) return NextResponse.json({ code: "GOOGLE_SIGN_IN_DISABLED" }, { status: 404 });
     const input = inputSchema.parse(await request.json());
-    const cookieToken = (await cookies()).get("taco_loco_google_csrf")?.value;
-    if (!cookieToken || cookieToken !== input.csrfToken) return NextResponse.json({ code: "CSRF_REJECTED" }, { status: 403 });
+    const requestCookies = await cookies();
+    const cookieToken = requestCookies.get("taco_loco_google_csrf")?.value;
+    const cookieNonce = requestCookies.get("taco_loco_google_nonce")?.value;
+    if (!cookieToken || cookieToken !== input.csrfToken || !cookieNonce || cookieNonce !== input.nonce) return NextResponse.json({ code: "CSRF_REJECTED" }, { status: 403 });
     const profile = await verifyGoogleIdToken(input.credential, config.clientId, input.nonce);
     const customer = await signInWithGoogle(profile);
-    return NextResponse.json({ authenticated: true, customer: publicCustomer(customer) });
+    const response = NextResponse.json({ authenticated: true, customer: publicCustomer(customer) });
+    response.cookies.set("taco_loco_google_nonce", "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
+    return response;
   } catch (error) {
     const code = error instanceof z.ZodError ? "INVALID_INPUT" : error instanceof Error && error.message === "GOOGLE_EMAIL_UNVERIFIED" ? "GOOGLE_EMAIL_UNVERIFIED" : "GOOGLE_AUTH_FAILED";
     return NextResponse.json({ code }, { status: 401 });
