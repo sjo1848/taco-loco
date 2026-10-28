@@ -143,5 +143,5 @@
   "tacoClubP1aIntegrationReview": "HUMAN_GATE",
   "tacoClubP1aIntegrationReviewEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-48744dd.md",
   "tacoClubP1bContract": "docs/contracts/TL-TC-TACO-CLUB-P1B.md",
-  "resumePoint": "P1a candidate 48744dd adds persisted GoogleAuthChallenge with atomic conditional consumption; local D1 challenge race produced one winner and identity race produced one unique identity but included SQLITE_BUSY/UNIQUE outcomes. CI 40713513428 is green. Current candidate is not deployed to staging because migration 0005 and deployment require explicit authorization. Keep PR #9 draft; no P1b implementation or production."
+  "resumePoint": "P1a candidate 48744dd adds persisted GoogleAuthChallenge with atomic conditional consumption; migration 0005 is applied to staging and Worker version 2b0a11a7-cb99-45c1-930b-e2240a62419a is deployed. Smoke passes; browser is prepared at the Google chooser. Local D1 identity race produced UNIQUE/SQLITE_BUSY outcomes, so real provider recovery is not claimed; challenge cleanup remains unresolved. Keep PR #9 draft; no P1b implementation or production."
 }
