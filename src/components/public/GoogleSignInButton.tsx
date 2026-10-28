@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PublicCustomer } from "@/modules/auth/customer-types";
+import { createGoogleNonce } from "@/lib/google-nonce";
 
 type Config = { enabled: boolean; clientId: string | null; csrfToken?: string };
 type AuthStatus = "idle" | "loading" | "error";
@@ -12,6 +13,7 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
   const router = useRouter();
   const [config, setConfig] = useState<Config | null>(null);
   const [error, setError] = useState("");
+  const nonceRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -27,7 +29,7 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
     const handleCredential = (response: { credential: string }) => {
       setError("");
       onStatusChange?.("loading");
-      void fetch("/api/customer/auth/google", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ credential: response.credential, csrfToken: config.csrfToken }) })
+      void fetch("/api/customer/auth/google", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ credential: response.credential, csrfToken: config.csrfToken, nonce: nonceRef.current }) })
         .then(async (result) => {
           if (!result.ok) {
             if (result.status === 403) {
@@ -49,7 +51,7 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
           setError(error instanceof Error && error.message === "GOOGLE_CSRF_EXPIRED" ? "La sesión de acceso venció. Volvé a tocar el botón de Google." : error instanceof Error && error.message === "GOOGLE_RATE_LIMITED" ? "Demasiados intentos. Esperá unos minutos y volvé a intentar." : "No pudimos iniciar sesión con Google.");
         });
     };
-    const render = () => { if (!window.google || !containerRef.current) return; window.google.accounts.id.initialize({ client_id: config.clientId!, callback: handleCredential, ux_mode: "popup" }); window.google.accounts.id.renderButton(containerRef.current, { theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: 280 }); };
+    const render = () => { if (!window.google || !containerRef.current) return; nonceRef.current = createGoogleNonce(); window.google.accounts.id.initialize({ client_id: config.clientId!, callback: handleCredential, nonce: nonceRef.current, ux_mode: "popup" }); window.google.accounts.id.renderButton(containerRef.current, { theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: 280 }); };
     if (window.google) { render(); return; }
     const script = document.createElement("script"); script.src = "https://accounts.google.com/gsi/client"; script.async = true; script.onload = render; document.head.appendChild(script);
     return () => { script.onload = null; };
