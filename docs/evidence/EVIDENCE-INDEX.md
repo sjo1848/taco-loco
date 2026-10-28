@@ -53,6 +53,15 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Remote staging: PROVEN PASS — `docs/evidence/TL-TC-ORDER-TRACKING-STAGING-2026-09-16.md`; deployment `ef5cad20-2dbe-4e79-ba44-6a9e110f1143`, D1 migration, opaque token/cursor, PICKUP/DELIVERY, admin/session, idempotency and privacy checks passed. Production remains unauthorized.
 - Production: NOT_AUTHORIZED.
 
+## Taco Club P1a — current HEAD atomic challenge — 2026-10-28
+
+- Candidate: `48744dd5850ece461f3c2841b401da6797467b0a`; CI `40713513428` PASS.
+- `GoogleAuthChallenge` migration and conditional one-use consumption implemented; local D1 race produced one winner and one loser.
+- Local D1 identity race produced one unique identity but surfaced provider `UNIQUE`/`SQLITE_BUSY`; no real application recovery PASS claimed.
+- Independent Critic: `HUMAN_GATE` — `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-48744dd.md`.
+- Integration Review: `HUMAN_GATE` — `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-48744dd.md`.
+- Staging migration/deployment and authenticated browser evidence pending explicit authorization.
+
 ## Taco Club P1a — identity uniqueness and staging rework — 2026-10-28
 
 - Exact candidate: `0160ab3ecde59011b39ade25ead4ab6a2a55589c`; staging deployment `3848a5bc-f97c-46ed-b827-aa41167ad93f`.

@@ -2,11 +2,11 @@
 Updated: 2026-10-28
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: P1A_REWORK / HUMAN_GATE_AUTHENTICATED_EVIDENCE
-Active contract: TL-TC-TACO-CLUB-P1A (`REMOTE_VALIDATION_PARTIAL / HUMAN_GATE_AUTHENTICATED_EVIDENCE`)
+Status: P1A_REWORK / HUMAN_GATE_STAGING_DEPLOY_AND_AUTHENTICATED_EVIDENCE
+Active contract: TL-TC-TACO-CLUB-P1A (`REMOTE_VALIDATION_PARTIAL / HUMAN_GATE_STAGING_DEPLOY_AND_AUTHENTICATED_EVIDENCE`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
-Execution HEAD: resolve dynamically with `git rev-parse HEAD`; current checkpoint is `0160ab3ecde59011b39ade25ead4ab6a2a55589c`.
-Application candidate: `0160ab3ecde59011b39ade25ead4ab6a2a55589c`
+Execution HEAD: resolve dynamically with `git rev-parse HEAD`; current checkpoint is `48744dd5850ece461f3c2841b401da6797467b0a`.
+Application candidate: `48744dd5850ece461f3c2841b401da6797467b0a`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
@@ -107,6 +107,14 @@ For staging manual review only, products without a dedicated asset may temporari
 ## Next action
 
 In the prepared browser, select the authorized Google test account and complete login/logout/relogin so the same context captures authenticated session state, identity reuse and admin/customer isolation; then validate guest checkout/tracking. Real D1 provider concurrency remains a separate acceptance decision. Only after P1a integration approval may Issue #6/P1b-A be admitted; no P1b implementation or production work is authorized now.
+
+## Current HEAD reconciliation — 2026-10-28
+
+- The PR HEAD advanced beyond `0160ab3` through dependency/CI commits and the current atomic challenge candidate `48744dd5850ece461f3c2841b401da6797467b0a`.
+- `GoogleAuthChallenge` is persisted in PostgreSQL/D1; challenge consumption is an atomic conditional update, not cookie deletion.
+- CI `40713513428`: PASS. Local QA: 27 test files/75 tests, typecheck, lint and `build:vinext`: PASS; three pre-existing lint warnings remain.
+- Isolated local D1 challenge race: exactly one update winner. Isolated local D1 identity race: one unique identity, with provider `UNIQUE` and `SQLITE_BUSY` outcomes; this is not a real application recovery PASS.
+- Migration `0005_google_auth_challenge.sql` and candidate `48744dd` are not deployed to staging. Independent Critic and Integration Review are both `HUMAN_GATE` pending explicit staging authorization and candidate-bound authenticated evidence.
 
 ## Taco Club P1a UX correction — 2026-10-28
 

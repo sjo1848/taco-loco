@@ -4,11 +4,11 @@ Updated: 2026-10-28
 
 - Repository: `sjo1848/taco-loco`
 - Branch: `feature/tl-taco-club-p1a`
-- Application candidate: `fb4fbd4ac2d9dd25b07b98839fb7a7fdde2ffb7f`
+- Application candidate: `48744dd5850ece461f3c2841b401da6797467b0a`
 - Execution HEAD: resolve dynamically with `git rev-parse HEAD`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `P1A_REWORK / HUMAN_GATE_AUTHENTICATED_EVIDENCE`
+- State: `P1A_REWORK / HUMAN_GATE_STAGING_DEPLOY_AND_AUTHENTICATED_EVIDENCE`
 - Active contract: `docs/contracts/TL-TC-TACO-CLUB-P1A.md`
 - Production: `NOT_AUTHORIZED`
 
@@ -74,6 +74,12 @@ Local visual QA, Independent Critic and Integration Review are PASS. The existin
 Drive synchronization: `PASS_2026-09-19`; canonical brand contract, source/tokens, QA, reviews, evidence index and staging evidence synchronized to the existing Taco Loco Drive package.
 
 Next action: stop at `HUMAN_TRACKING_WORKFLOW_REVIEW` for real WhatsApp mobile/desktop return validation. Production remains `NOT_AUTHORIZED`.
+
+## Taco Club P1a current HEAD checkpoint — 2026-10-28
+
+Current HEAD/candidate `48744dd5850ece461f3c2841b401da6797467b0a` adds persisted `GoogleAuthChallenge` with atomic conditional consumption. CI `40713513428` is green; local QA is 27 files/75 tests, typecheck, lint and vinext build PASS. Isolated local D1 produced one challenge-consume winner and one loser. Identity uniqueness remains structurally protected, but the local parallel identity run surfaced `UNIQUE`/`SQLITE_BUSY`; real application recovery is not claimed.
+
+Fresh exact reviews are `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-48744dd.md` (`HUMAN_GATE`) and `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-48744dd.md` (`HUMAN_GATE`). Migration `0005` and the exact candidate are not deployed to staging. Next action requires explicit authorization for the staging migration/deployment, followed by capturable authenticated login/logout/relogin/isolation evidence. Production remains `NOT_AUTHORIZED`.
 
 ## Taco Club P1a identity validation checkpoint — 2026-10-28
 
