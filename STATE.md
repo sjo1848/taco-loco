@@ -1,12 +1,12 @@
 # Taco Loco — Current Authoritative Project State
-Updated: 2026-10-27
+Updated: 2026-10-28
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: REWORK_STAGING_VALIDATION / HUMAN_INPUT_REAL_GOOGLE_ACCOUNT
-Active contract: TL-TC-TACO-CLUB-P1A (`REMOTE_VALIDATION_PARTIAL / HUMAN_INPUT_REAL_GOOGLE_ACCOUNT`)
+Status: P1A_REWORK / HUMAN_GATE_AUTHENTICATED_EVIDENCE
+Active contract: TL-TC-TACO-CLUB-P1A (`REMOTE_VALIDATION_PARTIAL / HUMAN_GATE_AUTHENTICATED_EVIDENCE`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
-Execution HEAD: resolve dynamically with `git rev-parse HEAD`; current checkpoint is `f6a6faa9a54e73b1bb09cdfab07031f74a3ccb11`.
-Application candidate: `c9dc733d9dd6fdd12655c36786aae1c783ff53de`
+Execution HEAD: resolve dynamically with `git rev-parse HEAD`; current checkpoint is `fb4fbd4ac2d9dd25b07b98839fb7a7fdde2ffb7f`.
+Application candidate: `fb4fbd4ac2d9dd25b07b98839fb7a7fdde2ffb7f`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
@@ -94,9 +94,19 @@ For staging manual review only, products without a dedicated asset may temporari
 - Active Task Contract: STAGES_BCD_IMPLEMENTED / STAGING_ONLY.
 - Production: NOT_AUTHORIZED_BY_EXPLICIT_HUMAN_HOLD.
 
+## Taco Club P1a identity validation — 2026-10-28
+
+- Candidate: `fb4fbd4ac2d9dd25b07b98839fb7a7fdde2ffb7f`; staging deployment: `abd27dc9-c1b6-4b48-8314-b3fb54ad7916`.
+- D1 aggregate snapshot: 2 Customer, 2 CustomerIdentity, 4 CustomerSession, 0 duplicate provider/subject keys, 0 orphan customers, 2 Google identities backing 2 customers.
+- Human reports same-account login/logout/relogin completed. This remains `HUMAN_REPORTED`; exact raw Customer.id reuse was not persisted in evidence.
+- Local QA: 25 files/70 tests, typecheck, lint and `build:vinext` PASS; lint retains three pre-existing warnings.
+- Nonce hardening: request nonce is mandatory and token nonce must match; missing/mismatched nonce tests PASS.
+- Independent Critic: `REWORK`; Integration Review: `HUMAN_GATE`. Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-IDENTITY-VALIDATION-2026-10-28.md` and the corresponding review files.
+- P1a is not `P1A_READY_FOR_INTEGRATION`: authenticated candidate-bound browser evidence and real D1 provider-concurrency evidence remain incomplete. PR #9 remains draft.
+
 ## Next action
 
-Stop at `HUMAN_INPUT_REAL_GOOGLE_ACCOUNT`: complete the Google chooser with a disposable test account so customer creation, cookie session, logout, repeat login and admin/customer isolation can be verified. Production remains unauthorized.
+Resolve the P1a Human Gate with candidate-bound authenticated staging evidence (session, logout, repeat login, admin/customer isolation and guest regression), or explicitly accept the bounded local concurrency evidence. Only after P1a integration approval may Issue #6/P1b-A be admitted; no P1b implementation or production work is authorized now.
 
 ## Taco Club P1a UX correction — 2026-10-28
 

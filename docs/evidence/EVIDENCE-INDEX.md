@@ -53,6 +53,19 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Remote staging: PROVEN PASS — `docs/evidence/TL-TC-ORDER-TRACKING-STAGING-2026-09-16.md`; deployment `ef5cad20-2dbe-4e79-ba44-6a9e110f1143`, D1 migration, opaque token/cursor, PICKUP/DELIVERY, admin/session, idempotency and privacy checks passed. Production remains unauthorized.
 - Production: NOT_AUTHORIZED.
 
+## Taco Club P1a — identity uniqueness and staging rework — 2026-10-28
+
+- Exact candidate: `fb4fbd4ac2d9dd25b07b98839fb7a7fdde2ffb7f`; staging deployment `abd27dc9-c1b6-4b48-8314-b3fb54ad7916`.
+- D1 aggregate: 2 Customer, 2 CustomerIdentity, 4 CustomerSession, 0 duplicate provider/subject keys, 0 orphan customers, 2 Google identities backing 2 customers.
+- Human same-account login/logout/relogin: `HUMAN_REPORTED`; exact raw Customer.id reuse is not independently persisted.
+- Local QA: 25 files/70 tests, typecheck, lint and `build:vinext` PASS; nonce binding is mandatory and covered by tests.
+- Candidate-bound smoke: health/menu/account reachable; unauthenticated customer session 401.
+- Independent Critic: `REWORK` — authenticated candidate-bound staging proof and real D1 concurrency remain missing.
+- Integration Review: `HUMAN_GATE` — same missing evidence; no P1A_READY_FOR_INTEGRATION.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-IDENTITY-VALIDATION-2026-10-28.md` and review files.
+- Issue #6/P1b-A contract prepared at `docs/contracts/TL-TC-TACO-CLUB-P1B.md`; implementation not started.
+- Production: NOT_AUTHORIZED.
+
 ## Taco Club P1a — Google Sign-In UX correction — 2026-10-28
 
 - Root cause: PROVEN — remote D1 already had customer/identity/session rows; `/cuenta` always rendered the login button and did not query/render the customer session after successful auth.

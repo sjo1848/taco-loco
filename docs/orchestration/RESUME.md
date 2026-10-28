@@ -1,14 +1,14 @@
 # Taco Loco — Resume / Orchestration State
 
-Updated: 2026-10-27
+Updated: 2026-10-28
 
 - Repository: `sjo1848/taco-loco`
 - Branch: `feature/tl-taco-club-p1a`
-- Application candidate: `2beb582f80c1326736fc95164ebdb1f8b807db99`
+- Application candidate: `fb4fbd4ac2d9dd25b07b98839fb7a7fdde2ffb7f`
 - Execution HEAD: resolve dynamically with `git rev-parse HEAD`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `REWORK_STAGING_VALIDATION / HUMAN_INPUT_REAL_GOOGLE_ACCOUNT`
+- State: `P1A_REWORK / HUMAN_GATE_AUTHENTICATED_EVIDENCE`
 - Active contract: `docs/contracts/TL-TC-TACO-CLUB-P1A.md`
 - Production: `NOT_AUTHORIZED`
 
@@ -74,6 +74,14 @@ Local visual QA, Independent Critic and Integration Review are PASS. The existin
 Drive synchronization: `PASS_2026-09-19`; canonical brand contract, source/tokens, QA, reviews, evidence index and staging evidence synchronized to the existing Taco Loco Drive package.
 
 Next action: stop at `HUMAN_TRACKING_WORKFLOW_REVIEW` for real WhatsApp mobile/desktop return validation. Production remains `NOT_AUTHORIZED`.
+
+## Taco Club P1a identity validation checkpoint — 2026-10-28
+
+Candidate `fb4fbd4ac2d9dd25b07b98839fb7a7fdde2ffb7f` is deployed to staging as `abd27dc9-c1b6-4b48-8314-b3fb54ad7916`. Read-only D1 aggregate evidence is stable at 2 Customer, 2 CustomerIdentity, 4 CustomerSession, zero duplicate provider/subject keys and zero orphan customers. Human same-account login/logout/relogin is recorded as human-reported only.
+
+Nonce binding is now mandatory at the API and token-verification layers. Local QA is 25 files/70 tests, typecheck, lint and `build:vinext` PASS, with three pre-existing lint warnings. The fresh Independent Critic verdict is `REWORK`; Integration Review is `HUMAN_GATE` because authenticated candidate-bound browser evidence, cross-session isolation and real D1 provider concurrency are not independently available. P1a is not ready for integration. PR #9 remains draft and production remains `NOT_AUTHORIZED`.
+
+The Issue #6/P1b-A contract is prepared at `docs/contracts/TL-TC-TACO-CLUB-P1B.md`, but implementation is blocked until P1a receives integration approval.
 
 ## Taco Club P1a implementation checkpoint — 2026-10-27
 
