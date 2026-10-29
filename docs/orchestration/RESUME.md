@@ -19,6 +19,7 @@ Updated: 2026-10-28
 - Smoke: health/menu/account pass; anonymous customer session is 401; Google config is enabled and emits challenge/cookies with values withheld.
 - Browser is prepared at the real Google account chooser. The only immediate human interaction is selecting the authorized Google account and completing the Google consent/return flow.
 - Do not call P1a ready: real D1 identity conflict recovery and bounded GoogleAuthChallenge cleanup remain unresolved review gates. No P1b, merge or production.
+- Follow-up diagnosis is recorded in `docs/evidence/TL-TC-TACO-CLUB-P1A-CONCURRENCY-CLEANUP-2026-10-29.md`; local tests remain PASS, but no real-provider concurrency PASS is claimed.
 
 ## Proven checkpoint
 

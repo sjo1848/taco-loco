@@ -18,6 +18,7 @@ Production: `NOT_AUTHORIZED`
 - Google config smoke: enabled, client ID present, challenge/cookies emitted without persisting values. Authenticated browser proof is pending one human account selection in the prepared Google chooser.
 - Challenge race is proven locally and the persisted consume predicate is atomic. Real provider identity conflict recovery is not claimed after local `UNIQUE`/`SQLITE_BUSY` observations. Challenge cleanup is unresolved for integration: consumed/expired rows currently remain without a bounded cleanup job.
 - Independent Critic and Integration Review remain `HUMAN_GATE`; evidence: `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-48744dd.md` and `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-48744dd.md`.
+- Follow-up diagnosis: `docs/evidence/TL-TC-TACO-CLUB-P1A-CONCURRENCY-CLEANUP-2026-10-29.md`; `UNIQUE` recovery is covered, `SQLITE_BUSY` recovery is deliberately not claimed, and bounded challenge cleanup is proposed but not implemented.
 
 ## Objective
 

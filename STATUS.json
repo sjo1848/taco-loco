@@ -135,7 +135,7 @@
   "tacoClubP1aStagingDeploymentVersion": "2b0a11a7-cb99-45c1-930b-e2240a62419a",
   "tacoClubP1aStagingD1": "taco-loco-staging-20260913",
   "tacoClubP1aStagingMigration": "0005_google_auth_challenge.sql_APPLIED_AND_VERIFIED",
-  "tacoClubP1aStagingEvidence": "docs/evidence/TL-TC-TACO-CLUB-P1A-ATOMIC-CHALLENGE-2026-10-28.md",
+  "tacoClubP1aStagingEvidence": "docs/evidence/TL-TC-TACO-CLUB-P1A-ATOMIC-CHALLENGE-2026-10-28.md; docs/evidence/TL-TC-TACO-CLUB-P1A-CONCURRENCY-CLEANUP-2026-10-29.md",
   "tacoClubP1aUxFixCandidate": "48744dd5850ece461f3c2841b401da6797467b0a",
   "tacoClubP1aUxFixDeploymentVersion": "2b0a11a7-cb99-45c1-930b-e2240a62419a",
   "tacoClubP1aIndependentCritic": "HUMAN_GATE",

@@ -8,6 +8,7 @@ As of: 2026-10-27
 - Sanitized smoke: health/menu/account 200, anonymous customer session 401, Google config enabled, challenge/cookies emitted without values.
 - Browser human proof pending in prepared Google chooser. Real D1 identity concurrency recovery and bounded challenge cleanup remain non-PASS gates.
 - Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-ATOMIC-CHALLENGE-2026-10-28.md`.
+- Contention/cleanup diagnosis: `docs/evidence/TL-TC-TACO-CLUB-P1A-CONCURRENCY-CLEANUP-2026-10-29.md`; real provider identity recovery and challenge cleanup remain non-PASS.
 
 Latest durable checkpoint: 2026-10-27 — P0 tracking return correction on `rework/tl-order-tracking-return-p0`, candidate `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`, staging deployment `1a27db08-8753-4e17-8ded-238ad99a0a8c`; technical staging PASS, stopped at `HUMAN_TRACKING_WORKFLOW_REVIEW`, production unauthorized.
 
