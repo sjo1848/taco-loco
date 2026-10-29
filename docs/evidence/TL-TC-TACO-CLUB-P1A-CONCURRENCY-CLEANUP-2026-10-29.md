@@ -38,4 +38,14 @@ This policy is proposed, not implemented or deployed in this checkpoint. Until i
 
 ## Human boundary
 
-The controlled browser is prepared at the Google account chooser. The next and only immediate human interaction is selecting the authorized account and completing the Google return flow. Credentials, cookies and tokens must not be sent in chat or persisted in evidence.
+The controlled browser was restored and the first real Google login was observed without persisting identity values:
+
+- `/cuenta` rendered the authenticated welcome state.
+- Browser session endpoint returned HTTP 200.
+- Reload preserved the authenticated state and the same anonymized customer identity fingerprint.
+- Logout returned HTTP 401 and the UI returned to the visitor state.
+- A second login opened the Google account chooser again; its selection/return has not yet completed, so re-login is not claimed PASS.
+
+Sanitized D1 aggregate after this bounded check: 2 customers, 2 identities, 4 active sessions, 4 challenge rows, 1 live challenge. No emails, provider subjects, cookies or tokens were persisted.
+
+The controlled browser is currently stopped at the Google account chooser. The next human interaction is selecting the authorized account and completing the Google return flow. Credentials, cookies and tokens must not be sent in chat or persisted in evidence.
