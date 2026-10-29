@@ -45,6 +45,7 @@ The controlled browser was restored and the first real Google login was observed
 - Reload preserved the authenticated state and the same anonymized customer identity fingerprint.
 - Logout returned HTTP 401 and the UI returned to the visitor state.
 - A second login opened the Google account chooser again; its selection/return has not yet completed, so re-login is not claimed PASS.
+- The delayed second attempt produced HTTP 403 from `/api/customer/auth/google` with the UI message that the access session had expired. A fresh challenge was issued and the chooser was reopened; this is an expected bounded-challenge expiry path, not a duplicate-customer result.
 
 Sanitized D1 aggregate after this bounded check: 2 customers, 2 identities, 4 active sessions, 4 challenge rows, 1 live challenge. No emails, provider subjects, cookies or tokens were persisted.
 
