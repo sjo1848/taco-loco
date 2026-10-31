@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     response.cookies.set("taco_loco_google_nonce", "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
     return response;
   } catch (error) {
-    if (googleIdentityVerified && error instanceof Error && error.message !== "CUSTOMER_DISABLED") {
+    if (googleIdentityVerified && (!(error instanceof Error) || error.message !== "CUSTOMER_DISABLED")) {
       const response = NextResponse.json({ code: "AUTH_PROVIDER_UNAVAILABLE" }, { status: 503 });
       response.cookies.set("taco_loco_google_nonce", "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
       response.cookies.set("taco_loco_google_csrf", "", { httpOnly: false, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });

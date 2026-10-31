@@ -111,4 +111,11 @@ describe("Google sign-in server challenge", () => {
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({ code: "AUTH_PROVIDER_UNAVAILABLE" });
   });
+
+  it("returns infrastructure failure for a non-Error post-verification failure", async () => {
+    mocked.signInWithGoogle.mockRejectedValue({ code: "D1_FAILURE" });
+    const response = await postGoogleAuth(authRequest({ credential: "x".repeat(120), csrfToken: cookieValues.csrf, nonce: cookieValues.nonce }));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ code: "AUTH_PROVIDER_UNAVAILABLE" });
+  });
 });
