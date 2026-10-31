@@ -24,7 +24,7 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
     void fetch("/api/customer/auth/google/config", { credentials: "same-origin" })
       .then((response) => response.json() as Promise<Config>)
       .then((value) => { if (!cancelled) { setConfig(value); setConfigError(false); } })
-      .catch(() => { if (!cancelled) setConfig({ enabled: false, clientId: null }); });
+      .catch(() => { if (!cancelled) { setConfig(null); setConfigError(true); } });
     return () => { cancelled = true; };
   }, [configRetry]);
 
