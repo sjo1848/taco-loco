@@ -1,16 +1,46 @@
 # Taco Loco — Resume / Orchestration State
 
-Updated: 2026-10-27
+Updated: 2026-10-28
 
 - Repository: `sjo1848/taco-loco`
-- Branch: `rework/tl-order-tracking-return-p0`
-- Application candidate: `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`
+- Branch: `feature/tl-taco-club-p1a`
+- Application candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`
 - Execution HEAD: resolve dynamically with `git rev-parse HEAD`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `STAGING_TECHNICAL_PASS / HUMAN_TRACKING_WORKFLOW_REVIEW`
-- Active contract: `docs/contracts/TL-TC-ORDER-TRACKING-RETURN-P0.md`
+- State: `P1A_REWORK / HUMAN_GATE_STAGING_DEPLOY_AND_AUTHENTICATED_EVIDENCE`
+- Active contract: `docs/contracts/TL-TC-TACO-CLUB-P1A.md`
 - Production: `NOT_AUTHORIZED`
+
+## Current P1a rework checkpoint — 2026-10-31
+
+- Exact code candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`.
+- Local QA: 27 test files / 85 tests, typecheck, lint and `build:vinext` PASS; three pre-existing lint warnings remain.
+- The code rework distinguishes definitive identity `UNIQUE` conflicts from transient `SQLITE_BUSY`, uses bounded stable-ID retries, atomically consumes Google challenges, returns 503 after post-consumption persistence failure, cleans at most 100 old challenges best-effort, and recovers GIS configuration/SDK stale callbacks with retryable UI.
+- Independent Critic: `HUMAN_GATE` — code review passes; exact-SHA staging/authenticated evidence and real D1 contention remain pending.
+- Integration Review: `HUMAN_GATE` — same external gates; no production or P1b work.
+- The prior candidate remains deployed in staging; this candidate is not deployed.
+
+## Candidate-bound staging deployment — 2026-10-31
+
+- Candidate `e6fd77a360c298cded9495ab79e9c805310f4487` deployed as Worker version `eb1c652f-8e4f-4171-8450-f2c353df7f99`.
+- Existing D1 binding and migration state verified; `0005_google_auth_challenge.sql` was already applied and no migration/data write occurred.
+- Smoke PASS: health, menu, `/cuenta`, anonymous customer session 401, invalid tracking 404. Sanitized snapshot: 3 customers, 3 identities, 5 active sessions, zero duplicate identity keys, zero orphan customers.
+- Browser runtime was unavailable in this execution; do not claim authenticated candidate-bound evidence. Real D1 identity contention remains unproven.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-STAGING-e6fd77a-2026-10-31.md`.
+
+## Next action
+
+Next: use a capturable browser, open `/cuenta`, generate a fresh challenge only when selecting Google, and capture login/logout/relogin, Customer reuse, admin/customer isolation and guest checkout/tracking regression. Keep PR #9 draft and production `NOT_AUTHORIZED`.
+
+## Current P1a staging checkpoint — 2026-10-28
+
+- `0005_google_auth_challenge.sql` is applied and verified on the existing staging D1.
+- Exact application candidate `48744dd5850ece461f3c2841b401da6797467b0a` is deployed as Worker version `2b0a11a7-cb99-45c1-930b-e2240a62419a`.
+- Smoke: health/menu/account pass; anonymous customer session is 401; Google config is enabled and emits challenge/cookies with values withheld.
+- Browser is prepared at the real Google account chooser. The only immediate human interaction is selecting the authorized Google account and completing the Google consent/return flow.
+- Do not call P1a ready: real D1 identity conflict recovery and bounded GoogleAuthChallenge cleanup remain unresolved review gates. No P1b, merge or production.
+- Follow-up diagnosis is recorded in `docs/evidence/TL-TC-TACO-CLUB-P1A-CONCURRENCY-CLEANUP-2026-10-29.md`; local tests remain PASS, but no real-provider concurrency PASS is claimed.
 
 ## Proven checkpoint
 
@@ -75,7 +105,21 @@ Drive synchronization: `PASS_2026-09-19`; canonical brand contract, source/token
 
 Next action: stop at `HUMAN_TRACKING_WORKFLOW_REVIEW` for real WhatsApp mobile/desktop return validation. Production remains `NOT_AUTHORIZED`.
 
-## Taco Club design checkpoint — 2026-10-27
+## Taco Club P1a current HEAD checkpoint — 2026-10-28
+
+Current HEAD/candidate `48744dd5850ece461f3c2841b401da6797467b0a` adds persisted `GoogleAuthChallenge` with atomic conditional consumption. CI `40713513428` is green; local QA is 27 files/75 tests, typecheck, lint and vinext build PASS. Isolated local D1 produced one challenge-consume winner and one loser. Identity uniqueness remains structurally protected, but the local parallel identity run surfaced `UNIQUE`/`SQLITE_BUSY`; real application recovery is not claimed.
+
+Fresh exact reviews are `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-48744dd.md` (`HUMAN_GATE`) and `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-48744dd.md` (`HUMAN_GATE`). Migration `0005` and the exact candidate are not deployed to staging. Next action requires explicit authorization for the staging migration/deployment, followed by capturable authenticated login/logout/relogin/isolation evidence. Production remains `NOT_AUTHORIZED`.
+
+## Taco Club P1a identity validation checkpoint — 2026-10-28
+
+Candidate `0160ab3ecde59011b39ade25ead4ab6a2a55589c` is deployed to staging as `3848a5bc-f97c-46ed-b827-aa41167ad93f`. Read-only D1 aggregate evidence is 2 Customer, 2 CustomerIdentity, 5 active CustomerSession, zero duplicate provider/subject keys and zero orphan customers. Human same-account login/logout/relogin is not yet reproduced in the prepared browser.
+
+Nonce binding is now server-issued through an HttpOnly cookie and required at the API/token-verification layers. Local QA is 25 files/70 tests, typecheck, lint and `build:vinext` PASS, with three pre-existing lint warnings. Exact reviews are `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-0160ab3.md` (`HUMAN_GATE`) and `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-0160ab3.md` (`HUMAN_GATE`), because authenticated candidate-bound browser evidence and real D1 provider concurrency are not independently available. P1a is not ready for integration. PR #9 remains draft and production remains `NOT_AUTHORIZED`.
+
+The Issue #6/P1b-A contract is prepared at `docs/contracts/TL-TC-TACO-CLUB-P1B.md`, but implementation is blocked until P1a receives integration approval.
+
+## Taco Club P1a implementation checkpoint — 2026-10-27
 
 The optional customer identity/fidelity design is recorded as GitHub planning authority, not duplicated in a competing implementation contract:
 
@@ -86,7 +130,18 @@ The optional customer identity/fidelity design is recorded as GitHub planning au
 - P1c repeat/favorites/addresses: #7
 - P2 commercial rules: #8
 
-Status: `HUMAN_GATE_PENDING`. No account, email-provider, loyalty or production changes are authorized. Guest checkout, bearer tracking and the existing P0 remain preserved.
+P1a corrective candidate `c9dc733d9dd6fdd12655c36786aae1c783ff53de` is implemented on `feature/tl-taco-club-p1a`; current governance checkpoint is this follow-up state commit.
+
+- Local evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-LOCAL-2026-10-27.md`.
+- Independent Critic: `PASS` — `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-2026-10-27.md`.
+- Integration Review: `PASS` — `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-2026-10-27.md`.
+- Added additive customer identity/session persistence and Google ID-token verification; GIS remains disabled by default.
+- Guest checkout, tracking, WhatsApp-return recovery and admin auth remain preserved. Issue #6 history/claim and loyalty remain deferred.
+- No remote migration, secret, OAuth credential or deployment was performed.
+
+Root cause: D1 contained prior customer/identity/session rows, but `/cuenta` always rendered the login button and did not query the session after the POST. Candidate `c9dc733` adds explicit account states, welcome/logout, response validation and bounded auth-attempt limiting. Deployment: `360a1217-1a8f-4495-9c1a-b0cf364e6e18`. Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-UX-FIX-2026-10-28.md`.
+
+Next action: `HUMAN_INPUT_REAL_GOOGLE_ACCOUNT` — complete the Google chooser with a disposable test account, then validate customer creation/session/logout/repeated login, admin/customer isolation and guest checkout/tracking. No staging PASS is claimed yet. Production remains `NOT_AUTHORIZED`.
 
 ## Customer tracking return P0 — 2026-10-27
 
