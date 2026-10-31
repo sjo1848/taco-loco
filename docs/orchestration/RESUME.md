@@ -12,6 +12,19 @@ Updated: 2026-10-28
 - Active contract: `docs/contracts/TL-TC-TACO-CLUB-P1A.md`
 - Production: `NOT_AUTHORIZED`
 
+## Current P1a rework checkpoint — 2026-10-31
+
+- Exact code candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`.
+- Local QA: 27 test files / 85 tests, typecheck, lint and `build:vinext` PASS; three pre-existing lint warnings remain.
+- The code rework distinguishes definitive identity `UNIQUE` conflicts from transient `SQLITE_BUSY`, uses bounded stable-ID retries, atomically consumes Google challenges, returns 503 after post-consumption persistence failure, cleans at most 100 old challenges best-effort, and recovers GIS configuration/SDK stale callbacks with retryable UI.
+- Independent Critic: `HUMAN_GATE` — code review passes; exact-SHA staging/authenticated evidence and real D1 contention remain pending.
+- Integration Review: `HUMAN_GATE` — same external gates; no production or P1b work.
+- The prior candidate remains deployed in staging; this candidate is not deployed.
+
+## Next action
+
+Authorize a new deployment of `e6fd77a` to the existing staging Worker/D1. Then capture login/logout/relogin, Customer reuse, admin/customer isolation and guest checkout/tracking regression. Keep PR #9 draft and production `NOT_AUTHORIZED`.
+
 ## Current P1a staging checkpoint — 2026-10-28
 
 - `0005_google_auth_challenge.sql` is applied and verified on the existing staging D1.

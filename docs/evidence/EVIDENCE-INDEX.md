@@ -1,6 +1,15 @@
 # Evidence Index — Taco Loco
 As of: 2026-10-27
 
+## Taco Club P1a — final local rework checkpoint — 2026-10-31
+
+- Exact candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`.
+- Local validation: 27 test files / 85 tests, typecheck, lint and `build:vinext` PASS; three pre-existing lint warnings remain.
+- Code scope: bounded identity conflict/transient handling, atomic Google challenge consumption, post-consumption failure renewal, bounded challenge cleanup, strict GIS config validation, SDK load retry and stale callback guards.
+- Independent Critic: `HUMAN_GATE` — code controls reviewed as coherent; staging exact-SHA authentication and real D1 contention remain unproven. Evidence: `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-e6fd77a.md`.
+- Integration Review: `HUMAN_GATE`; evidence: `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-e6fd77a.md`.
+- No new staging deployment, production action or merge occurred.
+
 ## Taco Club P1a current staging deployment — 2026-10-28
 
 - Candidate `48744dd5850ece461f3c2841b401da6797467b0a`; Worker version `2b0a11a7-cb99-45c1-930b-e2240a62419a`.

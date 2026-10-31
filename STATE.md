@@ -10,6 +10,19 @@ Application candidate: `48744dd5850ece461f3c2841b401da6797467b0a`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
+## Taco Club P1a code rework checkpoint — 2026-10-31
+
+- Exact application candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`.
+- Local implementation: `TECHNICAL_PASS`; bounded `UNIQUE`/`SQLITE_BUSY` handling, atomic challenge consumption, post-consumption infrastructure failure handling, bounded challenge cleanup and GIS stale-callback recovery are implemented.
+- Local QA: 27 test files / 85 tests, typecheck, lint and `build:vinext` PASS. Lint retains three pre-existing warnings.
+- Independent Critic: `HUMAN_GATE` for the exact candidate; code controls PASS, but exact-SHA staging/authenticated evidence and real D1 contention remain external gates. Evidence: `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-e6fd77a.md`.
+- Integration Review: `HUMAN_GATE`; evidence: `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-e6fd77a.md`.
+- No new staging deployment has been performed. Existing staging remains on the prior candidate. PR #9 remains draft; P1b and production remain unauthorized.
+
+## Next action
+
+Authorize deployment of exact candidate `e6fd77a360c298cded9495ab79e9c805310f4487` to the existing staging Worker/D1, then perform the candidate-bound authenticated login/logout/relogin and isolation journey. Do not prepare the Google selector before deployment authorization.
+
 ## Taco Club P1a staging deployment checkpoint — 2026-10-28
 
 - Exact application candidate: `48744dd5850ece461f3c2841b401da6797467b0a`; current HEAD descendants are governance-only for application surfaces.
