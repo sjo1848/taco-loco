@@ -104,4 +104,11 @@ describe("Google sign-in server challenge", () => {
     expect(response.cookies.get("taco_loco_google_nonce")?.maxAge).toBe(0);
     expect(response.cookies.get("taco_loco_google_csrf")?.maxAge).toBe(0);
   });
+
+  it("does not downgrade an unknown post-verification database error to an auth failure", async () => {
+    mocked.signInWithGoogle.mockRejectedValue(new Error("D1 write unavailable"));
+    const response = await postGoogleAuth(authRequest({ credential: "x".repeat(120), csrfToken: cookieValues.csrf, nonce: cookieValues.nonce }));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ code: "AUTH_PROVIDER_UNAVAILABLE" });
+  });
 });

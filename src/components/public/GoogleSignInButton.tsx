@@ -28,7 +28,9 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
   useEffect(() => {
     if (!config?.enabled || !config.clientId || !config.csrfToken || !config.nonce || !containerRef.current) return;
     const container = containerRef.current;
+    let active = true;
     const handleCredential = (response: { credential: string }) => {
+      if (!active) return;
       setError("");
       onStatusChange?.("loading");
       void fetch("/api/customer/auth/google", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ credential: response.credential, csrfToken: config.csrfToken, nonce: nonceRef.current }) })
@@ -37,9 +39,12 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
             if (result.status === 403 || result.status === 503) {
               if (refreshingConfigRef.current) throw new Error(result.status === 503 ? "GOOGLE_PROVIDER_UNAVAILABLE" : "GOOGLE_CSRF_EXPIRED");
               refreshingConfigRef.current = true;
-              const refreshed = await fetch("/api/customer/auth/google/config", { credentials: "same-origin" }).then((configResponse) => configResponse.json() as Promise<Config>);
-              setConfig(refreshed);
-              refreshingConfigRef.current = false;
+              try {
+                const refreshed = await fetch("/api/customer/auth/google/config", { credentials: "same-origin" }).then((configResponse) => configResponse.json() as Promise<Config>);
+                if (active) setConfig(refreshed);
+              } finally {
+                refreshingConfigRef.current = false;
+              }
               throw new Error(result.status === 503 ? "GOOGLE_PROVIDER_UNAVAILABLE" : "GOOGLE_CSRF_EXPIRED");
             }
             if (result.status === 429) throw new Error("GOOGLE_RATE_LIMITED");
@@ -58,9 +63,10 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
     };
     const challengeKey = `${config.clientId}:${config.csrfToken}:${config.nonce}`;
     const render = () => { if (!window.google || renderedChallengeRef.current === challengeKey) return; renderedChallengeRef.current = challengeKey; nonceRef.current = config.nonce!; window.google.accounts.id.initialize({ client_id: config.clientId!, callback: handleCredential, nonce: nonceRef.current, ux_mode: "popup" }); window.google.accounts.id.renderButton(container, { theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: 280 }); };
-    if (window.google) { render(); return; }
-    const script = document.createElement("script"); script.src = "https://accounts.google.com/gsi/client"; script.async = true; script.onload = render; document.head.appendChild(script);
-    return () => { script.onload = null; if (renderedChallengeRef.current === challengeKey) { window.google?.accounts.id.cancel(); container.replaceChildren(); renderedChallengeRef.current = null; } };
+    let script: HTMLScriptElement | null = null;
+    if (window.google) render();
+    else { script = document.createElement("script"); script.src = "https://accounts.google.com/gsi/client"; script.async = true; script.onload = render; document.head.appendChild(script); }
+    return () => { active = false; if (script) script.onload = null; if (renderedChallengeRef.current === challengeKey) { window.google?.accounts.id.cancel(); container.replaceChildren(); renderedChallengeRef.current = null; } };
   }, [config, onAuthenticated, onStatusChange, router]);
 
   if (config && !config.enabled) return <p className="selection-help">El acceso con Google todavía no está habilitado.</p>;
