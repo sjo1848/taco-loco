@@ -23,7 +23,7 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
     let cancelled = false;
     void fetch("/api/customer/auth/google/config", { credentials: "same-origin" })
       .then((response) => response.json() as Promise<Config>)
-      .then((value) => { if (!cancelled) setConfig(value); })
+      .then((value) => { if (!cancelled) { setConfig(value); setConfigError(false); } })
       .catch(() => { if (!cancelled) setConfig({ enabled: false, clientId: null }); });
     return () => { cancelled = true; };
   }, [configRetry]);
@@ -40,6 +40,7 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
       onStatusChange?.("loading");
       void fetch("/api/customer/auth/google", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ credential: response.credential, csrfToken: config.csrfToken, nonce: nonceRef.current }) })
         .then(async (result) => {
+          if (!active || challengeGenerationRef.current !== generation) return;
           if (!result.ok) {
             if (result.status === 403 || result.status === 503) {
               if (refreshingConfigRef.current) throw new Error(result.status === 503 ? "GOOGLE_PROVIDER_UNAVAILABLE" : "GOOGLE_CSRF_EXPIRED");
