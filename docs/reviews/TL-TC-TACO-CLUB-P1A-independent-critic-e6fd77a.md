@@ -25,6 +25,6 @@ These are not code defects and remain unproven for this exact candidate:
 - deployment of this SHA to staging;
 - authenticated staging login/logout/relogin and customer/admin isolation;
 - application-level identity contention recovery against real D1;
-- exact CI completion for this SHA at review time.
+- exact CI: PASS — run `41209728396`.
 
 Production remains `NOT_AUTHORIZED`; PR #9 remains draft.

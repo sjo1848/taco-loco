@@ -4,7 +4,7 @@ Updated: 2026-10-28
 
 - Repository: `sjo1848/taco-loco`
 - Branch: `feature/tl-taco-club-p1a`
-- Application candidate: `48744dd5850ece461f3c2841b401da6797467b0a`
+- Application candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`
 - Execution HEAD: resolve dynamically with `git rev-parse HEAD`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`

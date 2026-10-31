@@ -5,8 +5,8 @@ Phase: IMPLEMENT / VALIDATE
 Status: P1A_REWORK / HUMAN_GATE_STAGING_DEPLOY_AND_AUTHENTICATED_EVIDENCE
 Active contract: TL-TC-TACO-CLUB-P1A (`REMOTE_VALIDATION_PARTIAL / HUMAN_GATE_STAGING_DEPLOY_AND_AUTHENTICATED_EVIDENCE`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
-Execution HEAD: resolve dynamically with `git rev-parse HEAD`; current checkpoint is `48744dd5850ece461f3c2841b401da6797467b0a`.
-Application candidate: `48744dd5850ece461f3c2841b401da6797467b0a`
+Execution HEAD: resolve dynamically with `git rev-parse HEAD`; current governance checkpoint is `ad06c1a1575c8247ed5deefbe158bef5affc83f2`.
+Application candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
