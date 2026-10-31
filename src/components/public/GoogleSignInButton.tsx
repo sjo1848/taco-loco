@@ -86,7 +86,20 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
     const render = () => { if (!window.google || renderedChallengeRef.current === challengeKey) return; renderedChallengeRef.current = challengeKey; nonceRef.current = config.nonce!; window.google.accounts.id.initialize({ client_id: config.clientId!, callback: handleCredential, nonce: nonceRef.current, ux_mode: "popup" }); window.google.accounts.id.renderButton(container, { theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: 280 }); };
     let script: HTMLScriptElement | null = null;
     if (window.google) render();
-    else { script = document.createElement("script"); script.src = "https://accounts.google.com/gsi/client"; script.async = true; script.onload = render; document.head.appendChild(script); }
+    else {
+      script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.onload = render;
+      script.onerror = () => {
+        if (!active || challengeGenerationRef.current !== generation) return;
+        setConfig(null);
+        setConfigError(true);
+        onStatusChange?.("error");
+        setError("No pudimos cargar el acceso con Google. Intentá nuevamente.");
+      };
+      document.head.appendChild(script);
+    }
     return () => { active = false; if (script) script.onload = null; if (renderedChallengeRef.current === challengeKey) { window.google?.accounts.id.cancel(); container.replaceChildren(); renderedChallengeRef.current = null; } };
   }, [config, onAuthenticated, onStatusChange, router]);
 
