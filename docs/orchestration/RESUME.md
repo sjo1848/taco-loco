@@ -21,9 +21,17 @@ Updated: 2026-10-28
 - Integration Review: `HUMAN_GATE` — same external gates; no production or P1b work.
 - The prior candidate remains deployed in staging; this candidate is not deployed.
 
+## Candidate-bound staging deployment — 2026-10-31
+
+- Candidate `e6fd77a360c298cded9495ab79e9c805310f4487` deployed as Worker version `eb1c652f-8e4f-4171-8450-f2c353df7f99`.
+- Existing D1 binding and migration state verified; `0005_google_auth_challenge.sql` was already applied and no migration/data write occurred.
+- Smoke PASS: health, menu, `/cuenta`, anonymous customer session 401, invalid tracking 404. Sanitized snapshot: 3 customers, 3 identities, 5 active sessions, zero duplicate identity keys, zero orphan customers.
+- Browser runtime was unavailable in this execution; do not claim authenticated candidate-bound evidence. Real D1 identity contention remains unproven.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-STAGING-e6fd77a-2026-10-31.md`.
+
 ## Next action
 
-Authorize a new deployment of `e6fd77a` to the existing staging Worker/D1. Then capture login/logout/relogin, Customer reuse, admin/customer isolation and guest checkout/tracking regression. Keep PR #9 draft and production `NOT_AUTHORIZED`.
+Next: use a capturable browser, open `/cuenta`, generate a fresh challenge only when selecting Google, and capture login/logout/relogin, Customer reuse, admin/customer isolation and guest checkout/tracking regression. Keep PR #9 draft and production `NOT_AUTHORIZED`.
 
 ## Current P1a staging checkpoint — 2026-10-28
 

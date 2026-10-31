@@ -129,10 +129,10 @@
   "tacoClubP1aIndependentCriticEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-2026-10-27.md",
   "tacoClubP1aIntegrationReview": "PASS",
   "tacoClubP1aIntegrationReviewEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-2026-10-27.md",
-  "tacoClubP1aRemoteValidation": "HUMAN_GATE_NEW_CANDIDATE_STAGING_DEPLOY_AND_AUTHENTICATED_EVIDENCE",
-  "tacoClubP1aRemoteBlocker": "The exact candidate e6fd77a has not been deployed to staging. After authorization, capture login/logout/relogin and customer/admin isolation on this SHA; real D1 identity contention remains unproven.",
+  "tacoClubP1aRemoteValidation": "HUMAN_ACTION_AUTHENTICATED_BROWSER_VALIDATION",
+  "tacoClubP1aRemoteBlocker": "Exact candidate e6fd77a is deployed and smoke-tested. Controlled browser runtime is unavailable in this execution, so candidate-bound login/logout/relogin, isolation and guest regression remain pending; real D1 identity contention remains unproven.",
   "tacoClubP1aStagingWorker": "taco-loco-staging-20260913",
-  "tacoClubP1aStagingDeploymentVersion": "2b0a11a7-cb99-45c1-930b-e2240a62419a",
+  "tacoClubP1aStagingDeploymentVersion": "eb1c652f-8e4f-4171-8450-f2c353df7f99",
   "tacoClubP1aStagingD1": "taco-loco-staging-20260913",
   "tacoClubP1aStagingMigration": "0005_google_auth_challenge.sql_APPLIED_AND_VERIFIED",
   "tacoClubP1aStagingEvidence": "docs/evidence/TL-TC-TACO-CLUB-P1A-ATOMIC-CHALLENGE-2026-10-28.md; docs/evidence/TL-TC-TACO-CLUB-P1A-CONCURRENCY-CLEANUP-2026-10-29.md",
@@ -143,5 +143,5 @@
   "tacoClubP1aIntegrationReview": "HUMAN_GATE",
   "tacoClubP1aIntegrationReviewEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-e6fd77a.md",
   "tacoClubP1bContract": "docs/contracts/TL-TC-TACO-CLUB-P1B.md",
-  "resumePoint": "P1a code candidate e6fd77a adds bounded UNIQUE/SQLITE_BUSY recovery, strict GIS configuration validation, atomic challenge consumption, post-consumption failure renewal, bounded cleanup and stale SDK callback guards. Local QA is PASS; exact CI/staging/authenticated evidence and real D1 contention remain pending. Request authorization to deploy this exact SHA to existing staging. Keep PR #9 draft; no P1b implementation or production."
+  "resumePoint": "P1a candidate e6fd77a is deployed to existing staging as Worker version eb1c652f-8e4f-4171-8450-f2c353df7f99; 0005 was already applied and no migration/data changes occurred. Smoke PASS. Controlled browser runtime is unavailable; next action is candidate-bound Google login/logout/relogin and isolation capture with a fresh challenge. Keep PR #9 draft; no P1b implementation or production."
 }

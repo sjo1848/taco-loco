@@ -1,6 +1,16 @@
 # Evidence Index — Taco Loco
 As of: 2026-10-27
 
+## Taco Club P1a — candidate-bound staging deployment — 2026-10-31
+
+- Exact candidate `e6fd77a360c298cded9495ab79e9c805310f4487` deployed to existing Worker `taco-loco-staging-20260913` as version `eb1c652f-8e4f-4171-8450-f2c353df7f99`.
+- Existing D1 binding verified: `taco-loco-staging-20260913` / `266d23b2-4056-41c0-82d9-4f063ba48d78`.
+- Migrations `0001` through `0005` present; remote migration check reported no pending migrations and zero writes.
+- Smoke: health, menu, account shell, anonymous customer session 401 and invalid tracking 404 PASS. Google config endpoint was intentionally not called before browser preparation.
+- Sanitized D1 snapshot: 3 customers, 3 identities, 5 active sessions, zero duplicate provider/subject groups, zero orphan customers; read-only query.
+- Browser-bound authenticated evidence remains pending because the controlled browser runtime was unavailable. Real provider-backed identity concurrency is not claimed.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-STAGING-e6fd77a-2026-10-31.md`.
+
 ## Taco Club P1a — final local rework checkpoint — 2026-10-31
 
 - Exact candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`.

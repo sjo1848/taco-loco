@@ -19,9 +19,18 @@ Production: `NOT_AUTHORIZED`
 - Integration Review: `HUMAN_GATE`; evidence: `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-e6fd77a.md`.
 - No new staging deployment has been performed. Existing staging remains on the prior candidate. PR #9 remains draft; P1b and production remain unauthorized.
 
+## Taco Club P1a staging deployment — 2026-10-31
+
+- Exact candidate `e6fd77a360c298cded9495ab79e9c805310f4487` is deployed to the existing staging Worker as version `eb1c652f-8e4f-4171-8450-f2c353df7f99`.
+- Existing D1 binding verified against `taco-loco-staging-20260913` / `266d23b2-4056-41c0-82d9-4f063ba48d78`; migrations `0001`–`0005` are present and no migration or data write was performed.
+- Smoke PASS: health, menu, account shell, anonymous customer session 401 and invalid tracking 404. Bindings are DB, Static Assets and version metadata only.
+- Sanitized D1 snapshot: 3 customers, 3 identities, 5 active sessions, 0 duplicate identity keys and 0 orphan customers.
+- Controlled browser runtime was unavailable, so candidate-bound authenticated login/logout/relogin and isolation remain pending. Real provider-backed D1 identity concurrency is not claimed.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-STAGING-e6fd77a-2026-10-31.md`.
+
 ## Next action
 
-Authorize deployment of exact candidate `e6fd77a360c298cded9495ab79e9c805310f4487` to the existing staging Worker/D1, then perform the candidate-bound authenticated login/logout/relogin and isolation journey. Do not prepare the Google selector before deployment authorization.
+Complete candidate-bound Google login/logout/relogin and customer/admin isolation in a capturable browser, generating the challenge only at selection time. Then run guest checkout/tracking regression and bounded real-provider contention if viable. Production remains `NOT_AUTHORIZED`.
 
 ## Taco Club P1a staging deployment checkpoint — 2026-10-28
 
