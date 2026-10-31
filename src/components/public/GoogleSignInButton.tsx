@@ -43,8 +43,9 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
           if (!active || challengeGenerationRef.current !== generation) return;
           if (!result.ok) {
             if (result.status === 403 || result.status === 503) {
-              if (refreshingConfigRef.current) throw new Error(result.status === 503 ? "GOOGLE_PROVIDER_UNAVAILABLE" : "GOOGLE_CSRF_EXPIRED");
+              if (refreshingConfigRef.current) return;
               refreshingConfigRef.current = true;
+              const renewalMessage = result.status === 503 ? "No pudimos completar el acceso. Volvé a tocar el botón de Google para intentar de nuevo." : "La sesión de acceso venció. Volvé a tocar el botón de Google.";
               window.google?.accounts.id.cancel();
               container.replaceChildren();
               renderedChallengeRef.current = null;
@@ -55,12 +56,14 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
                 if (!active || !refreshed.enabled || !refreshed.clientId || !refreshed.csrfToken || !refreshed.nonce) throw new Error("GOOGLE_CONFIG_UNAVAILABLE");
                 setConfig(refreshed);
                 setConfigError(false);
+                onStatusChange?.("error");
+                setError(renewalMessage);
               } catch (refreshError) {
-                if (active) { setConfig(null); setConfigError(true); }
-                throw refreshError;
+                if (active) { setConfig(null); setConfigError(true); onStatusChange?.("error"); setError(refreshError instanceof Error && refreshError.message === "GOOGLE_CONFIG_UNAVAILABLE" ? "No pudimos preparar el acceso con Google." : "No pudimos renovar el acceso. Intentá nuevamente."); }
               } finally {
                 refreshingConfigRef.current = false;
               }
+              return;
               throw new Error(result.status === 503 ? "GOOGLE_PROVIDER_UNAVAILABLE" : "GOOGLE_CSRF_EXPIRED");
             }
             if (result.status === 429) throw new Error("GOOGLE_RATE_LIMITED");
