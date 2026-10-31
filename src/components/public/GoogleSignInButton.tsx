@@ -83,7 +83,13 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
         });
     };
     const challengeKey = `${config.clientId}:${config.csrfToken}:${config.nonce}`;
-    const render = () => { if (!window.google || renderedChallengeRef.current === challengeKey) return; renderedChallengeRef.current = challengeKey; nonceRef.current = config.nonce!; window.google.accounts.id.initialize({ client_id: config.clientId!, callback: handleCredential, nonce: nonceRef.current, ux_mode: "popup" }); window.google.accounts.id.renderButton(container, { theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: 280 }); };
+    const render = () => {
+      if (!active || challengeGenerationRef.current !== generation || !window.google || renderedChallengeRef.current === challengeKey) return;
+      renderedChallengeRef.current = challengeKey;
+      nonceRef.current = config.nonce!;
+      window.google.accounts.id.initialize({ client_id: config.clientId!, callback: handleCredential, nonce: nonceRef.current, ux_mode: "popup" });
+      window.google.accounts.id.renderButton(container, { theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: 280 });
+    };
     let script: HTMLScriptElement | null = null;
     if (window.google) render();
     else {
