@@ -123,6 +123,17 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-STAGING-2026-10-28.md`.
 - Production: NOT_AUTHORIZED.
 
+## Taco Club P1a — candidate-bound authenticated browser validation — 2026-10-31
+
+- Exact candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`; staging Worker version `eb1c652f-8e4f-4171-8450-f2c353df7f99`; existing D1 only.
+- Browser tooling: repository Playwright CLI recovered the capturable persistent browser after the in-app connector failed on its node-repl module loader. No credentials, cookies, raw IDs or tracking tokens were recorded.
+- Authenticated journey: PROVEN for login, reload, logout→401, second login and same anonymized Customer.id fingerprint; customer-to-admin isolation PROVEN. Reverse admin-to-customer isolation was not independently exercised in this run.
+- Guest journey: PROVEN for unauthenticated menu checkout, WhatsApp handoff page and public tracking reconstruction (`TL-0039`); delivery of the WhatsApp message itself is not claimed.
+- D1 aggregate: 3 Customer, 3 CustomerIdentity, 0 duplicate identity groups, 0 orphan customers. The prior 2/2 checkpoint was stale; the controlled re-login did not increase counts. Exact historical attribution of the third row is not claimed without exposing identity fields.
+- Real provider-backed identity concurrency/recovery: UNKNOWN/HUMAN_GATE. Local D1 harness evidence does not prove parallel Google identity contention against the provider, and shared staging was not used for synthetic parallel writes.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-STAGING-e6fd77a-2026-10-31.md`.
+- Production: NOT_AUTHORIZED; PR #9 remains draft; no P1b.
+
 ## Brand visual system — 2026-09-19
 
 - Contract: PROVEN staging-only visual implementation — `docs/contracts/TL-TC-BRAND-VISUAL-01.md`.

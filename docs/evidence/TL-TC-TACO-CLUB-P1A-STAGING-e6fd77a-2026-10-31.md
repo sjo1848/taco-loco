@@ -29,7 +29,7 @@ The execution HEAD differs from the technical candidate only by governance/evide
 | `/cuenta` | PASS, HTTP 200 |
 | anonymous `/api/customer/auth/session` | PASS, HTTP 401 |
 | invalid public tracking token | PASS, generic HTTP 404 with `no-store` and `no-referrer` |
-| Google challenge/login flow | DEFERRED until capturable browser is available; config endpoint was not called prematurely |
+| Google challenge/login flow | PASS in capturable Playwright browser; fresh challenge was generated at selection time |
 
 ## Sanitized D1 snapshot
 
@@ -43,12 +43,38 @@ Read-only query after deployment:
 
 No emails, provider subjects, cookies or tokens were recorded. No D1 data was changed by this validation.
 
+## Capturable browser validation
+
+The in-app browser connector could not initialize because its node-repl module loader rejected the runtime import of `node:process`. The repository Playwright CLI was available through `npx`; its shell wrapper is not executable as a file but runs correctly through `bash`, with the default persistent session.
+
+Candidate-bound staging observations, sanitized:
+
+- `/cuenta` initially showed the visitor state and the Google Sign-In control.
+- Google selection returned to `/cuenta` with the authenticated state and welcome/logout controls.
+- Reload preserved the authenticated UI.
+- Logout returned the account session endpoint to HTTP `401`.
+- A second Google login succeeded and produced the same anonymized `Customer.id` fingerprint as the prior authenticated cycle: `540b52674ceace53`. The raw identifier, email, cookie and token were not recorded.
+- With the customer session active, `/admin/orders` redirected to `/admin/login`, and the customer session did not authorize `/api/auth/session` (HTTP `401`). This proves customer-to-admin isolation. A fresh admin-authenticated session was not independently exercised in this run, so the reverse direction remains covered only by existing admin-auth evidence.
+
+## Guest checkout and tracking validation
+
+- From the public menu, a guest PICKUP checkout completed without Google authentication and created a bounded staging order `TL-0039`.
+- The WhatsApp handoff page opened with the order reference and a tracking link. Message delivery to WhatsApp itself is not claimed.
+- The tracking URL opened in the staging browser and rendered the persisted order projection: `Esperando confirmación`, `Pedido enviado`, one Burrito line and the expected total. The opaque token was not persisted in evidence.
+- No Google customer authentication was required for the guest order/tracking path.
+
+## D1 snapshot interpretation
+
+The current sanitized read-only aggregate remains `3 customers / 3 identities / 0 duplicate identity groups / 0 orphan customers`. The previously expected `2 / 2` value is stale relative to the snapshot already taken before this controlled re-login. The current login/logout/re-login cycle did not increase the counts. Without exposing identity subjects or customer IDs, the exact historical action that changed the aggregate from `2` to `3` cannot be attributed; no duplicate or orphan is observed.
+
 ## Concurrency
 
-The isolated local D1 Worker integration harness passed rollback, concurrent order idempotency, order transition race, admin SSE replay, session/logout and guest runtime checks (`D1_LOCAL_INTEGRATION_PROOF=PASS`). This is evidence for the existing D1 runtime and order path, not a claim of real Google identity contention recovery. A provider-backed identity contention run was not claimed: no additional remote database was created and the authenticated browser journey is still pending.
+The isolated local D1 Worker integration harness passed rollback, concurrent order idempotency, order transition race, admin SSE replay, session/logout and guest runtime checks (`D1_LOCAL_INTEGRATION_PROOF=PASS`). This is evidence for the existing D1 runtime and order path, not a claim of real Google identity contention recovery. No parallel synthetic identity write was run against the shared remote D1, so provider-backed identity contention and recovery from real D1 `UNIQUE`/`SQLITE_BUSY` races remain unproven.
+
+The minimum safe next test is an isolated local D1 database seeded with synthetic Google subjects, invoking the actual identity transaction concurrently and asserting one identity/customer outcome plus bounded recovery. A real-provider contention test would require an explicitly authorized isolated remote write environment; it must not use the shared staging database merely for convenience.
 
 ## Classification
 
-`HUMAN_ACTION / AUTHENTICATED_BROWSER_VALIDATION`
+`HUMAN_GATE / REAL_D1_IDENTITY_CONCURRENCY`
 
-The exact candidate is deployed and smoke-tested. Remaining action is to use a capturable browser, generate a fresh challenge at selection time, complete login/logout/relogin and customer/admin isolation, then run the bounded guest checkout/tracking regression. Production remains `NOT_AUTHORIZED`.
+The exact candidate is deployed and smoke-tested. Candidate-bound browser evidence now proves Google login, reload, logout-to-401, same-customer re-login, customer-to-admin isolation, guest checkout and tracking. The remaining gate is real D1 identity contention/recovery; it is not proven by the local harness or by the sequential browser journey. Production remains `NOT_AUTHORIZED`.

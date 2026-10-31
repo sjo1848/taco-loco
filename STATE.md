@@ -2,7 +2,7 @@
 Updated: 2026-10-28
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: P1A_REWORK / HUMAN_GATE_STAGING_DEPLOY_AND_AUTHENTICATED_EVIDENCE
+Status: P1A_REWORK / HUMAN_GATE_REAL_D1_IDENTITY_CONCURRENCY
 Active contract: TL-TC-TACO-CLUB-P1A (`REMOTE_VALIDATION_PARTIAL / HUMAN_GATE_STAGING_DEPLOY_AND_AUTHENTICATED_EVIDENCE`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
 Execution HEAD: resolve dynamically with `git rev-parse HEAD`; current governance checkpoint is `ad06c1a1575c8247ed5deefbe158bef5affc83f2`.
@@ -25,7 +25,7 @@ Production: `NOT_AUTHORIZED`
 - Existing D1 binding verified against `taco-loco-staging-20260913` / `266d23b2-4056-41c0-82d9-4f063ba48d78`; migrations `0001`–`0005` are present and no migration or data write was performed.
 - Smoke PASS: health, menu, account shell, anonymous customer session 401 and invalid tracking 404. Bindings are DB, Static Assets and version metadata only.
 - Sanitized D1 snapshot: 3 customers, 3 identities, 5 active sessions, 0 duplicate identity keys and 0 orphan customers.
-- Controlled browser runtime was unavailable, so candidate-bound authenticated login/logout/relogin and isolation remain pending. Real provider-backed D1 identity concurrency is not claimed.
+- Capturable Playwright validation now proves candidate-bound Google login, reload, logout→401, same-customer re-login, customer-to-admin isolation, guest checkout and tracking. Real provider-backed D1 identity concurrency remains unproven.
 - Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-STAGING-e6fd77a-2026-10-31.md`.
 
 ## Next action
