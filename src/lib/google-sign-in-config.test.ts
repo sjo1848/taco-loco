@@ -18,6 +18,8 @@ describe("Google Sign-In configuration", () => {
 
   it("rejects non-ok or malformed client configuration responses", async () => {
     expect(isGoogleSignInClientConfig({ error: "upstream failure" })).toBe(false);
+    expect(isGoogleSignInClientConfig({ enabled: true, clientId: "client.apps.googleusercontent.com", csrfToken: "", nonce: "nonce" })).toBe(false);
+    expect(isGoogleSignInClientConfig({ enabled: false, clientId: "stale-client.apps.googleusercontent.com" })).toBe(false);
     await expect(readGoogleSignInClientConfig(new Response(JSON.stringify({ error: "upstream failure" }), { status: 500 }))).rejects.toThrow("GOOGLE_CONFIG_UNAVAILABLE");
     await expect(readGoogleSignInClientConfig(new Response(JSON.stringify({ enabled: true, clientId: null }), { status: 200 }))).rejects.toThrow("GOOGLE_CONFIG_INVALID");
   });

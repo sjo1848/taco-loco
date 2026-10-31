@@ -15,9 +15,10 @@ export function isGoogleSignInClientConfig(value: unknown): value is GoogleSignI
   if (!value || typeof value !== "object") return false;
   const candidate = value as { enabled?: unknown; clientId?: unknown; csrfToken?: unknown; nonce?: unknown };
   if (typeof candidate.enabled !== "boolean") return false;
-  if (candidate.clientId !== null && typeof candidate.clientId !== "string") return false;
-  if (!candidate.enabled) return true;
-  return typeof candidate.clientId === "string" && typeof candidate.csrfToken === "string" && typeof candidate.nonce === "string";
+  if (!candidate.enabled) return candidate.clientId === null;
+  return typeof candidate.clientId === "string" && candidate.clientId.length > 0
+    && typeof candidate.csrfToken === "string" && candidate.csrfToken.length > 0
+    && typeof candidate.nonce === "string" && candidate.nonce.length > 0;
 }
 
 export async function readGoogleSignInClientConfig(response: Response): Promise<GoogleSignInClientConfig> {
