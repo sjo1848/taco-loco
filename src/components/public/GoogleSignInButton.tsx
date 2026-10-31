@@ -12,9 +12,12 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
   const router = useRouter();
   const [config, setConfig] = useState<Config | null>(null);
   const [error, setError] = useState("");
+  const [configError, setConfigError] = useState(false);
+  const [configRetry, setConfigRetry] = useState(0);
   const nonceRef = useRef<string | null>(null);
   const renderedChallengeRef = useRef<string | null>(null);
   const refreshingConfigRef = useRef(false);
+  const challengeGenerationRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -23,14 +26,16 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
       .then((value) => { if (!cancelled) setConfig(value); })
       .catch(() => { if (!cancelled) setConfig({ enabled: false, clientId: null }); });
     return () => { cancelled = true; };
-  }, []);
+  }, [configRetry]);
 
   useEffect(() => {
     if (!config?.enabled || !config.clientId || !config.csrfToken || !config.nonce || !containerRef.current) return;
     const container = containerRef.current;
     let active = true;
+    const generation = challengeGenerationRef.current + 1;
+    challengeGenerationRef.current = generation;
     const handleCredential = (response: { credential: string }) => {
-      if (!active) return;
+      if (!active || challengeGenerationRef.current !== generation) return;
       setError("");
       onStatusChange?.("loading");
       void fetch("/api/customer/auth/google", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ credential: response.credential, csrfToken: config.csrfToken, nonce: nonceRef.current }) })
@@ -43,12 +48,14 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
               container.replaceChildren();
               renderedChallengeRef.current = null;
               nonceRef.current = null;
+              challengeGenerationRef.current += 1;
               try {
                 const refreshed = await fetch("/api/customer/auth/google/config", { credentials: "same-origin" }).then((configResponse) => configResponse.json() as Promise<Config>);
                 if (!active || !refreshed.enabled || !refreshed.clientId || !refreshed.csrfToken || !refreshed.nonce) throw new Error("GOOGLE_CONFIG_UNAVAILABLE");
                 setConfig(refreshed);
+                setConfigError(false);
               } catch (refreshError) {
-                if (active) setConfig(null);
+                if (active) { setConfig(null); setConfigError(true); }
                 throw refreshError;
               } finally {
                 refreshingConfigRef.current = false;
@@ -60,13 +67,13 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
           }
           const body = await result.json() as { authenticated?: boolean; customer?: PublicCustomer };
           if (!body.authenticated || !body.customer) throw new Error("GOOGLE_AUTH_RESPONSE_INVALID");
-          if (!active) return;
+          if (!active || challengeGenerationRef.current !== generation) return;
           onAuthenticated?.(body.customer);
           onStatusChange?.("idle");
           router.refresh();
         })
         .catch((error: unknown) => {
-          if (!active) return;
+          if (!active || challengeGenerationRef.current !== generation) return;
           onStatusChange?.("error");
           setError(error instanceof Error && error.message === "GOOGLE_CSRF_EXPIRED" ? "La sesión de acceso venció. Volvé a tocar el botón de Google." : error instanceof Error && error.message === "GOOGLE_PROVIDER_UNAVAILABLE" ? "No pudimos completar el acceso. Volvé a tocar el botón de Google para intentar de nuevo." : error instanceof Error && error.message === "GOOGLE_RATE_LIMITED" ? "Demasiados intentos. Esperá unos minutos y volvé a intentar." : "No pudimos iniciar sesión con Google.");
         });
@@ -80,5 +87,6 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
   }, [config, onAuthenticated, onStatusChange, router]);
 
   if (config && !config.enabled) return <p className="selection-help">El acceso con Google todavía no está habilitado.</p>;
+  if (configError) return <div><p className="form-error" role="alert">No pudimos preparar el acceso con Google.</p><button className="admin-button admin-button--secondary" type="button" onClick={() => setConfigRetry((value) => value + 1)}>Reintentar acceso</button></div>;
   return <div><div ref={containerRef} aria-label="Continuar con Google" />{error && <p className="form-error" role="alert">{error}</p>}{!error && <p className="selection-help" role="status" aria-live="polite">{config ? "Elegí una cuenta Google para continuar." : "Preparando el acceso…"}</p>}</div>;
 }
