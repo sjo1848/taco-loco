@@ -39,11 +39,17 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
             if (result.status === 403 || result.status === 503) {
               if (refreshingConfigRef.current) throw new Error(result.status === 503 ? "GOOGLE_PROVIDER_UNAVAILABLE" : "GOOGLE_CSRF_EXPIRED");
               refreshingConfigRef.current = true;
-              if (active) { setConfig(null); nonceRef.current = null; }
+              window.google?.accounts.id.cancel();
+              container.replaceChildren();
+              renderedChallengeRef.current = null;
+              nonceRef.current = null;
               try {
                 const refreshed = await fetch("/api/customer/auth/google/config", { credentials: "same-origin" }).then((configResponse) => configResponse.json() as Promise<Config>);
                 if (!active || !refreshed.enabled || !refreshed.clientId || !refreshed.csrfToken || !refreshed.nonce) throw new Error("GOOGLE_CONFIG_UNAVAILABLE");
                 setConfig(refreshed);
+              } catch (refreshError) {
+                if (active) setConfig(null);
+                throw refreshError;
               } finally {
                 refreshingConfigRef.current = false;
               }
