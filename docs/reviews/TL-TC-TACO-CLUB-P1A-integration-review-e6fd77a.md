@@ -13,6 +13,14 @@
 - Client-side configuration, SDK loading, stale callback handling, and retry states are coherent.
 - Administrator authentication, public tracking, WhatsApp return, and production boundaries are unchanged.
 
-## Gate required before integration
+## Exact candidate integration evidence
 
-Authorize a new staging deployment of this exact candidate, then capture authenticated login/logout/relogin, identity reuse, customer/admin isolation, guest checkout/tracking regression, and provider-backed D1 contention evidence. No production action is implied.
+The candidate-bound Playwright run on 2026-10-31 verified login, reload, logout→401, same-customer re-login, customer-to-admin isolation, guest checkout and public tracking. The guest regression created `TL-0039`; it did not modify schema or identities through synthetic tests. The sanitized D1 aggregate remained 3 customers / 3 identities, with zero duplicate identity groups and zero orphan customers.
+
+The P0 WhatsApp-return branch is an ancestor of the current candidate, and PR #9 targets `rework/tl-order-tracking-return-p0`. The current GitHub quality check is PASS (`41253107443`); PR #9 remains draft and merge state is CLEAN.
+
+## Gate remaining before integration
+
+Only provider-backed D1 identity contention/recovery remains unresolved. The local harness and sequential browser evidence are insufficient to declare concurrent identity behavior PASS. No production action is implied.
+
+The proposed human decision is documented in `docs/evidence/TL-TC-TACO-CLUB-P1A-REMOTE-IDENTITY-RISK-ACCEPTANCE-2026-10-31.md`.

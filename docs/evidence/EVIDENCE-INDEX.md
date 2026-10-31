@@ -133,6 +133,7 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Real provider-backed identity concurrency/recovery: UNKNOWN/HUMAN_GATE. Local D1 harness evidence does not prove parallel Google identity contention against the provider, and shared staging was not used for synthetic parallel writes.
 - Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-STAGING-e6fd77a-2026-10-31.md`.
 - Production: NOT_AUTHORIZED; PR #9 remains draft; no P1b.
+- Residual-risk proposal (not accepted): `docs/evidence/TL-TC-TACO-CLUB-P1A-REMOTE-IDENTITY-RISK-ACCEPTANCE-2026-10-31.md`.
 
 ## Brand visual system — 2026-09-19
 
