@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { isSameOrigin } from "@/lib/request-security";
 import { getGoogleSignInConfig } from "@/lib/google-sign-in-config";
-import { publicCustomer, signInWithGoogle } from "@/modules/auth/customer-service";
+import { isCustomerIdentityInfrastructureError, publicCustomer, signInWithGoogle } from "@/modules/auth/customer-service";
 import { verifyGoogleIdToken } from "@/modules/auth/google-identity";
 import { consumeGoogleAuthChallenge } from "@/modules/auth/google-auth-challenge";
 import { checkCustomerAuthRateLimit, customerAuthRateLimitKey } from "@/lib/customer-auth-rate-limit";
@@ -29,6 +29,12 @@ export async function POST(request: Request) {
     response.cookies.set("taco_loco_google_nonce", "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
     return response;
   } catch (error) {
+    if (isCustomerIdentityInfrastructureError(error)) {
+      const response = NextResponse.json({ code: "AUTH_PROVIDER_UNAVAILABLE" }, { status: 503 });
+      response.cookies.set("taco_loco_google_nonce", "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
+      response.cookies.set("taco_loco_google_csrf", "", { httpOnly: false, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
+      return response;
+    }
     const code = error instanceof z.ZodError ? "INVALID_INPUT" : error instanceof Error && error.message === "GOOGLE_EMAIL_UNVERIFIED" ? "GOOGLE_EMAIL_UNVERIFIED" : "GOOGLE_AUTH_FAILED";
     return NextResponse.json({ code }, { status: 401 });
   }

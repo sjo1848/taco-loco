@@ -22,6 +22,7 @@ vi.mock("@/lib/customer-auth-rate-limit", () => ({
 }));
 vi.mock("@/modules/auth/google-identity", () => ({ verifyGoogleIdToken: mocked.verifyGoogleIdToken }));
 vi.mock("@/modules/auth/customer-service", () => ({
+  isCustomerIdentityInfrastructureError: (error: unknown) => error instanceof Error && error.message === "D1_CUSTOMER_IDENTITY_TRANSIENT",
   signInWithGoogle: mocked.signInWithGoogle,
   publicCustomer: mocked.publicCustomer,
 }));
@@ -93,5 +94,14 @@ describe("Google sign-in server challenge", () => {
     expect(mocked.verifyGoogleIdToken).toHaveBeenCalledWith("x".repeat(120), "client.apps.googleusercontent.com", cookieValues.nonce);
     expect(response.cookies.get("taco_loco_google_nonce")?.maxAge).toBe(0);
     expect(mocked.consumeGoogleAuthChallenge).toHaveBeenCalledWith(cookieValues.nonce);
+  });
+
+  it("returns infrastructure failure after consuming a challenge when identity persistence is unavailable", async () => {
+    mocked.signInWithGoogle.mockRejectedValue(new Error("D1_CUSTOMER_IDENTITY_TRANSIENT"));
+    const response = await postGoogleAuth(authRequest({ credential: "x".repeat(120), csrfToken: cookieValues.csrf, nonce: cookieValues.nonce }));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ code: "AUTH_PROVIDER_UNAVAILABLE" });
+    expect(response.cookies.get("taco_loco_google_nonce")?.maxAge).toBe(0);
+    expect(response.cookies.get("taco_loco_google_csrf")?.maxAge).toBe(0);
   });
 });

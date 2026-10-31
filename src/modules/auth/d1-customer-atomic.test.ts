@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { D1Database } from "@cloudflare/workers-types";
-import { createD1CustomerIdentityWith } from "./d1-customer-atomic";
+import { createD1CustomerIdentityWith, D1_CUSTOMER_IDENTITY_TRANSIENT } from "./d1-customer-atomic";
 
 function fakeD1(reject = false) {
   const sql: string[] = [];
@@ -40,6 +40,14 @@ function concurrentUniqueD1() {
   return { db, customerIds, identities };
 }
 
+function busyD1() {
+  const db = {
+    prepare(statement: string) { return { bind: (...values: unknown[]) => ({ statement, values }) }; },
+    async batch() { throw new Error("SQLITE_BUSY: database is locked"); },
+  } as unknown as D1Database;
+  return db;
+}
+
 describe("D1 customer identity atomic writer", () => {
   it("creates customer and Google identity in one batch", async () => {
     const { db, sql } = fakeD1();
@@ -63,7 +71,11 @@ describe("D1 customer identity atomic writer", () => {
     ]);
     expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
     expect(results.filter((result) => result.status === "rejected" && result.reason instanceof Error && result.reason.message === "D1_CUSTOMER_IDENTITY_CONFLICT")).toHaveLength(1);
-    expect(customerIds).toHaveLength(1);
-    expect(identities).toHaveLength(1);
+    expect(customerIds.size).toBe(1);
+    expect(identities.size).toBe(1);
+  });
+
+  it("classifies SQLite busy as transient infrastructure failure", async () => {
+    await expect(createD1CustomerIdentityWith(busyD1(), { customerId: "customer-busy", identityId: "identity-busy", provider: "google", providerSubject: "busy-subject", email: null, displayName: null, avatarUrl: null })).rejects.toThrow(D1_CUSTOMER_IDENTITY_TRANSIENT);
   });
 });
