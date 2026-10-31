@@ -3,14 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PublicCustomer } from "@/modules/auth/customer-types";
+import { readGoogleSignInClientConfig, type GoogleSignInClientConfig } from "@/lib/google-sign-in-config";
 
-type Config = { enabled: boolean; clientId: string | null; csrfToken?: string; nonce?: string };
 type AuthStatus = "idle" | "loading" | "error";
 
 export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuthenticated?: (customer: PublicCustomer) => void; onStatusChange?: (status: AuthStatus) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const [config, setConfig] = useState<Config | null>(null);
+  const [config, setConfig] = useState<GoogleSignInClientConfig | null>(null);
   const [error, setError] = useState("");
   const [configError, setConfigError] = useState(false);
   const [configRetry, setConfigRetry] = useState(0);
@@ -22,7 +22,7 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
   useEffect(() => {
     let cancelled = false;
     void fetch("/api/customer/auth/google/config", { credentials: "same-origin" })
-      .then((response) => response.json() as Promise<Config>)
+      .then(readGoogleSignInClientConfig)
       .then((value) => { if (!cancelled) { setConfig(value); setConfigError(false); } })
       .catch(() => { if (!cancelled) { setConfig(null); setConfigError(true); } });
     return () => { cancelled = true; };
@@ -52,7 +52,7 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
               nonceRef.current = null;
               challengeGenerationRef.current += 1;
               try {
-                const refreshed = await fetch("/api/customer/auth/google/config", { credentials: "same-origin" }).then((configResponse) => configResponse.json() as Promise<Config>);
+                const refreshed = await fetch("/api/customer/auth/google/config", { credentials: "same-origin" }).then(readGoogleSignInClientConfig);
                 if (!active || !refreshed.enabled || !refreshed.clientId || !refreshed.csrfToken || !refreshed.nonce) throw new Error("GOOGLE_CONFIG_UNAVAILABLE");
                 setConfig(refreshed);
                 setConfigError(false);
