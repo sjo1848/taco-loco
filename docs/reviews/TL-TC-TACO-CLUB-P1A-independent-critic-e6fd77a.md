@@ -4,7 +4,7 @@
 
 - Exact technical candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`
 - Review mode: fresh, read-only, logically independent
-- Verdict: `HUMAN_GATE`
+- Verdict: `PASS_WITH_CONDITIONS`
 
 ## Code review
 
@@ -31,17 +31,17 @@ The 2026-10-31 Playwright evidence closes the previously pending functional stag
 
 The staging aggregate remained 3 customers / 3 identities with zero duplicate identity keys and zero orphan customers. The prior 2/2 note was stale; the controlled re-login did not increase the aggregate. No identity fields were persisted.
 
-## Remaining external gate
+## Residual risk accepted for integration
 
 This is not a code defect and remains unproven for this exact candidate:
 
 - application-level identity contention and recovery against real provider D1 under parallel identity writes.
 
-The local D1 harness and the sequential browser journey do not prove that gate. No parallel synthetic write was made to the shared staging D1.
+The local D1 harness and the sequential browser journey do not prove that gate. No parallel synthetic write was made to the shared staging D1. The human accepted this residual risk exclusively for P1a integration, with the conditions and reopen triggers in the risk artifact.
 
 ## Human decision artifact
 
-The residual-risk proposal is recorded at `docs/evidence/TL-TC-TACO-CLUB-P1A-REMOTE-IDENTITY-RISK-ACCEPTANCE-2026-10-31.md`. It is a proposal only; no risk acceptance is inferred.
+The accepted-risk decision is recorded at `docs/evidence/TL-TC-TACO-CLUB-P1A-REMOTE-IDENTITY-RISK-ACCEPTANCE-2026-10-31.md`.
 
 Exact CI remains PASS — run `41209728396`; the current PR check is also PASS — run `41253107443`.
 

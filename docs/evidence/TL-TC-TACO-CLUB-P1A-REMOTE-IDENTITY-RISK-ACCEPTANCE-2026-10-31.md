@@ -1,6 +1,6 @@
 # Taco Club P1a — proposed residual-risk decision
 
-Status: `PROPOSAL_ONLY / HUMAN_DECISION_REQUIRED`
+Status: `HUMAN_ACCEPTED_FOR_P1A_INTEGRATION_ONLY`
 
 ## Scope
 
@@ -20,9 +20,9 @@ The exact candidate `e6fd77a360c298cded9495ab79e9c805310f4487` is deployed to th
 
 No authorized parallel synthetic identity write was executed against a provider-backed D1 environment. Therefore the exact behavior under simultaneous first-login requests, including provider timing and recovery from `UNIQUE`/`SQLITE_BUSY`, is not proven.
 
-## Proposed acceptance, not yet approved
+## Accepted scope
 
-If the human accepts the residual risk for P1a integration, the acceptance should be limited to:
+The human accepted this residual risk on 2026-10-31, exclusively for P1a integration in its destination branch. The acceptance is limited to:
 
 - no claim that real provider concurrency is proven;
 - reliance on the database unique constraint as the duplicate-prevention boundary;
@@ -31,6 +31,8 @@ If the human accepts the residual risk for P1a integration, the acceptance shoul
 - no automatic retry that can create a second customer or session;
 - continued staging monitoring of customer/identity cardinality, duplicate-key queries, 5xx auth responses and repeated identity-link failures;
 - immediate re-opening of the risk if a duplicate identity/customer, orphan customer, unbounded retry, persistent `SQLITE_BUSY`, or mismatch between identity and session records is observed.
+
+Baseline recorded at acceptance: 3 customers, 3 identities, zero duplicate identity groups and zero orphan customers.
 
 ## Impact and recovery
 
@@ -42,6 +44,6 @@ Reopen the risk before integration if staging shows any duplicate provider ident
 
 ## Decision
 
-`HUMAN_GATE_PENDING`
+`HUMAN_ACCEPTED / INTEGRATION_ONLY`
 
-This document does not accept the risk automatically and does not declare real concurrency PASS.
+This decision does not declare real remote concurrency PASS. It authorizes only closure of the external review gate for P1a integration, subject to the conditions above. It does not authorize merge, P1b, staging data changes, deployment or production.

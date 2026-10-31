@@ -2,10 +2,10 @@
 Updated: 2026-10-28
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: P1A_REWORK / HUMAN_GATE_REAL_D1_IDENTITY_CONCURRENCY
-Active contract: TL-TC-TACO-CLUB-P1A (`REMOTE_VALIDATION_PARTIAL / HUMAN_GATE_STAGING_DEPLOY_AND_AUTHENTICATED_EVIDENCE`)
+Status: P1A_READY_FOR_INTEGRATION / MERGE_HUMAN_AUTHORIZATION_PENDING
+Active contract: TL-TC-TACO-CLUB-P1A (`REMOTE_VALIDATION_PASS_WITH_ACCEPTED_RESIDUAL_RISK`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
-Execution HEAD: resolve dynamically with `git rev-parse HEAD`; current governance checkpoint is `ad06c1a1575c8247ed5deefbe158bef5affc83f2`.
+Execution HEAD: resolve dynamically with `git rev-parse HEAD`; current governance checkpoint is `d506cd0caeaae50bd4e1f866e432a2ad37b5a5dc`.
 Application candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
@@ -15,9 +15,9 @@ Production: `NOT_AUTHORIZED`
 - Exact application candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`.
 - Local implementation: `TECHNICAL_PASS`; bounded `UNIQUE`/`SQLITE_BUSY` handling, atomic challenge consumption, post-consumption infrastructure failure handling, bounded challenge cleanup and GIS stale-callback recovery are implemented.
 - Local QA: 27 test files / 85 tests, typecheck, lint and `build:vinext` PASS. Lint retains three pre-existing warnings.
-- Independent Critic: `HUMAN_GATE` for the exact candidate; code controls PASS, but exact-SHA staging/authenticated evidence and real D1 contention remain external gates. Evidence: `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-e6fd77a.md`.
-- Integration Review: `HUMAN_GATE`; evidence: `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-e6fd77a.md`.
-- No new staging deployment has been performed. Existing staging remains on the prior candidate. PR #9 remains draft; P1b and production remain unauthorized.
+- Independent Critic: `PASS_WITH_CONDITIONS`; authenticated staging evidence is complete, while real D1 identity concurrency remains explicitly unproven and accepted only for P1a integration. Evidence: `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-e6fd77a.md`.
+- Integration Review: `PASS_WITH_CONDITIONS`; same residual-risk boundary. Evidence: `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-e6fd77a.md`.
+- PR #9 remains draft pending separate protected-merge authorization; P1b and production remain unauthorized.
 
 ## Taco Club P1a staging deployment — 2026-10-31
 
@@ -30,7 +30,7 @@ Production: `NOT_AUTHORIZED`
 
 ## Next action
 
-Complete candidate-bound Google login/logout/relogin and customer/admin isolation in a capturable browser, generating the challenge only at selection time. Then run guest checkout/tracking regression and bounded real-provider contention if viable. Production remains `NOT_AUTHORIZED`.
+Present PR #9 for explicit protected-merge authorization. Do not merge automatically, begin P1b or change production. The accepted real-D1 concurrency residual must be reopened on the documented triggers. Production remains `NOT_AUTHORIZED`.
 
 ## Taco Club P1a staging deployment checkpoint — 2026-10-28
 

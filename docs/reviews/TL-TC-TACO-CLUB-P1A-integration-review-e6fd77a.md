@@ -4,7 +4,7 @@
 
 - Exact technical candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`
 - Scope: Google identity challenge, D1 identity/session persistence, GIS client recovery
-- Verdict: `HUMAN_GATE`
+- Verdict: `PASS_WITH_CONDITIONS`
 
 ## Composition reviewed
 
@@ -19,8 +19,8 @@ The candidate-bound Playwright run on 2026-10-31 verified login, reload, logoutâ
 
 The P0 WhatsApp-return branch is an ancestor of the current candidate, and PR #9 targets `rework/tl-order-tracking-return-p0`. The current GitHub quality check is PASS (`41253107443`); PR #9 remains draft and merge state is CLEAN.
 
-## Gate remaining before integration
+## Integration disposition
 
-Only provider-backed D1 identity contention/recovery remains unresolved. The local harness and sequential browser evidence are insufficient to declare concurrent identity behavior PASS. No production action is implied.
+Only provider-backed D1 identity contention/recovery remains unproven. The human accepted that residual risk for P1a integration only; this does not convert it into a concurrency PASS. The local harness and sequential browser evidence remain accurately classified as non-conclusive for that property.
 
-The proposed human decision is documented in `docs/evidence/TL-TC-TACO-CLUB-P1A-REMOTE-IDENTITY-RISK-ACCEPTANCE-2026-10-31.md`.
+The accepted decision and reopen conditions are documented in `docs/evidence/TL-TC-TACO-CLUB-P1A-REMOTE-IDENTITY-RISK-ACCEPTANCE-2026-10-31.md`. No production action is implied.

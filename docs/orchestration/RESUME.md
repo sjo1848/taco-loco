@@ -8,7 +8,7 @@ Updated: 2026-10-28
 - Execution HEAD: resolve dynamically with `git rev-parse HEAD`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `P1A_REWORK / HUMAN_GATE_STAGING_DEPLOY_AND_AUTHENTICATED_EVIDENCE`
+- State: `P1A_READY_FOR_INTEGRATION / MERGE_HUMAN_AUTHORIZATION_PENDING`
 - Active contract: `docs/contracts/TL-TC-TACO-CLUB-P1A.md`
 - Production: `NOT_AUTHORIZED`
 
@@ -17,9 +17,9 @@ Updated: 2026-10-28
 - Exact code candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`.
 - Local QA: 27 test files / 85 tests, typecheck, lint and `build:vinext` PASS; three pre-existing lint warnings remain.
 - The code rework distinguishes definitive identity `UNIQUE` conflicts from transient `SQLITE_BUSY`, uses bounded stable-ID retries, atomically consumes Google challenges, returns 503 after post-consumption persistence failure, cleans at most 100 old challenges best-effort, and recovers GIS configuration/SDK stale callbacks with retryable UI.
-- Independent Critic: `HUMAN_GATE` — code review passes; exact-SHA staging/authenticated evidence and real D1 contention remain pending.
-- Integration Review: `HUMAN_GATE` — same external gates; no production or P1b work.
-- The prior candidate remains deployed in staging; this candidate is not deployed.
+- Independent Critic: `PASS_WITH_CONDITIONS`; exact-SHA staging/authenticated evidence passes. Real D1 identity concurrency is explicitly unproven but accepted for P1a integration only.
+- Integration Review: `PASS_WITH_CONDITIONS`; same residual-risk boundary.
+- PR #9 remains draft pending explicit protected-merge authorization; no production or P1b work.
 
 ## Candidate-bound staging deployment — 2026-10-31
 
@@ -31,7 +31,7 @@ Updated: 2026-10-28
 
 ## Next action
 
-Next: resolve the separate real-D1 identity-concurrency gate using an isolated synthetic environment or an explicitly recorded residual-risk decision. Keep PR #9 draft and production `NOT_AUTHORIZED`.
+Next: obtain explicit authorization for protected merge of PR #9. Do not merge automatically, begin P1b or modify production. Reopen the accepted identity-concurrency risk on its documented triggers.
 
 ## Current P1a staging checkpoint — 2026-10-28
 

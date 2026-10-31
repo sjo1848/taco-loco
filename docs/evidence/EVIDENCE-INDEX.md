@@ -8,7 +8,7 @@ As of: 2026-10-27
 - Migrations `0001` through `0005` present; remote migration check reported no pending migrations and zero writes.
 - Smoke: health, menu, account shell, anonymous customer session 401 and invalid tracking 404 PASS. Google config endpoint was intentionally not called before browser preparation.
 - Sanitized D1 snapshot: 3 customers, 3 identities, 5 active sessions, zero duplicate provider/subject groups, zero orphan customers; read-only query.
-- Browser-bound authenticated evidence remains pending because the controlled browser runtime was unavailable. Real provider-backed identity concurrency is not claimed.
+- Capturable Playwright authenticated evidence is PASS for login, reload, logout→401, same-customer re-login, customer-to-admin isolation, guest checkout and tracking. Real provider-backed identity concurrency is not claimed and is accepted only for P1a integration under the recorded Human Decision.
 - Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-STAGING-e6fd77a-2026-10-31.md`.
 
 ## Taco Club P1a — final local rework checkpoint — 2026-10-31
@@ -16,9 +16,9 @@ As of: 2026-10-27
 - Exact candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`.
 - Local validation: 27 test files / 85 tests, typecheck, lint and `build:vinext` PASS; three pre-existing lint warnings remain.
 - Code scope: bounded identity conflict/transient handling, atomic Google challenge consumption, post-consumption failure renewal, bounded challenge cleanup, strict GIS config validation, SDK load retry and stale callback guards.
-- Independent Critic: `HUMAN_GATE` — code controls reviewed as coherent; staging exact-SHA authentication and real D1 contention remain unproven. Evidence: `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-e6fd77a.md`.
-- Integration Review: `HUMAN_GATE`; evidence: `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-e6fd77a.md`.
-- No new staging deployment, production action or merge occurred.
+- Independent Critic: `PASS_WITH_CONDITIONS` — exact-SHA functional staging evidence passes; real D1 contention remains explicitly unproven and accepted only for P1a integration. Evidence: `docs/reviews/TL-TC-TACO-CLUB-P1A-independent-critic-e6fd77a.md`.
+- Integration Review: `PASS_WITH_CONDITIONS`; same residual-risk boundary. Evidence: `docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-e6fd77a.md`.
+- Human acceptance: `docs/evidence/TL-TC-TACO-CLUB-P1A-REMOTE-IDENTITY-RISK-ACCEPTANCE-2026-10-31.md`. No production action or merge occurred.
 
 ## Taco Club P1a current staging deployment — 2026-10-28
 
