@@ -36,12 +36,13 @@ jobs:
         with:
           node-version: 22.13.0
           cache: pnpm
-      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
+      - run: pnpm db:generate:d1
       - run: pnpm db:deploy
       - run: pnpm db:seed
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm audit --audit-level=high
-      - run: pnpm build
+      - run: pnpm build:vinext

@@ -23,6 +23,60 @@ model AdminUser {
   orderEvents   OrderEvent[]
 }
 
+model Customer {
+  id             String             @id @default(uuid())
+  email          String?
+  displayName    String?
+  avatarUrl      String?
+  active         Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  lastLoginAt    DateTime?
+  identities     CustomerIdentity[]
+  sessions       CustomerSession[]
+  orders         Order[]
+
+  @@index([email])
+}
+
+model CustomerIdentity {
+  id              String   @id @default(uuid())
+  customerId      String
+  provider        String
+  providerSubject String
+  emailAtLogin    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerSubject])
+  @@index([customerId])
+}
+
+model CustomerSession {
+  id         String   @id @default(uuid())
+  tokenHash  String   @unique
+  customerId String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime?
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([expiresAt])
+}
+
+model GoogleAuthChallenge {
+  id         String    @id @default(uuid())
+  nonceHash  String    @unique
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  consumedAt DateTime?
+
+  @@index([expiresAt])
+  @@index([consumedAt])
+}
+
 enum OrderStatus {
   RECEIVED
   CONFIRMED
@@ -109,10 +163,12 @@ model Order {
   updatedAt              DateTime           @updatedAt
   clientReference        String?            @unique
   publicTrackingToken    String?            @unique
+  customerId             String?
   createdById            String?
   updatedById            String?
   createdBy              AdminUser?         @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   updatedBy              AdminUser?         @relation("OrderUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  customer               Customer?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
   lines                  OrderLine[]
   events                 OrderEvent[]
 
@@ -121,6 +177,7 @@ model Order {
   @@index([paymentStatus, createdAt])
   @@index([fulfillment, status, createdAt])
   @@index([customerPhone])
+  @@index([customerId, createdAt])
 }
 
 model OrderLine {
