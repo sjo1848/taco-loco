@@ -2,13 +2,37 @@
 Updated: 2026-11-01
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: P1B_A_READY_FOR_INTEGRATION / STAGING_VALIDATED
-Active contract: TL-TC-TACO-CLUB-P1B (`P1B_A_STAGING_VALIDATED / P1B_B_DEFERRED`)
+Status: P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED
+Active contract: TL-TC-TACO-CLUB-P1B (`P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
 Execution HEAD: resolve dynamically with `git rev-parse HEAD`.
-Application candidate: `4b565f3dec11940bb651518a1f4a786da52661c2`
+Application candidate: `2c15d6f0255fe1df411ef1128d177dc1c8a8206a`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
+
+## Taco Club P1b-B — claim policy checkpoint
+
+- Branch: `feature/tl-taco-club-p1b-b`, based on integrated P1b-A merge `3197611bd8bf464c29fc1418cd2b5d4b9cefea7d`.
+- No application code, remote data, migration or staging resource was changed.
+- A single recommended guest-claim policy is recorded in `docs/contracts/TL-TC-TACO-CLUB-P1B.md`: authenticated session plus opaque tracking token; 30-day claim window; first atomic claim wins; same-customer retry idempotent; generic conflict for another owner; no self-unclaim; existing retention unchanged; no synthetic OrderEvent.
+- Human approved the claim window, shared-link consequence, revocation and retention treatment on 2026-11-01. Local implementation and QA are complete; staging deployment is the next authorization boundary.
+
+## Taco Club P1b-B — local implementation — 2026-11-01
+
+- Candidate: `2c15d6f0255fe1df411ef1128d177dc1c8a8206a`.
+- Added authenticated guest-order claim using the existing opaque tracking token, explicit confirmation, strict Origin requirement and atomic conditional `customerId` assignment with the 30-day predicate in the write.
+- Same-customer retry is idempotent, competing owners receive a generic conflict, expired guest orders cannot be claimed, and no synthetic OrderEvent or parallel history was added.
+- Local QA: 30 test files / 101 tests, typecheck, lint and `build:vinext` PASS; three pre-existing lint warnings remain.
+- Independent Critic: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-independent-critic-2c15d6f.md`.
+- Integration Review: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-integration-review-2c15d6f.md`.
+
+## Taco Club P1b-B — staging validation — 2026-11-01
+
+- Exact candidate `2c15d6f0255fe1df411ef1128d177dc1c8a8206a` deployed to the existing staging Worker as `bac79e88-f482-4b8b-9ad6-471e2c73de01`; no migration or new resource was created.
+- Bounded real journey passed: synthetic guest order, private tracking, Google session, explicit claim confirmation and appearance in `Mis pedidos`.
+- Health, menu, anonymous authorization boundaries, invalid tracking and unauthenticated claim smoke checks passed. Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-B-STAGING-2026-11-01.md`.
+- Local idempotency/conflict/expiry/parallel modeled tests remain PASS. Real D1 concurrent-claim contention is not claimed; the authenticated `wrangler d1 info` read returned provider error 10000 and no migration was retried.
+- Classification: `P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED`. PR #11 remains draft; merge and production remain unauthorized.
 
 ## Taco Club P1b-A — local implementation
 

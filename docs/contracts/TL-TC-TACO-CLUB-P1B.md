@@ -1,12 +1,45 @@
 # TL-TC-TACO-CLUB-P1B — Customer order history and verified guest claim
 
-Status: `P1B_A_STAGING_VALIDATED / P1B_B_DEFERRED`
+Status: `P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED`
 Issue: `#6 — P1b: historial de pedidos y claim verificable de invitados`  
 Depends on: `TL-TC-TACO-CLUB-P1A` integration approval
 
-Current checkpoint: P1b-A customer-scoped order history is implemented and validated on staging. P1b-B guest claim remains outside this increment and is not authorized to begin.
+Current checkpoint: P1b-A customer-scoped order history is integrated. P1b-B guest claim is implemented on `2c15d6f0255fe1df411ef1128d177dc1c8a8206a` and passed the bounded real staging journey. Protected merge/integration authorization remains pending.
 
 P1b-A evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-STAGING-2026-11-01.md`.
+
+## P1b-B approved policy
+
+This single policy was approved by the human on 2026-11-01 and governs the implementation below.
+
+### Recommended policy
+
+1. **Capability and authorization.** Claim requires both an authenticated customer session and the complete opaque tracking token. `TL-xxxx`, email, phone, address, client reference and Google identity email never authorize a claim.
+2. **Eligibility window.** A guest order may be claimed once, up to 30 days after `createdAt`, while the order is retained. This window applies to claiming only; existing public tracking behavior is unchanged. Manual orders without a public tracking token are ineligible.
+3. **Shared-link risk.** The token is a bearer capability. Whoever possesses a shared link can view the deliberately minimal public projection and, before a claim, can win the first valid claim. The UI must warn the customer not to share the link. There is no automatic recovery or ownership transfer based on identity assertions.
+4. **Conflict behavior.** The first atomic conditional claim wins. A repeat claim by the same customer is idempotent and returns success. A claim against an order already owned by another customer returns a generic conflict without disclosing the owner or personal data.
+5. **Revocation.** Customers cannot self-unclaim in P1b-B. An operator-assisted unlink is not included in this increment; if required, it becomes a separate audited contract. Account/session logout does not revoke an existing order association.
+6. **Retention and deletion.** Claiming creates no parallel history and does not extend order retention. Existing order retention/erasure policy remains authoritative. Account deletion or personal-data erasure rules require a separate human decision before implementation.
+7. **Lifecycle/audit.** Claim changes ownership, not order status or customer-visible timeline. It therefore creates no synthetic `OrderEvent` and must not alter public tracking history. The atomic ownership write is the only new state mutation in this increment.
+
+### Technical contract after approval
+
+- Add a customer-scoped claim surface from `/pedido/[token]`, with explicit confirmation and a validated return path through `/cuenta` when Google login is required.
+- Add `POST /api/customer/orders/[token]/claim`; require the existing customer session, same-origin request checks/CSRF protection, a valid 43-character token and the 30-day eligibility check.
+- Use one conditional D1/PostgreSQL write equivalent to `UPDATE Order SET customerId = sessionCustomerId WHERE publicTrackingToken = token AND customerId IS NULL AND createdAt >= cutoff`. The result must distinguish only: claimed/already-owned, generic conflict, not eligible/not found and unauthorized.
+- Preserve guest checkout, tracking, WhatsApp, admin history and the existing customer-order projection. After success, `/cuenta` must show the order without duplicating it.
+- No new table, identity provider, infrastructure, order event kind, production migration or remote data mutation is part of this contract.
+
+### Required proof before staging
+
+- token-only, TL-only, email-only and phone-only attempts cannot claim;
+- unauthenticated, malformed, expired-window and unknown-token requests fail without ownership change;
+- explicit confirmation is required;
+- same-customer retry is idempotent;
+- two parallel claims yield one owner and no duplicate association;
+- another customer receives a generic conflict and cannot read or alter ownership;
+- public tracking, WhatsApp, guest checkout, admin view and customer history remain compatible;
+- no token, customer identity, address, transfer holder or internal order fields leak through the claim response/UI.
 
 ## Objective
 
@@ -54,7 +87,7 @@ Allow an authenticated Taco Club customer to view their order history and explic
 
 ## Human gates
 
-Pause for human decision if retention/erasure, guest claim UX, account deletion, or customer-history privacy policy changes materially; production remains separately unauthorized.
+The claim policy above is approved. Pause again only if retention/erasure, guest claim UX, account deletion, or customer-history privacy policy changes materially. Staging deployment still requires explicit authorization; production remains separately unauthorized.
 
 ## Done when
 
@@ -62,4 +95,4 @@ Local implementation, D1/PostgreSQL migrations if needed, full affected QA, Inde
 
 ## Resume point
 
-After P1a evidence is finalized, present this contract for review. The next authorized action is contract admission/design review for Issue #6, not production work.
+The next authorized action is protected merge/integration authorization for the exact staging-validated candidate. No production work is authorized.

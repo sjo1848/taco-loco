@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { GoogleSignInButton } from "@/components/public/GoogleSignInButton";
 import type { PublicCustomer } from "@/modules/auth/customer-types";
 import { CustomerOrders } from "@/components/public/CustomerOrders";
@@ -9,6 +10,8 @@ import { CustomerOrders } from "@/components/public/CustomerOrders";
 type AccountState = "loading" | "visitor" | "authenticating" | "authenticated" | "error";
 
 export function CustomerAccount() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [state, setState] = useState<AccountState>("loading");
   const [customer, setCustomer] = useState<PublicCustomer | null>(null);
   const [message, setMessage] = useState("");
@@ -41,7 +44,9 @@ export function CustomerAccount() {
     setCustomer(value);
     setState("authenticated");
     setMessage("Sesión iniciada correctamente.");
-  }, []);
+    const returnTo = searchParams.get("returnTo");
+    if (returnTo && /^\/pedido\/[A-Za-z0-9_-]{43}$/.test(returnTo)) router.push(returnTo);
+  }, [router, searchParams]);
 
   const handleAuthStatus = useCallback((status: "idle" | "loading" | "error") => {
     if (status === "loading") setState("authenticating");
