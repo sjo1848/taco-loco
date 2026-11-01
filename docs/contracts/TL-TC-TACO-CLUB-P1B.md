@@ -1,10 +1,10 @@
 # TL-TC-TACO-CLUB-P1B — Customer order history and verified guest claim
 
-Status: `P1B_B_LOCAL_TECHNICAL_PASS / STAGING_AUTHORIZATION_REQUIRED`
+Status: `P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED`
 Issue: `#6 — P1b: historial de pedidos y claim verificable de invitados`  
 Depends on: `TL-TC-TACO-CLUB-P1A` integration approval
 
-Current checkpoint: P1b-A customer-scoped order history is integrated. P1b-B guest claim is implemented and locally validated on `2c15d6f0255fe1df411ef1128d177dc1c8a8206a`; staging deployment remains unauthorized.
+Current checkpoint: P1b-A customer-scoped order history is integrated. P1b-B guest claim is implemented on `2c15d6f0255fe1df411ef1128d177dc1c8a8206a` and passed the bounded real staging journey. Protected merge/integration authorization remains pending.
 
 P1b-A evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-STAGING-2026-11-01.md`.
 
@@ -95,4 +95,4 @@ Local implementation, D1/PostgreSQL migrations if needed, full affected QA, Inde
 
 ## Resume point
 
-The next authorized action is bounded staging authorization for candidate `2c15d6f0255fe1df411ef1128d177dc1c8a8206a`. No production work is authorized.
+The next authorized action is protected merge/integration authorization for the exact staging-validated candidate. No production work is authorized.

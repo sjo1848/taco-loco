@@ -2,11 +2,11 @@
 Updated: 2026-11-01
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: P1B_B_LOCAL_TECHNICAL_PASS / STAGING_AUTHORIZATION_REQUIRED
-Active contract: TL-TC-TACO-CLUB-P1B (`P1B_B_LOCAL_TECHNICAL_PASS / STAGING_AUTHORIZATION_REQUIRED`)
+Status: P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED
+Active contract: TL-TC-TACO-CLUB-P1B (`P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
 Execution HEAD: resolve dynamically with `git rev-parse HEAD`.
-Application candidate: `4b565f3dec11940bb651518a1f4a786da52661c2`
+Application candidate: `2c15d6f0255fe1df411ef1128d177dc1c8a8206a`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
@@ -25,6 +25,14 @@ Production: `NOT_AUTHORIZED`
 - Local QA: 30 test files / 101 tests, typecheck, lint and `build:vinext` PASS; three pre-existing lint warnings remain.
 - Independent Critic: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-independent-critic-2c15d6f.md`.
 - Integration Review: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-integration-review-2c15d6f.md`.
+
+## Taco Club P1b-B — staging validation — 2026-11-01
+
+- Exact candidate `2c15d6f0255fe1df411ef1128d177dc1c8a8206a` deployed to the existing staging Worker as `bac79e88-f482-4b8b-9ad6-471e2c73de01`; no migration or new resource was created.
+- Bounded real journey passed: synthetic guest order, private tracking, Google session, explicit claim confirmation and appearance in `Mis pedidos`.
+- Health, menu, anonymous authorization boundaries, invalid tracking and unauthenticated claim smoke checks passed. Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-B-STAGING-2026-11-01.md`.
+- Local idempotency/conflict/expiry/parallel modeled tests remain PASS. Real D1 concurrent-claim contention is not claimed; the authenticated `wrangler d1 info` read returned provider error 10000 and no migration was retried.
+- Classification: `P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED`. PR #11 remains draft; merge and production remain unauthorized.
 
 ## Taco Club P1b-A — local implementation
 

@@ -200,3 +200,12 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Design evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-B-DESIGN-2026-11-01.md`.
 - Independent Critic: `PASS` — `docs/reviews/TL-TC-TACO-CLUB-P1B-independent-critic-2c15d6f.md`.
 - Integration Review: `PASS` — `docs/reviews/TL-TC-TACO-CLUB-P1B-integration-review-2c15d6f.md`.
+
+## Taco Club P1b-B — staging validation — 2026-11-01
+
+- Exact candidate `2c15d6f0255fe1df411ef1128d177dc1c8a8206a`; Worker version `bac79e88-f482-4b8b-9ad6-471e2c73de01`; existing D1 only; no migration or resource creation.
+- Real bounded claim journey: guest order → private tracking → Google authentication → explicit confirmation → `Mis pedidos` PASS.
+- Health, menu, anonymous authorization, invalid tracking and unauthenticated claim smoke checks PASS. Local 30-file/101-test suite and exact-candidate Critic/Integration Review remain PASS.
+- Real D1 concurrent claim contention is not claimed. Current `wrangler d1 info` read returned provider error 10000; no migration was retried.
+- Classification: `P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED`.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-B-STAGING-2026-11-01.md`.

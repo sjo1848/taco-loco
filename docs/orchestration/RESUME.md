@@ -174,3 +174,9 @@ P1b-A is integrated at `3197611bd8bf464c29fc1418cd2b5d4b9cefea7d`. Branch `featu
 The approved guest-claim policy is recorded in `docs/contracts/TL-TC-TACO-CLUB-P1B.md`: authenticated session plus opaque tracking token, 30-day claim window, first atomic claim wins, same-customer idempotent retry, generic conflict for another owner, no self-unclaim, existing retention unchanged, and no synthetic OrderEvent. Candidate `2c15d6f0255fe1df411ef1128d177dc1c8a8206a` is locally validated; current state is `P1B_B_LOCAL_TECHNICAL_PASS / STAGING_AUTHORIZATION_REQUIRED`.
 
 Next action: authorize bounded staging deployment/validation of the exact candidate. Do not merge or touch production.
+
+## Taco Club P1b-B staging checkpoint — 2026-11-01
+
+Exact candidate `2c15d6f0255fe1df411ef1128d177dc1c8a8206a` is deployed to the existing staging Worker as `bac79e88-f482-4b8b-9ad6-471e2c73de01`. The bounded real journey passed: synthetic guest order, private tracking, Google authentication, explicit claim confirmation and customer-history visibility. Health/menu/anonymous-boundary/invalid-token smoke checks also passed. Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-B-STAGING-2026-11-01.md`.
+
+Classification: `P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED`. Real D1 concurrent-claim contention is not claimed; `wrangler d1 info` returned provider error 10000 during the read and no migration was retried. PR #11 remains draft. Next action: obtain protected merge/integration authorization. Do not begin P1b-C or modify production.
