@@ -14,5 +14,5 @@ export default async function TrackingPage({ params }: { params: Promise<{ token
   if (!isPublicTrackingToken(token)) notFound();
   const order = await orderRepository.findByTrackingToken(token);
   if (!order) notFound();
-  return <><OrderTracking initial={await buildPublicOrderTracking(order, token)} /><ClaimGuestOrder token={token} /></>;
+  return <><OrderTracking initial={await buildPublicOrderTracking(order, token)} />{!order.customerId && <ClaimGuestOrder token={token} />}</>;
 }
