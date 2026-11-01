@@ -148,5 +148,5 @@
   "tacoClubP1aIntegrationReview": "PASS_WITH_CONDITIONS",
   "tacoClubP1aIntegrationReviewEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-e6fd77a.md",
   "tacoClubP1bContract": "docs/contracts/TL-TC-TACO-CLUB-P1B.md",
-  "resumePoint": "P1b-A is implemented locally from integrated P1a merge 0a0a9ff on feature/tl-taco-club-p1b-a. Authenticated public-menu orders associate server-side to the session customer; guests remain NULL; private paginated Mis pedidos API/UI are present. Local QA PASS: 28 files/89 tests, typecheck, lint and build:vinext; evidence docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md. Create draft PR for review; no staging, merge, P1b-B or production."
+  "resumePoint": "P1b-A is implemented locally from integrated P1a merge 0a0a9ff on feature/tl-taco-club-p1b-a. Authenticated public-menu orders associate server-side to the session customer; guests remain NULL; private paginated Mis pedidos API/UI are present. Local QA PASS: 28 files/90 tests, typecheck, lint and build:vinext; evidence docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md. Create draft PR for review; no staging, merge, P1b-B or production."
 }

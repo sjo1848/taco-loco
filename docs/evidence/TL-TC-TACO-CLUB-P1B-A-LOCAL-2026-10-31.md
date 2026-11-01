@@ -16,18 +16,19 @@
 | Guest preservation | Missing/invalid customer session passes `null`; manual/admin orders default to `null` | D1 writer test and existing guest regression suite |
 | D1 atomicity | `customerId` is inserted in the same order/lines/event batch | `src/modules/orders/d1-atomic.test.ts` |
 | PostgreSQL parity | Prisma transaction includes `customerId` in the same order creation | Typecheck and schema compatibility |
-| Idempotency | Existing `clientReference` lookup returns the original order unchanged before ownership assignment | Existing service behavior preserved; no owner reassignment path added |
+| Idempotency | Existing `clientReference` lookup returns the original order unchanged; explicit owner-resolution rule applies session ownership only to a new order | `service.test.ts`: guest and already-owned replays preserve their original owner |
 | Private history | `GET /api/customer/orders` requires `requireCustomer()`, filters by session customer ID and uses bounded stable cursor pagination | Route implementation and cursor tests |
 | Privacy | Account DTO is constructed from safe lifecycle/line fields; no order ID, tracking token, address, transfer holder, customer ID or internal fields are returned | Projection allow-list test |
 | Guest/tracking/admin compatibility | No tracking endpoint, admin route, event model or guest token behavior changed | Full regression and vinext build |
 
 ## Validation
 
-- Focused tests: PASS, 12 tests.
-- Full tests: PASS, 28 files / 89 tests.
+- Focused tests: PASS, 13 tests.
+- Full tests: PASS, 28 files / 90 tests.
 - Typecheck: PASS.
 - Lint: PASS with 3 pre-existing harness/generated warnings; 0 errors.
 - `build:vinext`: PASS; `/api/customer/orders` is included in the route output.
+- Idempotency boundary: PASS; an authenticated retry of a guest order remains guest-owned until the separately scoped P1b-B claim flow.
 - Remote staging/D1: NOT RUN; no migration or deployment authorized in this block.
 
 ## Scope boundary

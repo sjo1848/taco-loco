@@ -20,6 +20,11 @@ export type TransitionOrderInput = z.infer<typeof transitionOrderInputSchema>;
 export function canConfirmDelivery(paymentStatus: string) {
   return paymentStatus === "CONFIRMED";
 }
+
+/** Idempotent replay never changes an order owner; session ownership applies only to a new order. */
+export function resolveOrderOwner(existing: { customerId: string | null } | null, authenticatedCustomerId: string | null) {
+  return existing ? existing.customerId : authenticatedCustomerId;
+}
 export const orderWorkflowActionSchema = z.object({ orderId: z.uuid(), action: z.enum(["CONFIRM_PAYMENT_AND_ORDER", "EXPIRE_PENDING", "MARK_NO_SHOW", "REPORT_PAYMENT", "REJECT_PAYMENT", "REQUIRE_REFUND", "MARK_REFUNDED"]) });
 export type OrderWorkflowActionInput = z.infer<typeof orderWorkflowActionSchema>;
 

@@ -17,7 +17,7 @@ Production: `NOT_AUTHORIZED`
 - Authenticated public-menu orders now receive `Order.customerId` from the validated server-side customer session; guest orders remain `NULL`.
 - `/api/customer/orders` provides bounded cursor pagination and a customer-scoped safe projection; `/cuenta` renders `Mis pedidos` only for authenticated customers.
 - No new migration was required; P1a's nullable `Order.customerId` and index are reused.
-- Local QA: 28 test files / 89 tests, typecheck, lint and `build:vinext` PASS; three pre-existing warnings remain.
+- Local QA: 28 test files / 90 tests, typecheck, lint and `build:vinext` PASS; three pre-existing warnings remain.
 - Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md`.
 - Staging, merge and production are not authorized.
 

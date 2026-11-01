@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canConfirmDelivery, createPublicOrderIntentInputSchema } from "./service";
+import { canConfirmDelivery, createPublicOrderIntentInputSchema, resolveOrderOwner } from "./service";
 
 const line = { productId: "11111111-1111-4111-8111-111111111111", quantity: 1, modifiers: [] };
 
@@ -23,5 +23,11 @@ describe("public order intent checkout", () => {
     expect(canConfirmDelivery("PENDING")).toBe(false);
     expect(canConfirmDelivery("REPORTED")).toBe(false);
     expect(canConfirmDelivery("CONFIRMED")).toBe(true);
+  });
+
+  it("preserves guest ownership on idempotent replay and assigns only new orders", () => {
+    expect(resolveOrderOwner(null, "customer-authenticated")).toBe("customer-authenticated");
+    expect(resolveOrderOwner({ customerId: null }, "customer-authenticated")).toBeNull();
+    expect(resolveOrderOwner({ customerId: "customer-original" }, "customer-authenticated")).toBe("customer-original");
   });
 });

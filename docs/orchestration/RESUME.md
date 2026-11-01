@@ -17,7 +17,7 @@ Updated: 2026-10-28
 - Base: integrated P1a merge `0a0a9ff370291be04a47d19232954979630fcd01`.
 - Authenticated checkout association is server-side and atomic; guest checkout remains unowned (`Order.customerId = NULL`).
 - Private `/api/customer/orders` and `/cuenta` history use a bounded stable cursor and safe DTO without tracking capabilities or delivery PII.
-- Local QA: 28 test files / 89 tests, typecheck, lint and `build:vinext` PASS; three pre-existing warnings remain.
+- Local QA: 28 test files / 90 tests, typecheck, lint and `build:vinext` PASS; three pre-existing warnings remain.
 - Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md`.
 - Next: create/update the draft PR for review. Do not deploy staging, merge or begin P1b-B.
 
