@@ -179,6 +179,20 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Human boundary: actual WhatsApp mobile-app/deep-link, WhatsApp Web and no-app behavior remain `HUMAN_TRACKING_WORKFLOW_REVIEW`; no message delivery is asserted.
 - Production: NOT_AUTHORIZED.
 
+## Customer tracking return P0 — closure review — 2026-11-01
+
+- Base/merge: `fd1ee6be539755b50bb88cf9d118a1019a36bade`; application candidate unchanged at `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`.
+- QA: full 30-file/101-test suite, P0-specific 11 tests, typecheck, lint and `build:vinext` PASS.
+- Independent Critic: reused valid PASS. Integration Review: reused valid PASS.
+- Classification: `P0_TECHNICAL_PASS / P0_HUMAN_DEVICE_VALIDATION_PENDING`.
+- Evidence: `docs/reviews/TL-TC-ORDER-TRACKING-RETURN-P0-closure-review-2026-11-01.md`.
+
+## MVP operational audit — 2026-11-01
+
+- Read-only staging smoke: health/menu/static asset PASS; anonymous customer boundaries and invalid tracking PASS.
+- Pilot blockers: physical WhatsApp return validation pending; account-specific D1 `info`/backup-restore evidence UNKNOWN; tracked staging deployment procedure requires controlled configuration evidence.
+- Evidence: `docs/evidence/TL-MVP-OPERATIONS-AUDIT-2026-11-01.md`.
+
 ## Taco Club P1a — optional Google identity foundation — 2026-10-27
 
 - Contract: PROVEN local implementation — `docs/contracts/TL-TC-TACO-CLUB-P1A.md`.
@@ -209,3 +223,10 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Real D1 concurrent claim contention is not claimed. Current `wrangler d1 info` read returned provider error 10000; no migration was retried.
 - Classification: `P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED`.
 - Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-B-STAGING-2026-11-01.md`.
+# MVP pilot operational readiness — 2026-11-01
+
+- `docs/evidence/TL-MVP-OPERATIONS-AUDIT-2026-11-01.md` — read-only staging smoke and pilot boundary.
+- `docs/evidence/TL-MVP-D1-LOCAL-RECOVERY-DRILL-2026-11-01.md` — isolated local export/import recovery drill PASS.
+- `docs/operations/TL-D1-BACKUP-RECOVERY-RUNBOOK-2026-11-01.md` — export, verification and recovery procedure; remote restore not executed.
+- `docs/operations/TL-MVP-PILOT-RUNBOOK-2026-11-01.md` — opening, order handling, monitoring, exception and closing procedure.
+- `ops/staging/wrangler.staging.example.jsonc` / `ops/staging/README.md` — versioned secret-free staging configuration and dry-run procedure.

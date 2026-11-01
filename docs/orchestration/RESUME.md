@@ -1,5 +1,34 @@
 # Taco Loco — Resume / Orchestration State
 
+## Active checkpoint — MVP Pilot Operational Readiness / Issue #12
+
+- Current branch: `rework/mvp-pilot-readiness`; current HEAD: resolve dynamically.
+- Draft PR: #13 targeting `rework/tl-order-tracking-return-p0`; CI is PASS.
+- P1a is integrated. P1b-A is integrated through PR #10. P1b-B is integrated through PR #11 at merge `fd1ee6be539755b50bb88cf9d118a1019a36bade`.
+- P0 remains `P0_TECHNICAL_PASS / P0_HUMAN_DEVICE_VALIDATION_PENDING`.
+- Issue #12 is the active tracker; pilot state is `MVP_PILOT_BLOCKED`; production is `NOT_AUTHORIZED`.
+- PR #13 may be integrated as documentation/configuration work under its approved scope. Do not close Issue #12 or authorize the pilot until the remaining pilot criteria, including physical WhatsApp validation, are resolved.
+
+## MVP pilot operational readiness — 2026-11-01
+
+- Canonical tracker: GitHub Issue #12, `MVP Pilot Operational Readiness`.
+- Branch: `rework/mvp-pilot-readiness`; execution HEAD is dynamic and must be resolved with `git rev-parse HEAD`.
+- Read-only D1 `info --json` and Time Travel info succeeded after one intermittent provider error 10000; exact provider root cause remains UNKNOWN. No remote write, migration or restore was performed.
+- Local export/import recovery drill PASS: `docs/evidence/TL-MVP-D1-LOCAL-RECOVERY-DRILL-2026-11-01.md`.
+- Versioned staging template/dry-run: `ops/staging/wrangler.staging.example.jsonc`, `ops/staging/README.md`.
+- Pilot procedure: `docs/operations/TL-MVP-PILOT-RUNBOOK-2026-11-01.md`; recovery procedure: `docs/operations/TL-D1-BACKUP-RECOVERY-RUNBOOK-2026-11-01.md`.
+- Classification: `MVP_PILOT_BLOCKED` until the owner records the four physical WhatsApp scenarios. Production remains `NOT_AUTHORIZED`.
+
+## Customer tracking return P0 — 2026-11-01
+
+The P0 base/merge `fd1ee6be539755b50bb88cf9d118a1019a36bade` is verified on `rework/tl-order-tracking-return-p0-qa`. Application candidate `de368359ea18ced8571b8a36e20cd8f73f2f8d7a` is unchanged. Full QA is green: 30 files/101 tests, P0-specific 11 tests, typecheck, lint and `build:vinext`. Independent Critic and Integration Review remain valid PASS. Classification: `P0_TECHNICAL_PASS / P0_HUMAN_DEVICE_VALIDATION_PENDING`.
+
+Only real-device WhatsApp app, WhatsApp Web and no-app return behavior remain for human review. No production, merge or infrastructure action is authorized. Evidence: `docs/reviews/TL-TC-ORDER-TRACKING-RETURN-P0-closure-review-2026-11-01.md`.
+
+## MVP operational audit — 2026-11-01
+
+Read-only staging smoke passed for health, menu, Static Asset, anonymous auth boundaries and invalid tracking. The operational audit is `docs/evidence/TL-MVP-OPERATIONS-AUDIT-2026-11-01.md`. Pilot blockers remain physical WhatsApp return evidence and untested remote restore; D1 read-only info/Time Travel bookmark and the controlled staging procedure are now evidenced. No production action is authorized.
+
 Updated: 2026-10-28
 
 - Repository: `sjo1848/taco-loco`

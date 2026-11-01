@@ -2,13 +2,39 @@
 Updated: 2026-11-01
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED
+Status: MVP_PILOT_BLOCKED
 Active contract: TL-TC-TACO-CLUB-P1B (`P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
 Execution HEAD: resolve dynamically with `git rev-parse HEAD`.
 Application candidate: `2c15d6f0255fe1df411ef1128d177dc1c8a8206a`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
+
+## MVP operational audit — 2026-11-01
+
+- Read-only staging smoke: health/menu/static asset PASS; anonymous customer session/history boundaries and invalid tracking 401/404 PASS.
+- Operational audit evidence: `docs/evidence/TL-MVP-OPERATIONS-AUDIT-2026-11-01.md`.
+- Pilot blockers: physical WhatsApp return validation pending; remote restore remains untested and account-specific retention is UNKNOWN.
+- Read-only D1 `info --json` and Time Travel bookmark checks succeeded after an intermittent provider error 10000; no remote write occurred.
+- Local export/import recovery drill passed. Versioned secret-free staging template, dry-run procedure and pilot runbook are recorded.
+- No production, migration, deployment, resource creation or remote data mutation performed in this readiness block.
+
+## MVP pilot operational readiness — 2026-11-01
+
+- Canonical tracker: GitHub Issue #12, `MVP Pilot Operational Readiness`.
+- Branch: `rework/mvp-pilot-readiness`.
+- Evidence: `docs/evidence/TL-MVP-D1-LOCAL-RECOVERY-DRILL-2026-11-01.md`, `docs/operations/TL-D1-BACKUP-RECOVERY-RUNBOOK-2026-11-01.md`, `docs/operations/TL-MVP-PILOT-RUNBOOK-2026-11-01.md`.
+- Classification: `MVP_PILOT_BLOCKED` until the owner records the four physical WhatsApp scenarios. Production remains `NOT_AUTHORIZED`.
+
+## Customer tracking return P0 — closure checkpoint — 2026-11-01
+
+- Base/merge verified: `fd1ee6be539755b50bb88cf9d118a1019a36bade`.
+- Application candidate: `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`; no P0 implementation changes were introduced after its validated staging evidence.
+- Automated QA: full suite 30 files/101 tests, P0-specific 2 files/11 tests, typecheck, lint and `build:vinext` PASS.
+- Independent Critic and Integration Review remain valid PASS for the unchanged candidate.
+- Classification: `P0_TECHNICAL_PASS / P0_HUMAN_DEVICE_VALIDATION_PENDING`.
+- Evidence: `docs/reviews/TL-TC-ORDER-TRACKING-RETURN-P0-closure-review-2026-11-01.md`.
+- Pending only: real WhatsApp mobile-app, WhatsApp Web and no-app/device return checks. No message delivery is claimed.
 
 ## Taco Club P1b-B — claim policy checkpoint
 
