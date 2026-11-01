@@ -28,6 +28,8 @@ describe("guest order claim route", () => {
     mocked.isSameOrigin.mockReturnValue(false);
     expect((await POST(request(), { params: Promise.resolve({ token }) })).status).toBe(403);
     mocked.isSameOrigin.mockReturnValue(true);
+    const missingOrigin = new Request(`https://taco.test/api/customer/orders/${token}/claim`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm: true }) });
+    expect((await POST(missingOrigin, { params: Promise.resolve({ token }) })).status).toBe(403);
     mocked.requireCustomer.mockRejectedValue(new Error("CUSTOMER_UNAUTHORIZED"));
     expect((await POST(request(), { params: Promise.resolve({ token }) })).status).toBe(401);
   });
@@ -36,6 +38,13 @@ describe("guest order claim route", () => {
     expect((await POST(request(), { params: Promise.resolve({ token: "TL-0027" }) })).status).toBe(404);
     expect((await POST(request({ confirm: false }), { params: Promise.resolve({ token }) })).status).toBe(400);
     expect(mocked.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("returns a generic not-found result for an unknown token", async () => {
+    mocked.findUnique.mockResolvedValueOnce(null);
+    const response = await POST(request(), { params: Promise.resolve({ token }) });
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ code: "ORDER_CLAIM_UNAVAILABLE" });
   });
 
   it("claims atomically and makes a same-customer retry idempotent", async () => {
@@ -47,7 +56,35 @@ describe("guest order claim route", () => {
     const retry = await POST(request(), { params: Promise.resolve({ token }) });
     expect(retry.status).toBe(200);
     expect(await retry.json()).toEqual({ claimed: true, reused: true });
-    expect(mocked.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ customerId: null }) }));
+    expect(mocked.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ customerId: null, createdAt: { gte: expect.any(Date) } }) }));
+  });
+
+  it("keeps an owned order idempotent after the claim window", async () => {
+    mocked.findUnique.mockResolvedValueOnce({ ...order, customerId: customer.id, createdAt: new Date("2020-01-01T00:00:00.000Z") });
+    const response = await POST(request(), { params: Promise.resolve({ token }) });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ claimed: true, reused: true });
+    expect(mocked.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("does not claim an expired guest order", async () => {
+    mocked.findUnique.mockResolvedValueOnce({ ...order, createdAt: new Date("2020-01-01T00:00:00.000Z") });
+    const response = await POST(request(), { params: Promise.resolve({ token }) });
+    expect(response.status).toBe(404);
+    expect(mocked.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("models parallel claims as one atomic winner and one conflict", async () => {
+    mocked.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+    mocked.findUnique
+      .mockResolvedValueOnce(order).mockResolvedValueOnce(order)
+      .mockResolvedValueOnce({ customerId: "other-customer" });
+    const responses = await Promise.all([
+      POST(request(), { params: Promise.resolve({ token }) }),
+      POST(request(), { params: Promise.resolve({ token }) }),
+    ]);
+    expect(responses.map((response) => response.status).sort()).toEqual([200, 409]);
+    expect(mocked.updateMany).toHaveBeenCalledTimes(2);
   });
 
   it("returns a generic conflict for an existing owner and for a losing race", async () => {
