@@ -273,6 +273,9 @@ h1 { margin: 0; font-size: clamp(2.5rem, 12vw, 5rem); line-height: .95; }
 .tracking-summary h2 { margin-bottom: 2px; }
 .tracking-summary small { display: block; margin-top: 3px; color: var(--muted); }
 .tracking-summary > strong { margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--border); color: var(--yellow); }
+.tracking-claim { max-width: 720px; margin: 16px auto; padding: 18px 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.tracking-claim h2 { margin-top: 0; }
+.tracking-claim p:last-child { margin-bottom: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 @media (min-width: 700px) { .admin-page { padding: 40px 24px; } .admin-toolbar { grid-template-columns: 1fr 240px; } .order-form__add { grid-template-columns: 1fr auto; align-items: end; } .order-detail__meta { grid-template-columns: repeat(3, 1fr); } }
 @media (min-width: 700px) { .admin-form-grid { grid-template-columns: 1fr 1fr; } }
