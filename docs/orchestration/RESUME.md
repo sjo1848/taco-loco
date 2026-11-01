@@ -1,5 +1,14 @@
 # Taco Loco — Resume / Orchestration State
 
+## Active checkpoint — MVP Pilot Operational Readiness / Issue #12
+
+- Current branch: `rework/mvp-pilot-readiness`; current HEAD: resolve dynamically.
+- Draft PR: #13 targeting `rework/tl-order-tracking-return-p0`; CI is PASS.
+- P1a is integrated. P1b-A is integrated through PR #10. P1b-B is integrated through PR #11 at merge `fd1ee6be539755b50bb88cf9d118a1019a36bade`.
+- P0 remains `P0_TECHNICAL_PASS / P0_HUMAN_DEVICE_VALIDATION_PENDING`.
+- Issue #12 is the active tracker; pilot state is `MVP_PILOT_BLOCKED`; production is `NOT_AUTHORIZED`.
+- Do not close Issue #12 or merge PR #13 until the pilot criteria and physical WhatsApp validation are resolved.
+
 ## MVP pilot operational readiness — 2026-11-01
 
 - Canonical tracker: GitHub Issue #12, `MVP Pilot Operational Readiness`.
@@ -18,7 +27,7 @@ Only real-device WhatsApp app, WhatsApp Web and no-app return behavior remain fo
 
 ## MVP operational audit — 2026-11-01
 
-Read-only staging smoke passed for health, menu, Static Asset, anonymous auth boundaries and invalid tracking. The operational audit is `docs/evidence/TL-MVP-OPERATIONS-AUDIT-2026-11-01.md`. Pilot blockers remain physical WhatsApp return evidence, account-specific D1 `info`/backup-restore evidence and a controlled tracked staging deployment procedure. No production action is authorized.
+Read-only staging smoke passed for health, menu, Static Asset, anonymous auth boundaries and invalid tracking. The operational audit is `docs/evidence/TL-MVP-OPERATIONS-AUDIT-2026-11-01.md`. Pilot blockers remain physical WhatsApp return evidence and untested remote restore; D1 read-only info/Time Travel bookmark and the controlled staging procedure are now evidenced. No production action is authorized.
 
 Updated: 2026-10-28
 
