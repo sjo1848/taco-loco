@@ -6,7 +6,7 @@ Status: P1B_A_LOCAL_TECHNICAL_PASS / READY_FOR_PR_REVIEW
 Active contract: TL-TC-TACO-CLUB-P1B (`P1B_A_ONLY / STAGING_NOT_AUTHORIZED`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
 Execution HEAD: resolve dynamically with `git rev-parse HEAD`.
-Application candidate: `P1B_A_SHA_PENDING`
+Application candidate: `4b565f3dec11940bb651518a1f4a786da52661c2`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
@@ -18,6 +18,8 @@ Production: `NOT_AUTHORIZED`
 - `/api/customer/orders` provides bounded cursor pagination and a customer-scoped safe projection; `/cuenta` renders `Mis pedidos` only for authenticated customers.
 - No new migration was required; P1a's nullable `Order.customerId` and index are reused.
 - Local QA: 28 test files / 90 tests, typecheck, lint and `build:vinext` PASS; three pre-existing warnings remain.
+- Independent Critic: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-A-independent-critic-4b565f3.md`.
+- Integration Review: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-A-integration-review-4b565f3.md`.
 - Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md`.
 - Staging, merge and production are not authorized.
 

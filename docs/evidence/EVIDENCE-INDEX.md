@@ -9,6 +9,8 @@ As of: 2026-10-27
 - No new migration, staging deployment or production action.
 - QA: 28 test files / 89 tests, typecheck, lint and `build:vinext` PASS; 3 pre-existing warnings.
 - Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md`.
+- Independent Critic: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-A-independent-critic-4b565f3.md`.
+- Integration Review: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-A-integration-review-4b565f3.md`.
 
 ## Taco Club P1a — candidate-bound staging deployment — 2026-10-31
 

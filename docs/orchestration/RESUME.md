@@ -4,7 +4,7 @@ Updated: 2026-10-28
 
 - Repository: `sjo1848/taco-loco`
 - Branch: `feature/tl-taco-club-p1b-a`
-- Application candidate: `P1B_A_SHA_PENDING`
+- Application candidate: `4b565f3dec11940bb651518a1f4a786da52661c2`
 - Execution HEAD: resolve dynamically with `git rev-parse HEAD`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
@@ -19,6 +19,8 @@ Updated: 2026-10-28
 - Private `/api/customer/orders` and `/cuenta` history use a bounded stable cursor and safe DTO without tracking capabilities or delivery PII.
 - Local QA: 28 test files / 90 tests, typecheck, lint and `build:vinext` PASS; three pre-existing warnings remain.
 - Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md`.
+- Independent Critic: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-A-independent-critic-4b565f3.md`.
+- Integration Review: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-A-integration-review-4b565f3.md`.
 - Next: create/update the draft PR for review. Do not deploy staging, merge or begin P1b-B.
 
 ## Current P1a rework checkpoint — 2026-10-31
