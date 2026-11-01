@@ -7,7 +7,7 @@
 - P1a is integrated. P1b-A is integrated through PR #10. P1b-B is integrated through PR #11 at merge `fd1ee6be539755b50bb88cf9d118a1019a36bade`.
 - P0 remains `P0_TECHNICAL_PASS / P0_HUMAN_DEVICE_VALIDATION_PENDING`.
 - Issue #12 is the active tracker; pilot state is `MVP_PILOT_BLOCKED`; production is `NOT_AUTHORIZED`.
-- Do not close Issue #12 or merge PR #13 until the pilot criteria and physical WhatsApp validation are resolved.
+- PR #13 may be integrated as documentation/configuration work under its approved scope. Do not close Issue #12 or authorize the pilot until the remaining pilot criteria, including physical WhatsApp validation, are resolved.
 
 ## MVP pilot operational readiness — 2026-11-01
 
