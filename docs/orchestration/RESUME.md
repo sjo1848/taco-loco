@@ -167,3 +167,10 @@ The prior return flow left the customer on `/menu` after WhatsApp because `track
 Staging deployment: `1a27db08-8753-4e17-8ded-238ad99a0a8c`. Chrome CDP simulations passed at 390×844 and 1440×900. Independent Critic and Integration Review are PASS. Actual WhatsApp app/Web return and no-app fallback remain pending human device review; no message delivery is claimed.
 
 Evidence: `docs/evidence/TL-TC-ORDER-TRACKING-RETURN-P0-2026-10-27.md`.
+## Taco Club P1b-B policy gate — 2026-11-01
+
+P1b-A is integrated at `3197611bd8bf464c29fc1418cd2b5d4b9cefea7d`. Branch `feature/tl-taco-club-p1b-b` was created from the real remote base after fetching origin. No code, migration, remote data or staging resource changed.
+
+The single recommended guest-claim policy is recorded in `docs/contracts/TL-TC-TACO-CLUB-P1B.md` and summarized in `docs/evidence/TL-TC-TACO-CLUB-P1B-B-DESIGN-2026-11-01.md`: authenticated session plus opaque tracking token, 30-day claim window, first atomic claim wins, same-customer idempotent retry, generic conflict for another owner, no self-unclaim, existing retention unchanged, and no synthetic OrderEvent. Current state is `P1B_B_POLICY_PROPOSED / HUMAN_GATE_PENDING`.
+
+Next action: human approval/rejection of this policy. Do not implement claim, change remote data, deploy staging, merge or touch production before approval.

@@ -2,13 +2,20 @@
 Updated: 2026-11-01
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: P1B_A_READY_FOR_INTEGRATION / STAGING_VALIDATED
-Active contract: TL-TC-TACO-CLUB-P1B (`P1B_A_STAGING_VALIDATED / P1B_B_DEFERRED`)
+Status: P1B_B_POLICY_PROPOSED / HUMAN_GATE_PENDING
+Active contract: TL-TC-TACO-CLUB-P1B (`P1B_B_POLICY_PROPOSED / HUMAN_GATE_PENDING`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
 Execution HEAD: resolve dynamically with `git rev-parse HEAD`.
 Application candidate: `4b565f3dec11940bb651518a1f4a786da52661c2`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
+
+## Taco Club P1b-B — claim policy checkpoint
+
+- Branch: `feature/tl-taco-club-p1b-b`, based on integrated P1b-A merge `3197611bd8bf464c29fc1418cd2b5d4b9cefea7d`.
+- No application code, remote data, migration or staging resource was changed.
+- A single recommended guest-claim policy is recorded in `docs/contracts/TL-TC-TACO-CLUB-P1B.md`: authenticated session plus opaque tracking token; 30-day claim window; first atomic claim wins; same-customer retry idempotent; generic conflict for another owner; no self-unclaim; existing retention unchanged; no synthetic OrderEvent.
+- Human approval is required before implementing the claim because the claim window, shared-link consequence, revocation and retention treatment are product/privacy decisions.
 
 ## Taco Club P1b-A — local implementation
 

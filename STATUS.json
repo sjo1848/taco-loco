@@ -1,12 +1,12 @@
 {
   "contract": "TL-TC-TACO-CLUB-P1A",
-  "status": "P1B_A_READY_FOR_INTEGRATION_STAGING_VALIDATED",
+  "status": "P1B_B_POLICY_PROPOSED_HUMAN_GATE_PENDING",
   "sourceRepo": "sjo1848/taco-loco-foodtrack",
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
   "targetBranch": "feature/tl-taco-club-p1b-a",
   "technicalCandidate": "4b565f3dec11940bb651518a1f4a786da52661c2",
   "executionHead": "DYNAMIC_GIT_HEAD",
-  "stage": "P1B_A_STAGING_VALIDATED_MERGE_AUTHORIZATION_REQUIRED",
+  "stage": "P1B_B_DESIGN_POLICY_HUMAN_APPROVAL_REQUIRED",
   "remoteIntegration": "PASS_BASELINE",
   "stagingWorker": "taco-loco-staging-20260913",
   "stagingD1": "taco-loco-staging-20260913",
@@ -40,7 +40,7 @@
   "tacoClubP1bAStaging": "P1B_A_READY_FOR_INTEGRATION",
   "tacoClubP1bAStagingEvidence": "docs/evidence/TL-TC-TACO-CLUB-P1B-A-STAGING-2026-11-01.md",
   "tacoClubP1bAStagingDeploymentVersion": "b777951d-247e-4419-adcf-d4d562e0835f",
-  "tacoClubP1bB": "DEFERRED",
+  "tacoClubP1bB": "POLICY_PROPOSED_HUMAN_GATE_PENDING",
   "driveSync": "PASS_2026-10-27",
   "productionEligibility": "HUMAN_HOLD_NOT_AUTHORIZED",
   "productionUrlDecision": "WORKERS_DEV_ACCEPTED_FOR_FUTURE_INITIAL_RELEASE",
@@ -154,5 +154,5 @@
   "tacoClubP1aIntegrationReview": "PASS_WITH_CONDITIONS",
   "tacoClubP1aIntegrationReviewEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-e6fd77a.md",
   "tacoClubP1bContract": "docs/contracts/TL-TC-TACO-CLUB-P1B.md",
-  "resumePoint": "P1b-A staging validation is complete on exact application candidate 4b565f3, deployed as Worker version b777951d-247e-4419-adcf-d4d562e0835f with existing D1 only and no migration. Authenticated /cuenta and Mis pedidos passed; one bounded authenticated PICKUP order is customer-owned and visible in private history. Sanitized staging evidence: docs/evidence/TL-TC-TACO-CLUB-P1B-A-STAGING-2026-11-01.md. Classification P1B_A_READY_FOR_INTEGRATION. PR #10 remains draft; do not merge, begin P1b-B or touch production."
+  "resumePoint": "P1b-B policy proposal is recorded in docs/contracts/TL-TC-TACO-CLUB-P1B.md on feature/tl-taco-club-p1b-b, based on integrated merge 3197611bd8bf464c29fc1418cd2b5d4b9cefea7d. No code, remote data, migration or staging resource changed. Await human approval of the single recommended claim policy before implementation. Production remains NOT_AUTHORIZED."
 }
