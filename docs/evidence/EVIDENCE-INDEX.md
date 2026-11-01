@@ -1,6 +1,17 @@
 # Evidence Index — Taco Loco
 As of: 2026-10-27
 
+## Taco Club P1b-A — Mis pedidos local implementation — 2026-10-31
+
+- Base: integrated P1a merge `0a0a9ff370291be04a47d19232954979630fcd01`.
+- Branch: `feature/tl-taco-club-p1b-a`.
+- Local implementation: `P1B_A_LOCAL_TECHNICAL_PASS`; authenticated public-menu orders bind server-side to `Customer.id`, guests remain unowned, and `/api/customer/orders` plus `/cuenta` provide a bounded private history projection.
+- No new migration, staging deployment or production action.
+- QA: 28 test files / 89 tests, typecheck, lint and `build:vinext` PASS; 3 pre-existing warnings.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md`.
+- Independent Critic: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-A-independent-critic-4b565f3.md`.
+- Integration Review: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-A-integration-review-4b565f3.md`.
+
 ## Taco Club P1a — candidate-bound staging deployment — 2026-10-31
 
 - Exact candidate `e6fd77a360c298cded9495ab79e9c805310f4487` deployed to existing Worker `taco-loco-staging-20260913` as version `eb1c652f-8e4f-4171-8450-f2c353df7f99`.
@@ -122,6 +133,16 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Remaining gate: HUMAN_INPUT — disposable Google account required for real first login, persistent cookie, logout, repeated login without duplication, customer/admin isolation, and guest regression.
 - Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1A-STAGING-2026-10-28.md`.
 - Production: NOT_AUTHORIZED.
+
+## Taco Club P1b-A — staging validation — 2026-11-01
+
+- Contract: `TL-TC-TACO-CLUB-P1B` / Issue #6, P1b-A only.
+- Candidate: `4b565f3dec11940bb651518a1f4a786da52661c2`; Worker deployment `b777951d-247e-4419-adcf-d4d562e0835f`; existing D1 `taco-loco-staging-20260913` only; no migration or resource creation.
+- Runtime: health, menu, account, anonymous 401 boundaries and invalid tracking 404 pass. Authenticated `/cuenta` and `Mis pedidos` pass; one bounded authenticated PICKUP order is customer-owned and visible in the private history projection.
+- Sanitized D1 aggregate: 40 orders (1 customer-owned, 39 guest-owned), 3 customers, 3 identities. No raw identity, cookie, token or personal data is persisted.
+- Local QA and exact-candidate Independent Critic/Integration Review remain PASS. A second authenticated remote account and forced pagination threshold are not claimed as new browser observations.
+- Classification: `P1B_A_READY_FOR_INTEGRATION`; PR #10 remains draft; production and P1b-B remain unauthorized/deferred.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-STAGING-2026-11-01.md`.
 
 ## Taco Club P1a — candidate-bound authenticated browser validation — 2026-10-31
 

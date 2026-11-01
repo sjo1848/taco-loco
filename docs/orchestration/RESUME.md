@@ -3,14 +3,25 @@
 Updated: 2026-10-28
 
 - Repository: `sjo1848/taco-loco`
-- Branch: `feature/tl-taco-club-p1a`
-- Application candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`
+- Branch: `feature/tl-taco-club-p1b-a`
+- Application candidate: `4b565f3dec11940bb651518a1f4a786da52661c2`
 - Execution HEAD: resolve dynamically with `git rev-parse HEAD`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `P1A_READY_FOR_INTEGRATION / MERGE_HUMAN_AUTHORIZATION_PENDING`
+- State: `P1B_A_LOCAL_TECHNICAL_PASS / READY_FOR_PR_REVIEW`
 - Active contract: `docs/contracts/TL-TC-TACO-CLUB-P1A.md`
 - Production: `NOT_AUTHORIZED`
+
+## Current P1b-A checkpoint
+
+- Base: integrated P1a merge `0a0a9ff370291be04a47d19232954979630fcd01`.
+- Authenticated checkout association is server-side and atomic; guest checkout remains unowned (`Order.customerId = NULL`).
+- Private `/api/customer/orders` and `/cuenta` history use a bounded stable cursor and safe DTO without tracking capabilities or delivery PII.
+- Local QA: 28 test files / 90 tests, typecheck, lint and `build:vinext` PASS; three pre-existing warnings remain.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md`.
+- Independent Critic: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-A-independent-critic-4b565f3.md`.
+- Integration Review: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-A-integration-review-4b565f3.md`.
+- Next: create/update the draft PR for review. Do not deploy staging, merge or begin P1b-B.
 
 ## Current P1a rework checkpoint — 2026-10-31
 
@@ -104,6 +115,12 @@ Local visual QA, Independent Critic and Integration Review are PASS. The existin
 Drive synchronization: `PASS_2026-09-19`; canonical brand contract, source/tokens, QA, reviews, evidence index and staging evidence synchronized to the existing Taco Loco Drive package.
 
 Next action: stop at `HUMAN_TRACKING_WORKFLOW_REVIEW` for real WhatsApp mobile/desktop return validation. Production remains `NOT_AUTHORIZED`.
+
+## Taco Club P1b-A staging checkpoint — 2026-11-01
+
+Exact application candidate `4b565f3dec11940bb651518a1f4a786da52661c2` is deployed to the existing staging Worker as `b777951d-247e-4419-adcf-d4d562e0835f`; governance HEAD is `f4e0cccca7dc775fc9c7e39dca8ad2e68243f71a`. Existing D1 binding and migrations were verified with no migration applied. Authenticated `/cuenta` and private `Mis pedidos` passed, including a bounded authenticated PICKUP order that appears as customer-owned history. Health, menu, anonymous authorization boundaries, guest tracking and WhatsApp handoff smoke checks passed. Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-STAGING-2026-11-01.md`.
+
+Classification: `P1B_A_READY_FOR_INTEGRATION`. The local Independent Critic and Integration Review remain valid PASS for the unchanged candidate. A second authenticated customer remote journey and forced pagination threshold were not repeated; they are covered by local tests/prior evidence and are not claimed as new browser observations. PR #10 remains draft. Next action: obtain explicit protected merge authorization for PR #10. Production remains `NOT_AUTHORIZED`; P1b-B is deferred.
 
 ## Taco Club P1a current HEAD checkpoint — 2026-10-28
 

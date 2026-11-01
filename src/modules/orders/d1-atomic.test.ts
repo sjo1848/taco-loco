@@ -57,6 +57,15 @@ describe("D1 atomic order adapter", () => {
     expect(bindings[0]?.[13]).toBe("Ana");
   });
 
+  it("binds an authenticated customer without changing the guest default", async () => {
+    const { db, bindings } = fakeD1();
+    await createD1OrderWith(db, { ...order, customerId: "44444444-4444-4444-8444-444444444444" });
+    expect(bindings[0]).toContain("44444444-4444-4444-8444-444444444444");
+    const { db: guestDb, bindings: guestBindings } = fakeD1();
+    await createD1OrderWith(guestDb, order);
+    expect(guestBindings[0]).toContain(null);
+  });
+
   it("does not convert a failed batch into a partial success", async () => {
     const { db } = fakeD1({ reject: true });
     await expect(createD1OrderWith(db, order)).rejects.toThrow("UNIQUE constraint failed");

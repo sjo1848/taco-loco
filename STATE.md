@@ -1,14 +1,36 @@
 # Taco Loco — Current Authoritative Project State
-Updated: 2026-10-28
+Updated: 2026-11-01
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: P1A_READY_FOR_INTEGRATION / MERGE_HUMAN_AUTHORIZATION_PENDING
-Active contract: TL-TC-TACO-CLUB-P1A (`REMOTE_VALIDATION_PASS_WITH_ACCEPTED_RESIDUAL_RISK`)
+Status: P1B_A_READY_FOR_INTEGRATION / STAGING_VALIDATED
+Active contract: TL-TC-TACO-CLUB-P1B (`P1B_A_STAGING_VALIDATED / P1B_B_DEFERRED`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
-Execution HEAD: resolve dynamically with `git rev-parse HEAD`; current governance checkpoint is `d506cd0caeaae50bd4e1f866e432a2ad37b5a5dc`.
-Application candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`
+Execution HEAD: resolve dynamically with `git rev-parse HEAD`.
+Application candidate: `4b565f3dec11940bb651518a1f4a786da52661c2`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
+
+## Taco Club P1b-A — local implementation
+
+- Base verified: integrated P1a merge `0a0a9ff370291be04a47d19232954979630fcd01`.
+- Branch: `feature/tl-taco-club-p1b-a`.
+- Authenticated public-menu orders now receive `Order.customerId` from the validated server-side customer session; guest orders remain `NULL`.
+- `/api/customer/orders` provides bounded cursor pagination and a customer-scoped safe projection; `/cuenta` renders `Mis pedidos` only for authenticated customers.
+- No new migration was required; P1a's nullable `Order.customerId` and index are reused.
+- Local QA: 28 test files / 90 tests, typecheck, lint and `build:vinext` PASS; three pre-existing warnings remain.
+- Independent Critic: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-A-independent-critic-4b565f3.md`.
+- Integration Review: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-A-integration-review-4b565f3.md`.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md`.
+- Staging, merge and production are not authorized.
+
+## Taco Club P1b-A — staging validation — 2026-11-01
+
+- Exact application candidate `4b565f3dec11940bb651518a1f4a786da52661c2` deployed to the existing staging Worker as version `b777951d-247e-4419-adcf-d4d562e0835f`; current governance HEAD is `f4e0cccca7dc775fc9c7e39dca8ad2e68243f71a`.
+- Existing D1 binding verified and migrations reported no work; no migration or resource creation was performed.
+- Authenticated `/cuenta` and `Mis pedidos` passed in the persistent browser session. A bounded authenticated PICKUP order was created and appeared in private history; D1 aggregate snapshot is 40 orders (1 customer-owned, 39 guest-owned), 3 customers and 3 identities.
+- Health/menu/account, anonymous 401 boundaries, public tracking and WhatsApp handoff smoke checks passed. Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-STAGING-2026-11-01.md`.
+- Local Independent Critic and Integration Review remain PASS for the unchanged candidate. A second-account remote browser isolation journey and forced pagination threshold were not independently repeated; they remain covered by local tests and prior evidence, not by this new browser run.
+- Classification: `P1B_A_READY_FOR_INTEGRATION`. PR #10 remains draft; no merge, production or P1b-B.
 
 ## Taco Club P1a code rework checkpoint — 2026-10-31
 

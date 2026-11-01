@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import type { OrderStatus } from "@/modules/orders/model";
 
 export type OrderListFilter = { status?: OrderStatus; query?: string };
+export type CustomerOrderCursor = { createdAt: string; id: string };
 
 function parseOrderNumber(query: string) {
   const value = query.replace(/^tl-/i, "").trim();
@@ -11,6 +12,22 @@ function parseOrderNumber(query: string) {
 }
 
 export const orderRepository = {
+  async listForCustomer(customerId: string, cursor: CustomerOrderCursor | null, take = 10) {
+    const rows = await db.order.findMany({
+      where: {
+        customerId,
+        ...(cursor ? { OR: [{ createdAt: { lt: new Date(cursor.createdAt) } }, { createdAt: new Date(cursor.createdAt), id: { lt: cursor.id } }] } : {}),
+      },
+      include: { lines: true, events: { orderBy: { sequence: "asc" } } },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: take + 1,
+    });
+    const hasMore = rows.length > take;
+    const orders = hasMore ? rows.slice(0, take) : rows;
+    const last = orders.at(-1);
+    return { orders, nextCursor: hasMore && last ? { createdAt: new Date(last.createdAt).toISOString(), id: last.id } : null };
+  },
+
   async latestEventSequence() {
     const event = await db.orderEvent.findFirst({ orderBy: { sequence: "desc" }, select: { sequence: true } });
     return event?.sequence ?? BigInt(0);
