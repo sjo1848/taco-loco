@@ -34,6 +34,8 @@
   "trackingReturnP0Candidate": "de368359ea18ced8571b8a36e20cd8f73f2f8d7a",
   "trackingReturnP0Base": "fd1ee6be539755b50bb88cf9d118a1019a36bade",
   "trackingReturnP0ClosureEvidence": "docs/reviews/TL-TC-ORDER-TRACKING-RETURN-P0-closure-review-2026-11-01.md",
+  "mvpOperationalAudit": "READ_ONLY_2026-11-01",
+  "mvpOperationalAuditEvidence": "docs/evidence/TL-MVP-OPERATIONS-AUDIT-2026-11-01.md",
   "tacoClubP1bA": "LOCAL_TECHNICAL_PASS",
   "tacoClubP1bABase": "0a0a9ff370291be04a47d19232954979630fcd01",
   "tacoClubP1bAEvidence": "docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md",
