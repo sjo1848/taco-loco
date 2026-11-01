@@ -33,6 +33,7 @@ export type D1OrderWrite = {
   totalAmount: number;
   clientReference: string | null;
   publicTrackingToken?: string | null;
+  customerId?: string | null;
   createdById: string | null;
   reason: string;
   eventKind?: "ORDER_CREATED" | "STATUS_TRANSITION";
@@ -54,11 +55,11 @@ export async function createD1OrderWith(db: D1Database, input: D1OrderWrite) {
   const deliveryFeeAmount = input.deliveryFeeAmount ?? 0;
   const transferHolderName = input.transferHolderName ?? null;
   const statements: D1Statement[] = [
-    db.prepare(`INSERT INTO "Order" ("id", "orderNumber", "status", "fulfillment", "verificationStatus", "paymentStatus", "refundStatus", "source", "customerName", "customerPhone", "tableLabel", "notes", "deliveryAddress", "deliveryReference", "deliveryFeeAmount", "transferHolderName", "subtotalAmount", "adjustmentAmount", "totalAmount", "clientReference", "publicTrackingToken", "createdById", "createdAt", "updatedAt") VALUES (?, (SELECT COALESCE(MAX("orderNumber"), 0) + 1 FROM "Order"), 'RECEIVED',
+    db.prepare(`INSERT INTO "Order" ("id", "orderNumber", "status", "fulfillment", "verificationStatus", "paymentStatus", "refundStatus", "source", "customerName", "customerPhone", "tableLabel", "notes", "deliveryAddress", "deliveryReference", "deliveryFeeAmount", "transferHolderName", "subtotalAmount", "adjustmentAmount", "totalAmount", "clientReference", "publicTrackingToken", "customerId", "createdById", "createdAt", "updatedAt") VALUES (?, (SELECT COALESCE(MAX("orderNumber"), 0) + 1 FROM "Order"), 'RECEIVED',
       ?, ?, ?, ?, ?, ?, ?,
       ?, ?, ?, ?, ?, ?, ?,
-      ?, ?, ?, ?, ?, ?, ?
-      )`).bind(input.id, input.fulfillment, verificationStatus, paymentStatus, refundStatus, input.source, input.customerName, input.customerPhone, input.tableLabel, input.notes, deliveryAddress, deliveryReference, deliveryFeeAmount, transferHolderName, input.subtotalAmount, input.adjustmentAmount, input.totalAmount, input.clientReference, input.publicTrackingToken, input.createdById, now, now),
+      ?, ?, ?, ?, ?, ?, ?, ?
+      )`).bind(input.id, input.fulfillment, verificationStatus, paymentStatus, refundStatus, input.source, input.customerName, input.customerPhone, input.tableLabel, input.notes, deliveryAddress, deliveryReference, deliveryFeeAmount, transferHolderName, input.subtotalAmount, input.adjustmentAmount, input.totalAmount, input.clientReference, input.publicTrackingToken, input.customerId ?? null, input.createdById, now, now),
     ...input.lines.map((line) => db.prepare(`INSERT INTO "OrderLine" ("id", "orderId", "productId", "productName", "unitPriceAmount", "quantity", "modifiersSnapshot", "note", "createdAt") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(line.id, input.id, line.productId, line.productName, line.unitPriceAmount, line.quantity, JSON.stringify(line.modifiersSnapshot), line.note, now)),
     db.prepare(`INSERT INTO "OrderEvent" ("id", "sequence", "orderId", "fromStatus", "toStatus", "reason", "kind", "createdAt", "actorId") VALUES (?, (SELECT COALESCE(MAX("sequence"), 0) + 1 FROM "OrderEvent"), ?, NULL, 'RECEIVED', ?, ?, ?, ?)`).bind(crypto.randomUUID(), input.id, input.reason, input.eventKind ?? "STATUS_TRANSITION", now, input.createdById),
   ];

@@ -1,10 +1,10 @@
 {
   "contract": "TL-TC-TACO-CLUB-P1A",
-  "status": "P1A_READY_FOR_INTEGRATION_MERGE_HUMAN_AUTHORIZATION_PENDING",
+  "status": "P1B_A_LOCAL_TECHNICAL_PASS_READY_FOR_PR_REVIEW",
   "sourceRepo": "sjo1848/taco-loco-foodtrack",
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
-  "targetBranch": "feature/tl-taco-club-p1a",
-  "technicalCandidate": "e6fd77a360c298cded9495ab79e9c805310f4487",
+  "targetBranch": "feature/tl-taco-club-p1b-a",
+  "technicalCandidate": "P1B_A_SHA_PENDING",
   "executionHead": "DYNAMIC_GIT_HEAD",
   "stage": "P1A_CODE_REWORK_LOCAL_PASS_STAGING_AUTH_REQUIRED",
   "remoteIntegration": "PASS_BASELINE",
@@ -30,6 +30,11 @@
   "kvResource": "DEFERRED_NOT_REQUIRED",
   "costPosture": "COST_0_FREE_TIER_TARGET",
   "production": "NOT_AUTHORIZED",
+  "tacoClubP1bA": "LOCAL_TECHNICAL_PASS",
+  "tacoClubP1bABase": "0a0a9ff370291be04a47d19232954979630fcd01",
+  "tacoClubP1bAEvidence": "docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md",
+  "tacoClubP1bAStaging": "NOT_AUTHORIZED",
+  "tacoClubP1bB": "DEFERRED",
   "driveSync": "PASS_2026-10-27",
   "productionEligibility": "HUMAN_HOLD_NOT_AUTHORIZED",
   "productionUrlDecision": "WORKERS_DEV_ACCEPTED_FOR_FUTURE_INITIAL_RELEASE",
@@ -143,5 +148,5 @@
   "tacoClubP1aIntegrationReview": "PASS_WITH_CONDITIONS",
   "tacoClubP1aIntegrationReviewEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-e6fd77a.md",
   "tacoClubP1bContract": "docs/contracts/TL-TC-TACO-CLUB-P1B.md",
-  "resumePoint": "P1a candidate e6fd77a is deployed to existing staging as Worker version eb1c652f-8e4f-4171-8450-f2c353df7f99; 0005 was already applied and no migration/data changes occurred. Smoke and candidate-bound Playwright validation PASS. Independent Critic and Integration Review are PASS_WITH_CONDITIONS after explicit human acceptance of the unproven real-D1 identity-concurrency residual for integration only. PR #9 remains draft pending protected-merge authorization; no P1b or production."
+  "resumePoint": "P1b-A is implemented locally from integrated P1a merge 0a0a9ff on feature/tl-taco-club-p1b-a. Authenticated public-menu orders associate server-side to the session customer; guests remain NULL; private paginated Mis pedidos API/UI are present. Local QA PASS: 28 files/89 tests, typecheck, lint and build:vinext; evidence docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md. Create draft PR for review; no staging, merge, P1b-B or production."
 }

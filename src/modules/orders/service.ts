@@ -66,6 +66,7 @@ type OrderWorkflow = {
   deliveryFeeAmount: number;
   transferHolderName: string | null;
   publicTrackingToken?: string | null;
+  customerId?: string | null;
 };
 
 export function transitionOrderData(toStatus: OrderStatus, reason: string | null | undefined, now = new Date()) {
@@ -97,7 +98,7 @@ function resolveModifiers(product: ManualProduct, modifiers: CreateManualOrderIn
   return modifiers.map((modifier) => ({ group: modifier.group, option: grouped.get(modifier.group)?.shift() ?? modifier.option }));
 }
 
-export async function createManualOrder(input: unknown, actorId: string | null, clientReference: string | null = null, reason = "Pedido registrado manualmente", source: "WHATSAPP" | "PUBLIC_MENU" = "WHATSAPP", workflow: OrderWorkflow = { verificationStatus: "VERIFIED", paymentStatus: "NOT_REQUIRED", deliveryAddress: null, deliveryReference: null, deliveryFeeAmount: 0, transferHolderName: null }) {
+export async function createManualOrder(input: unknown, actorId: string | null, clientReference: string | null = null, reason = "Pedido registrado manualmente", source: "WHATSAPP" | "PUBLIC_MENU" = "WHATSAPP", workflow: OrderWorkflow = { verificationStatus: "VERIFIED", paymentStatus: "NOT_REQUIRED", deliveryAddress: null, deliveryReference: null, deliveryFeeAmount: 0, transferHolderName: null, customerId: null }) {
   const parsed = createManualOrderInputSchema.parse(input);
   const productIds = [...new Set(parsed.lines.map((line) => line.productId))];
   const products = await db.product.findMany({ where: { id: { in: productIds }, archivedAt: null, published: true, available: true }, include: { modifierGroups: { include: { modifierGroup: { include: { options: true } } } } } }) as ManualProduct[];
@@ -113,7 +114,7 @@ export async function createManualOrder(input: unknown, actorId: string | null, 
   if (isD1Runtime) {
     const { createD1Order } = await import("@/modules/orders/d1-atomic.worker");
     const id = crypto.randomUUID();
-    await createD1Order({ id, source, fulfillment: parsed.fulfillment, verificationStatus: workflow.verificationStatus, paymentStatus: workflow.paymentStatus, deliveryAddress: workflow.deliveryAddress, deliveryReference: workflow.deliveryReference, deliveryFeeAmount: workflow.deliveryFeeAmount, transferHolderName: workflow.transferHolderName, customerName: parsed.customerName ?? null, customerPhone: parsed.customerPhone ?? null, tableLabel: parsed.tableLabel ?? null, notes: parsed.notes ?? null, subtotalAmount, adjustmentAmount: parsed.adjustmentAmount, totalAmount, clientReference, publicTrackingToken: workflow.publicTrackingToken ?? null, createdById: actorId, reason, eventKind: source === "PUBLIC_MENU" ? "ORDER_CREATED" : "STATUS_TRANSITION", lines: resolvedLines.map((line) => ({ ...line, id: crypto.randomUUID() })) });
+    await createD1Order({ id, source, fulfillment: parsed.fulfillment, verificationStatus: workflow.verificationStatus, paymentStatus: workflow.paymentStatus, deliveryAddress: workflow.deliveryAddress, deliveryReference: workflow.deliveryReference, deliveryFeeAmount: workflow.deliveryFeeAmount, transferHolderName: workflow.transferHolderName, customerName: parsed.customerName ?? null, customerPhone: parsed.customerPhone ?? null, tableLabel: parsed.tableLabel ?? null, notes: parsed.notes ?? null, subtotalAmount, adjustmentAmount: parsed.adjustmentAmount, totalAmount, clientReference, publicTrackingToken: workflow.publicTrackingToken ?? null, customerId: workflow.customerId ?? null, createdById: actorId, reason, eventKind: source === "PUBLIC_MENU" ? "ORDER_CREATED" : "STATUS_TRANSITION", lines: resolvedLines.map((line) => ({ ...line, id: crypto.randomUUID() })) });
     const order = await db.order.findUniqueOrThrow({ where: { id }, include: { lines: true } });
     const event = await db.orderEvent.findFirstOrThrow({ where: { orderId: id }, orderBy: { sequence: "desc" } });
     return { order, event };
@@ -138,6 +139,7 @@ export async function createManualOrder(input: unknown, actorId: string | null, 
         totalAmount,
         clientReference,
         publicTrackingToken: workflow.publicTrackingToken ?? null,
+        customerId: workflow.customerId ?? null,
         createdById: actorId,
         lines: { create: resolvedLines },
       },
@@ -149,7 +151,7 @@ export async function createManualOrder(input: unknown, actorId: string | null, 
   });
 }
 
-export async function createPublicOrderIntent(input: unknown) {
+export async function createPublicOrderIntent(input: unknown, customerId: string | null = null) {
   const parsed = createPublicOrderIntentInputSchema.parse(input);
   const existing = await db.order.findUnique({ where: { clientReference: parsed.clientReference }, include: { lines: true } });
   if (existing) return { order: existing, event: null, reused: true };
@@ -157,7 +159,7 @@ export async function createPublicOrderIntent(input: unknown) {
   if (parsed.fulfillment === "DELIVERY" && !settings.deliveryEnabled) throw new AppError("DELIVERY_UNAVAILABLE", "El delivery no está disponible en este momento.", 400);
   const deliveryFeeAmount = parsed.fulfillment === "DELIVERY" ? settings.deliveryFeeAmount : 0;
   try {
-    return await createManualOrder({ fulfillment: parsed.fulfillment, customerName: null, customerPhone: null, tableLabel: null, notes: "Intención registrada desde el menú. Confirmar recepción por WhatsApp.", adjustmentAmount: deliveryFeeAmount, lines: parsed.lines }, null, parsed.clientReference, "Intención preparada desde el menú público", "PUBLIC_MENU", { verificationStatus: "PENDING", paymentStatus: parsed.fulfillment === "DELIVERY" ? "PENDING" : "NOT_REQUIRED", deliveryAddress: parsed.deliveryAddress ?? null, deliveryReference: parsed.deliveryReference ?? null, deliveryFeeAmount, transferHolderName: parsed.transferHolderName ?? null, publicTrackingToken: createPublicTrackingToken() });
+    return await createManualOrder({ fulfillment: parsed.fulfillment, customerName: null, customerPhone: null, tableLabel: null, notes: "Intención registrada desde el menú. Confirmar recepción por WhatsApp.", adjustmentAmount: deliveryFeeAmount, lines: parsed.lines }, null, parsed.clientReference, "Intención preparada desde el menú público", "PUBLIC_MENU", { verificationStatus: "PENDING", paymentStatus: parsed.fulfillment === "DELIVERY" ? "PENDING" : "NOT_REQUIRED", deliveryAddress: parsed.deliveryAddress ?? null, deliveryReference: parsed.deliveryReference ?? null, deliveryFeeAmount, transferHolderName: parsed.transferHolderName ?? null, publicTrackingToken: createPublicTrackingToken(), customerId });
   } catch (error) {
     const isClientReferenceConflict = error && typeof error === "object" && (("code" in error && error.code === "P2002") || ("message" in error && typeof error.message === "string" && error.message.includes("Order.clientReference")));
     if (isClientReferenceConflict) {

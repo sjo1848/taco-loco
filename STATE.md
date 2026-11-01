@@ -2,13 +2,24 @@
 Updated: 2026-10-28
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: P1A_READY_FOR_INTEGRATION / MERGE_HUMAN_AUTHORIZATION_PENDING
-Active contract: TL-TC-TACO-CLUB-P1A (`REMOTE_VALIDATION_PASS_WITH_ACCEPTED_RESIDUAL_RISK`)
+Status: P1B_A_LOCAL_TECHNICAL_PASS / READY_FOR_PR_REVIEW
+Active contract: TL-TC-TACO-CLUB-P1B (`P1B_A_ONLY / STAGING_NOT_AUTHORIZED`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
-Execution HEAD: resolve dynamically with `git rev-parse HEAD`; current governance checkpoint is `d506cd0caeaae50bd4e1f866e432a2ad37b5a5dc`.
-Application candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`
+Execution HEAD: resolve dynamically with `git rev-parse HEAD`.
+Application candidate: `P1B_A_SHA_PENDING`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
+
+## Taco Club P1b-A — local implementation
+
+- Base verified: integrated P1a merge `0a0a9ff370291be04a47d19232954979630fcd01`.
+- Branch: `feature/tl-taco-club-p1b-a`.
+- Authenticated public-menu orders now receive `Order.customerId` from the validated server-side customer session; guest orders remain `NULL`.
+- `/api/customer/orders` provides bounded cursor pagination and a customer-scoped safe projection; `/cuenta` renders `Mis pedidos` only for authenticated customers.
+- No new migration was required; P1a's nullable `Order.customerId` and index are reused.
+- Local QA: 28 test files / 89 tests, typecheck, lint and `build:vinext` PASS; three pre-existing warnings remain.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md`.
+- Staging, merge and production are not authorized.
 
 ## Taco Club P1a code rework checkpoint — 2026-10-31
 

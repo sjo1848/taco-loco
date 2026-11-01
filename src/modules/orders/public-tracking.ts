@@ -17,7 +17,21 @@ export type PublicOrderTracking = {
   version: string;
 };
 
-type PublicOrderRecord = {
+export type CustomerOrderSummary = {
+  orderCode: string;
+  fulfillment: "PICKUP" | "DELIVERY";
+  currentStage: PublicOrderStage;
+  title: string;
+  message: string;
+  totalAmount: number;
+  deliveryFeeAmount: number;
+  createdAt: string;
+  updatedAt: string;
+  history: PublicTrackingEvent[];
+  lines: PublicOrderTracking["lines"];
+};
+
+export type PublicOrderRecord = {
   orderNumber: number; fulfillment: "PICKUP" | "DINE_IN" | "DELIVERY"; status: string; verificationStatus: string; paymentStatus: string; refundStatus: string;
   totalAmount: number; deliveryFeeAmount: number; createdAt: Date | string; updatedAt: Date | string;
   lines: Array<{ productName: string; quantity: number; modifiersSnapshot: unknown }>;
@@ -119,6 +133,20 @@ export function toPublicOrderTracking(order: PublicOrderRecord, version = "0"): 
     createdAt: iso(order.createdAt), updatedAt: iso(order.updatedAt), history,
     lines: order.lines.map((line) => ({ name: line.productName, quantity: line.quantity, modifiers: Array.isArray(line.modifiersSnapshot) ? line.modifiersSnapshot.filter((item): item is { group: string; option: string } => Boolean(item) && typeof item === "object" && "group" in item && "option" in item).map((item) => ({ group: item.group, option: item.option })) : [] })),
     version,
+  };
+}
+
+/** Private account projection: reuse the safe public lifecycle/line projection without exposing a tracking capability. */
+export function toCustomerOrderSummary(order: PublicOrderRecord): CustomerOrderSummary {
+  const fulfillment = order.fulfillment === "DINE_IN" ? "PICKUP" : order.fulfillment;
+  const currentStage = toPublicTrackingStage(order);
+  const [title, message] = stageTitle(currentStage, fulfillment);
+  const history = toPublicOrderHistory({ fulfillment, events: order.events });
+  return {
+    orderCode: formatOrderNumber(order.orderNumber), fulfillment, currentStage, title, message,
+    totalAmount: order.totalAmount, deliveryFeeAmount: order.deliveryFeeAmount,
+    createdAt: iso(order.createdAt), updatedAt: iso(order.updatedAt), history,
+    lines: order.lines.map((line) => ({ name: line.productName, quantity: line.quantity, modifiers: Array.isArray(line.modifiersSnapshot) ? line.modifiersSnapshot.filter((item): item is { group: string; option: string } => Boolean(item) && typeof item === "object" && "group" in item && "option" in item).map((item) => ({ group: item.group, option: item.option })) : [] })),
   };
 }
 

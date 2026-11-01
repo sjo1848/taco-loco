@@ -1,6 +1,15 @@
 # Evidence Index — Taco Loco
 As of: 2026-10-27
 
+## Taco Club P1b-A — Mis pedidos local implementation — 2026-10-31
+
+- Base: integrated P1a merge `0a0a9ff370291be04a47d19232954979630fcd01`.
+- Branch: `feature/tl-taco-club-p1b-a`.
+- Local implementation: `P1B_A_LOCAL_TECHNICAL_PASS`; authenticated public-menu orders bind server-side to `Customer.id`, guests remain unowned, and `/api/customer/orders` plus `/cuenta` provide a bounded private history projection.
+- No new migration, staging deployment or production action.
+- QA: 28 test files / 89 tests, typecheck, lint and `build:vinext` PASS; 3 pre-existing warnings.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md`.
+
 ## Taco Club P1a — candidate-bound staging deployment — 2026-10-31
 
 - Exact candidate `e6fd77a360c298cded9495ab79e9c805310f4487` deployed to existing Worker `taco-loco-staging-20260913` as version `eb1c652f-8e4f-4171-8450-f2c353df7f99`.

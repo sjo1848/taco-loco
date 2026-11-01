@@ -3,14 +3,23 @@
 Updated: 2026-10-28
 
 - Repository: `sjo1848/taco-loco`
-- Branch: `feature/tl-taco-club-p1a`
-- Application candidate: `e6fd77a360c298cded9495ab79e9c805310f4487`
+- Branch: `feature/tl-taco-club-p1b-a`
+- Application candidate: `P1B_A_SHA_PENDING`
 - Execution HEAD: resolve dynamically with `git rev-parse HEAD`
 - Mode: `DELIVERY`
 - Phase: `VALIDATE / RELEASE_PREPARATION`
-- State: `P1A_READY_FOR_INTEGRATION / MERGE_HUMAN_AUTHORIZATION_PENDING`
+- State: `P1B_A_LOCAL_TECHNICAL_PASS / READY_FOR_PR_REVIEW`
 - Active contract: `docs/contracts/TL-TC-TACO-CLUB-P1A.md`
 - Production: `NOT_AUTHORIZED`
+
+## Current P1b-A checkpoint
+
+- Base: integrated P1a merge `0a0a9ff370291be04a47d19232954979630fcd01`.
+- Authenticated checkout association is server-side and atomic; guest checkout remains unowned (`Order.customerId = NULL`).
+- Private `/api/customer/orders` and `/cuenta` history use a bounded stable cursor and safe DTO without tracking capabilities or delivery PII.
+- Local QA: 28 test files / 89 tests, typecheck, lint and `build:vinext` PASS; three pre-existing warnings remain.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md`.
+- Next: create/update the draft PR for review. Do not deploy staging, merge or begin P1b-B.
 
 ## Current P1a rework checkpoint — 2026-10-31
 
