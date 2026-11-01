@@ -6,6 +6,10 @@ The P0 base/merge `fd1ee6be539755b50bb88cf9d118a1019a36bade` is verified on `rew
 
 Only real-device WhatsApp app, WhatsApp Web and no-app return behavior remain for human review. No production, merge or infrastructure action is authorized. Evidence: `docs/reviews/TL-TC-ORDER-TRACKING-RETURN-P0-closure-review-2026-11-01.md`.
 
+## MVP operational audit — 2026-11-01
+
+Read-only staging smoke passed for health, menu, Static Asset, anonymous auth boundaries and invalid tracking. The operational audit is `docs/evidence/TL-MVP-OPERATIONS-AUDIT-2026-11-01.md`. Pilot blockers remain physical WhatsApp return evidence, account-specific D1 `info`/backup-restore evidence and a controlled tracked staging deployment procedure. No production action is authorized.
+
 Updated: 2026-10-28
 
 - Repository: `sjo1848/taco-loco`

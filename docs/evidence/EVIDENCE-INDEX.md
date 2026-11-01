@@ -187,6 +187,12 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Classification: `P0_TECHNICAL_PASS / P0_HUMAN_DEVICE_VALIDATION_PENDING`.
 - Evidence: `docs/reviews/TL-TC-ORDER-TRACKING-RETURN-P0-closure-review-2026-11-01.md`.
 
+## MVP operational audit — 2026-11-01
+
+- Read-only staging smoke: health/menu/static asset PASS; anonymous customer boundaries and invalid tracking PASS.
+- Pilot blockers: physical WhatsApp return validation pending; account-specific D1 `info`/backup-restore evidence UNKNOWN; tracked staging deployment procedure requires controlled configuration evidence.
+- Evidence: `docs/evidence/TL-MVP-OPERATIONS-AUDIT-2026-11-01.md`.
+
 ## Taco Club P1a — optional Google identity foundation — 2026-10-27
 
 - Contract: PROVEN local implementation — `docs/contracts/TL-TC-TACO-CLUB-P1A.md`.

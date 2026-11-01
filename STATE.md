@@ -10,6 +10,13 @@ Application candidate: `2c15d6f0255fe1df411ef1128d177dc1c8a8206a`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
+## MVP operational audit — 2026-11-01
+
+- Read-only staging smoke: health/menu/static asset PASS; anonymous customer session/history boundaries and invalid tracking 401/404 PASS.
+- Operational audit evidence: `docs/evidence/TL-MVP-OPERATIONS-AUDIT-2026-11-01.md`.
+- Pilot blockers: physical WhatsApp return validation pending; account-specific D1 `info`/backup-restore evidence UNKNOWN; tracked staging deployment configuration is not self-contained.
+- No production, migration, deployment, resource creation or remote data mutation performed in this audit.
+
 ## Customer tracking return P0 — closure checkpoint — 2026-11-01
 
 - Base/merge verified: `fd1ee6be539755b50bb88cf9d118a1019a36bade`.
