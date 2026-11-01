@@ -195,6 +195,8 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Branch: `feature/tl-taco-club-p1b-b`, base `3197611bd8bf464c29fc1418cd2b5d4b9cefea7d`.
 - No application code, migration, remote data or staging resource changed.
 - Recommended claim policy: authenticated session plus opaque tracking token; 30-day claim window; first atomic claim wins; same-customer retry idempotent; generic conflict for another owner; no self-unclaim; existing retention unchanged; no synthetic OrderEvent.
-- Status: `HUMAN_GATE / CLAIM_POLICY_APPROVAL_REQUIRED`.
+- Policy approved 2026-11-01; implementation candidate `2c15d6f0255fe1df411ef1128d177dc1c8a8206a` is locally validated. Status: `LOCAL_TECHNICAL_PASS / STAGING_AUTHORIZATION_REQUIRED`.
 - Contract: `docs/contracts/TL-TC-TACO-CLUB-P1B.md`.
 - Design evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-B-DESIGN-2026-11-01.md`.
+- Independent Critic: `PASS` — `docs/reviews/TL-TC-TACO-CLUB-P1B-independent-critic-2c15d6f.md`.
+- Integration Review: `PASS` — `docs/reviews/TL-TC-TACO-CLUB-P1B-integration-review-2c15d6f.md`.

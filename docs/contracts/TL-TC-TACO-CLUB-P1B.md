@@ -1,16 +1,16 @@
 # TL-TC-TACO-CLUB-P1B — Customer order history and verified guest claim
 
-Status: `P1B_B_POLICY_PROPOSED / HUMAN_GATE_PENDING`
+Status: `P1B_B_LOCAL_TECHNICAL_PASS / STAGING_AUTHORIZATION_REQUIRED`
 Issue: `#6 — P1b: historial de pedidos y claim verificable de invitados`  
 Depends on: `TL-TC-TACO-CLUB-P1A` integration approval
 
-Current checkpoint: P1b-A customer-scoped order history is implemented and validated on staging. P1b-B guest claim remains outside this increment and is not authorized to begin.
+Current checkpoint: P1b-A customer-scoped order history is integrated. P1b-B guest claim is implemented and locally validated on `2c15d6f0255fe1df411ef1128d177dc1c8a8206a`; staging deployment remains unauthorized.
 
 P1b-A evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-STAGING-2026-11-01.md`.
 
-## P1b-B policy proposal — approval required before implementation
+## P1b-B approved policy
 
-This is the single recommended policy for guest-order claiming. It is a product/privacy decision and is intentionally not implemented until the human approves it.
+This single policy was approved by the human on 2026-11-01 and governs the implementation below.
 
 ### Recommended policy
 
@@ -87,7 +87,7 @@ Allow an authenticated Taco Club customer to view their order history and explic
 
 ## Human gates
 
-Pause for human decision if retention/erasure, guest claim UX, account deletion, or customer-history privacy policy changes materially; production remains separately unauthorized.
+The claim policy above is approved. Pause again only if retention/erasure, guest claim UX, account deletion, or customer-history privacy policy changes materially. Staging deployment still requires explicit authorization; production remains separately unauthorized.
 
 ## Done when
 
@@ -95,4 +95,4 @@ Local implementation, D1/PostgreSQL migrations if needed, full affected QA, Inde
 
 ## Resume point
 
-The next authorized action is human approval or rejection of the single P1b-B claim policy above. After approval, implement locally on `feature/tl-taco-club-p1b-b`, run the bounded QA/reviews, and request separate staging authorization. No production work is authorized.
+The next authorized action is bounded staging authorization for candidate `2c15d6f0255fe1df411ef1128d177dc1c8a8206a`. No production work is authorized.

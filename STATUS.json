@@ -1,12 +1,12 @@
 {
   "contract": "TL-TC-TACO-CLUB-P1A",
-  "status": "P1B_B_POLICY_PROPOSED_HUMAN_GATE_PENDING",
+  "status": "P1B_B_LOCAL_TECHNICAL_PASS_STAGING_AUTHORIZATION_REQUIRED",
   "sourceRepo": "sjo1848/taco-loco-foodtrack",
   "sourceSha": "a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48",
   "targetBranch": "feature/tl-taco-club-p1b-a",
   "technicalCandidate": "4b565f3dec11940bb651518a1f4a786da52661c2",
   "executionHead": "DYNAMIC_GIT_HEAD",
-  "stage": "P1B_B_DESIGN_POLICY_HUMAN_APPROVAL_REQUIRED",
+  "stage": "P1B_B_IMPLEMENTED_LOCAL_STAGING_AUTHORIZATION_REQUIRED",
   "remoteIntegration": "PASS_BASELINE",
   "stagingWorker": "taco-loco-staging-20260913",
   "stagingD1": "taco-loco-staging-20260913",
@@ -40,7 +40,12 @@
   "tacoClubP1bAStaging": "P1B_A_READY_FOR_INTEGRATION",
   "tacoClubP1bAStagingEvidence": "docs/evidence/TL-TC-TACO-CLUB-P1B-A-STAGING-2026-11-01.md",
   "tacoClubP1bAStagingDeploymentVersion": "b777951d-247e-4419-adcf-d4d562e0835f",
-  "tacoClubP1bB": "POLICY_PROPOSED_HUMAN_GATE_PENDING",
+  "tacoClubP1bB": "LOCAL_TECHNICAL_PASS_STAGING_AUTHORIZATION_REQUIRED",
+  "tacoClubP1bBCandidate": "2c15d6f0255fe1df411ef1128d177dc1c8a8206a",
+  "tacoClubP1bBIndependentCritic": "PASS",
+  "tacoClubP1bBIndependentCriticEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1B-independent-critic-2c15d6f.md",
+  "tacoClubP1bBIntegrationReview": "PASS",
+  "tacoClubP1bBIntegrationReviewEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1B-integration-review-2c15d6f.md",
   "driveSync": "PASS_2026-10-27",
   "productionEligibility": "HUMAN_HOLD_NOT_AUTHORIZED",
   "productionUrlDecision": "WORKERS_DEV_ACCEPTED_FOR_FUTURE_INITIAL_RELEASE",
@@ -154,5 +159,5 @@
   "tacoClubP1aIntegrationReview": "PASS_WITH_CONDITIONS",
   "tacoClubP1aIntegrationReviewEvidence": "docs/reviews/TL-TC-TACO-CLUB-P1A-integration-review-e6fd77a.md",
   "tacoClubP1bContract": "docs/contracts/TL-TC-TACO-CLUB-P1B.md",
-  "resumePoint": "P1b-B policy proposal is recorded in docs/contracts/TL-TC-TACO-CLUB-P1B.md on feature/tl-taco-club-p1b-b, based on integrated merge 3197611bd8bf464c29fc1418cd2b5d4b9cefea7d. No code, remote data, migration or staging resource changed. Await human approval of the single recommended claim policy before implementation. Production remains NOT_AUTHORIZED."
+  "resumePoint": "P1b-B guest-order claim is implemented locally on candidate 2c15d6f0255fe1df411ef1128d177dc1c8a8206a in feature/tl-taco-club-p1b-b. Local QA is 30 files/101 tests, typecheck, lint and build:vinext PASS. No remote data or staging resource changed. Fresh critic functional checks pass; integration evidence is pending. Next action is bounded staging authorization. Production remains NOT_AUTHORIZED."
 }

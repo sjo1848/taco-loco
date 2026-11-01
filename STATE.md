@@ -2,8 +2,8 @@
 Updated: 2026-11-01
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: P1B_B_POLICY_PROPOSED / HUMAN_GATE_PENDING
-Active contract: TL-TC-TACO-CLUB-P1B (`P1B_B_POLICY_PROPOSED / HUMAN_GATE_PENDING`)
+Status: P1B_B_LOCAL_TECHNICAL_PASS / STAGING_AUTHORIZATION_REQUIRED
+Active contract: TL-TC-TACO-CLUB-P1B (`P1B_B_LOCAL_TECHNICAL_PASS / STAGING_AUTHORIZATION_REQUIRED`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
 Execution HEAD: resolve dynamically with `git rev-parse HEAD`.
 Application candidate: `4b565f3dec11940bb651518a1f4a786da52661c2`
@@ -15,7 +15,16 @@ Production: `NOT_AUTHORIZED`
 - Branch: `feature/tl-taco-club-p1b-b`, based on integrated P1b-A merge `3197611bd8bf464c29fc1418cd2b5d4b9cefea7d`.
 - No application code, remote data, migration or staging resource was changed.
 - A single recommended guest-claim policy is recorded in `docs/contracts/TL-TC-TACO-CLUB-P1B.md`: authenticated session plus opaque tracking token; 30-day claim window; first atomic claim wins; same-customer retry idempotent; generic conflict for another owner; no self-unclaim; existing retention unchanged; no synthetic OrderEvent.
-- Human approval is required before implementing the claim because the claim window, shared-link consequence, revocation and retention treatment are product/privacy decisions.
+- Human approved the claim window, shared-link consequence, revocation and retention treatment on 2026-11-01. Local implementation and QA are complete; staging deployment is the next authorization boundary.
+
+## Taco Club P1b-B — local implementation — 2026-11-01
+
+- Candidate: `2c15d6f0255fe1df411ef1128d177dc1c8a8206a`.
+- Added authenticated guest-order claim using the existing opaque tracking token, explicit confirmation, strict Origin requirement and atomic conditional `customerId` assignment with the 30-day predicate in the write.
+- Same-customer retry is idempotent, competing owners receive a generic conflict, expired guest orders cannot be claimed, and no synthetic OrderEvent or parallel history was added.
+- Local QA: 30 test files / 101 tests, typecheck, lint and `build:vinext` PASS; three pre-existing lint warnings remain.
+- Independent Critic: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-independent-critic-2c15d6f.md`.
+- Integration Review: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-integration-review-2c15d6f.md`.
 
 ## Taco Club P1b-A — local implementation
 
