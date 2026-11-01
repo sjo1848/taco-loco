@@ -116,6 +116,12 @@ Drive synchronization: `PASS_2026-09-19`; canonical brand contract, source/token
 
 Next action: stop at `HUMAN_TRACKING_WORKFLOW_REVIEW` for real WhatsApp mobile/desktop return validation. Production remains `NOT_AUTHORIZED`.
 
+## Taco Club P1b-A staging checkpoint — 2026-11-01
+
+Exact application candidate `4b565f3dec11940bb651518a1f4a786da52661c2` is deployed to the existing staging Worker as `b777951d-247e-4419-adcf-d4d562e0835f`; governance HEAD is `f4e0cccca7dc775fc9c7e39dca8ad2e68243f71a`. Existing D1 binding and migrations were verified with no migration applied. Authenticated `/cuenta` and private `Mis pedidos` passed, including a bounded authenticated PICKUP order that appears as customer-owned history. Health, menu, anonymous authorization boundaries, guest tracking and WhatsApp handoff smoke checks passed. Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-STAGING-2026-11-01.md`.
+
+Classification: `P1B_A_READY_FOR_INTEGRATION`. The local Independent Critic and Integration Review remain valid PASS for the unchanged candidate. A second authenticated customer remote journey and forced pagination threshold were not repeated; they are covered by local tests/prior evidence and are not claimed as new browser observations. PR #10 remains draft. Next action: obtain explicit protected merge authorization for PR #10. Production remains `NOT_AUTHORIZED`; P1b-B is deferred.
+
 ## Taco Club P1a current HEAD checkpoint — 2026-10-28
 
 Current HEAD/candidate `48744dd5850ece461f3c2841b401da6797467b0a` adds persisted `GoogleAuthChallenge` with atomic conditional consumption. CI `40713513428` is green; local QA is 27 files/75 tests, typecheck, lint and vinext build PASS. Isolated local D1 produced one challenge-consume winner and one loser. Identity uniqueness remains structurally protected, but the local parallel identity run surfaced `UNIQUE`/`SQLITE_BUSY`; real application recovery is not claimed.

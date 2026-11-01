@@ -1,8 +1,12 @@
 # TL-TC-TACO-CLUB-P1B — Customer order history and verified guest claim
 
-Status: `DESIGN_READY / STAGING_ONLY`  
+Status: `P1B_A_STAGING_VALIDATED / P1B_B_DEFERRED`
 Issue: `#6 — P1b: historial de pedidos y claim verificable de invitados`  
 Depends on: `TL-TC-TACO-CLUB-P1A` integration approval
+
+Current checkpoint: P1b-A customer-scoped order history is implemented and validated on staging. P1b-B guest claim remains outside this increment and is not authorized to begin.
+
+P1b-A evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-STAGING-2026-11-01.md`.
 
 ## Objective
 

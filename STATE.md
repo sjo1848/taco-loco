@@ -1,9 +1,9 @@
 # Taco Loco — Current Authoritative Project State
-Updated: 2026-10-28
+Updated: 2026-11-01
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: P1B_A_LOCAL_TECHNICAL_PASS / READY_FOR_PR_REVIEW
-Active contract: TL-TC-TACO-CLUB-P1B (`P1B_A_ONLY / STAGING_NOT_AUTHORIZED`)
+Status: P1B_A_READY_FOR_INTEGRATION / STAGING_VALIDATED
+Active contract: TL-TC-TACO-CLUB-P1B (`P1B_A_STAGING_VALIDATED / P1B_B_DEFERRED`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
 Execution HEAD: resolve dynamically with `git rev-parse HEAD`.
 Application candidate: `4b565f3dec11940bb651518a1f4a786da52661c2`
@@ -22,6 +22,15 @@ Production: `NOT_AUTHORIZED`
 - Integration Review: `PASS`; `docs/reviews/TL-TC-TACO-CLUB-P1B-A-integration-review-4b565f3.md`.
 - Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-LOCAL-2026-10-31.md`.
 - Staging, merge and production are not authorized.
+
+## Taco Club P1b-A — staging validation — 2026-11-01
+
+- Exact application candidate `4b565f3dec11940bb651518a1f4a786da52661c2` deployed to the existing staging Worker as version `b777951d-247e-4419-adcf-d4d562e0835f`; current governance HEAD is `f4e0cccca7dc775fc9c7e39dca8ad2e68243f71a`.
+- Existing D1 binding verified and migrations reported no work; no migration or resource creation was performed.
+- Authenticated `/cuenta` and `Mis pedidos` passed in the persistent browser session. A bounded authenticated PICKUP order was created and appeared in private history; D1 aggregate snapshot is 40 orders (1 customer-owned, 39 guest-owned), 3 customers and 3 identities.
+- Health/menu/account, anonymous 401 boundaries, public tracking and WhatsApp handoff smoke checks passed. Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-A-STAGING-2026-11-01.md`.
+- Local Independent Critic and Integration Review remain PASS for the unchanged candidate. A second-account remote browser isolation journey and forced pagination threshold were not independently repeated; they remain covered by local tests and prior evidence, not by this new browser run.
+- Classification: `P1B_A_READY_FOR_INTEGRATION`. PR #10 remains draft; no merge, production or P1b-B.
 
 ## Taco Club P1a code rework checkpoint — 2026-10-31
 
