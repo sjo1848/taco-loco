@@ -223,3 +223,10 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Real D1 concurrent claim contention is not claimed. Current `wrangler d1 info` read returned provider error 10000; no migration was retried.
 - Classification: `P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED`.
 - Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1B-B-STAGING-2026-11-01.md`.
+# MVP pilot operational readiness — 2026-11-01
+
+- `docs/evidence/TL-MVP-OPERATIONS-AUDIT-2026-11-01.md` — read-only staging smoke and pilot boundary.
+- `docs/evidence/TL-MVP-D1-LOCAL-RECOVERY-DRILL-2026-11-01.md` — isolated local export/import recovery drill PASS.
+- `docs/operations/TL-D1-BACKUP-RECOVERY-RUNBOOK-2026-11-01.md` — export, verification and recovery procedure; remote restore not executed.
+- `docs/operations/TL-MVP-PILOT-RUNBOOK-2026-11-01.md` — opening, order handling, monitoring, exception and closing procedure.
+- `ops/staging/wrangler.staging.example.jsonc` / `ops/staging/README.md` — versioned secret-free staging configuration and dry-run procedure.

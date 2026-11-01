@@ -1,9 +1,9 @@
 # Taco Loco — MVP operational audit — 2026-11-01
 
-Scope: read-only audit; no production, migration, deployment or data mutation performed.  
-Repository: `sjo1848/taco-loco`  
-P0 base: `fd1ee6be539755b50bb88cf9d118a1019a36bade`  
-QA HEAD: `03feb11b8a67b4e06f3117a5edd837c4718b69f8`  
+Scope: read-only audit; no production, migration, deployment or data mutation performed.
+Repository: `sjo1848/taco-loco`
+P0 base: `fd1ee6be539755b50bb88cf9d118a1019a36bade`
+QA HEAD: `03feb11b8a67b4e06f3117a5edd837c4718b69f8`
 Production: `NOT_AUTHORIZED`
 
 ## Current runtime smoke
@@ -24,8 +24,8 @@ These checks are read-only and do not prove the pending physical WhatsApp return
 ### Blocks a controlled pilot
 
 1. **WhatsApp physical return is not yet observed.** Mobile app/deep-link, WhatsApp Web and no-app/blocked-opening behavior remain pending human-device validation. The application-side simulations are not a substitute.
-2. **Operational backup/restore evidence is incomplete.** The current authenticated Wrangler session can deploy, but the read-only `wrangler d1 info taco-loco-staging-20260913` inspection is rejected by Cloudflare with provider error 10000. No migration or restore was attempted. The D1 production backend's Time Travel capability must be verified for the target account and a restore runbook must be recorded before a real pilot.
-3. **Staging deployment configuration is not self-contained in the tracked `wrangler.jsonc`.** The tracked file intentionally contains local placeholder bindings; staging deployment uses a separate temporary configuration. A pilot needs a controlled, non-secret deployment procedure and verified binding/account evidence.
+2. **Remote restore evidence remains incomplete, but the read-only access blocker was narrowed.** A bounded `wrangler d1 list` call returned provider error 10000; the subsequent read-only `wrangler d1 info --json` and `wrangler d1 time-travel info --json` calls succeeded for the existing staging D1. The account-specific root cause of the intermittent 10000 remains `UNKNOWN`; no migration, restore or remote data mutation was attempted. A recovery procedure and local isolated drill are now recorded separately.
+3. **Staging deployment configuration is now reproducible as a tracked secret-free template, but no deployment was performed in this block.** The tracked root `wrangler.jsonc` remains intentionally local; `ops/staging/wrangler.staging.example.jsonc` and its procedure define the controlled staging path and require explicit value substitution before use.
 
 ### Important, non-blocking for the technical MVP
 
@@ -34,7 +34,7 @@ These checks are read-only and do not prove the pending physical WhatsApp return
 - PENDING closure, no-show recording and refunds are manual operational actions and need a daily checklist.
 - The fixed delivery fee, catalog prices, availability and publication state are configuration/data responsibilities; changes require an operator review before opening a session.
 - Admin order intake and SSE visibility are proven by prior staging evidence; the operator should retain manual refresh/navigation as a recovery procedure.
-- No production monitoring, alerting, export retention or disaster-recovery drill is currently evidenced.
+- No production monitoring, alerting, export retention or remote disaster-recovery drill is currently evidenced. A local isolated export/import drill passed.
 
 ### Future improvements
 
@@ -54,7 +54,7 @@ These checks are read-only and do not prove the pending physical WhatsApp return
 
 ## Cloudflare recovery/cost note
 
-Current Cloudflare documentation states that D1 Time Travel is always enabled on supported production-backend databases, with a 7-day restore window on Workers Free and 30 days on Workers Paid; restore overwrites the database in place. This is a capability reference, not account-specific proof. Account/resource state remains UNKNOWN until `d1 info` or Dashboard evidence is available.
+Current Cloudflare documentation states that D1 Time Travel is always enabled on supported production-backend databases, with a 7-day restore window on Workers Free and 30 days on Workers Paid; restore overwrites the database in place. The staging account now has successful read-only `d1 info` and bookmark evidence, but the CLI did not expose account-specific retention; retention remains UNKNOWN until Dashboard/provider evidence is available.
 
 Sources:
 
@@ -65,3 +65,11 @@ Sources:
 ## Next evidence boundary
 
 Complete the four physical WhatsApp scenarios in one human-device session. Record each as `PASS` or `UNKNOWN`, with no credentials, cookies or tracking tokens in the report. Do not create more than one bounded PICKUP and one bounded DELIVERY order.
+
+## New readiness evidence — 2026-11-01
+
+- D1 read-only `info --json`: PASS after one intermittent provider error; 16 tables, 352256 bytes, 9744 reads and 42 writes in the reported 24-hour window.
+- D1 Time Travel info: PASS; bookmark returned, no restore performed.
+- Local recovery drill: PASS — `docs/evidence/TL-MVP-D1-LOCAL-RECOVERY-DRILL-2026-11-01.md`.
+- Reproducible staging template and dry-run procedure: `ops/staging/wrangler.staging.example.jsonc` and `ops/staging/README.md`.
+- Operating procedure: `docs/operations/TL-MVP-PILOT-RUNBOOK-2026-11-01.md`.

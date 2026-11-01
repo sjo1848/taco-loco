@@ -1,5 +1,15 @@
 # Taco Loco — Resume / Orchestration State
 
+## MVP pilot operational readiness — 2026-11-01
+
+- Canonical tracker: GitHub Issue #12, `MVP Pilot Operational Readiness`.
+- Branch: `rework/mvp-pilot-readiness`; execution HEAD is dynamic and must be resolved with `git rev-parse HEAD`.
+- Read-only D1 `info --json` and Time Travel info succeeded after one intermittent provider error 10000; exact provider root cause remains UNKNOWN. No remote write, migration or restore was performed.
+- Local export/import recovery drill PASS: `docs/evidence/TL-MVP-D1-LOCAL-RECOVERY-DRILL-2026-11-01.md`.
+- Versioned staging template/dry-run: `ops/staging/wrangler.staging.example.jsonc`, `ops/staging/README.md`.
+- Pilot procedure: `docs/operations/TL-MVP-PILOT-RUNBOOK-2026-11-01.md`; recovery procedure: `docs/operations/TL-D1-BACKUP-RECOVERY-RUNBOOK-2026-11-01.md`.
+- Classification: `MVP_PILOT_BLOCKED` until the owner records the four physical WhatsApp scenarios. Production remains `NOT_AUTHORIZED`.
+
 ## Customer tracking return P0 — 2026-11-01
 
 The P0 base/merge `fd1ee6be539755b50bb88cf9d118a1019a36bade` is verified on `rework/tl-order-tracking-return-p0-qa`. Application candidate `de368359ea18ced8571b8a36e20cd8f73f2f8d7a` is unchanged. Full QA is green: 30 files/101 tests, P0-specific 11 tests, typecheck, lint and `build:vinext`. Independent Critic and Integration Review remain valid PASS. Classification: `P0_TECHNICAL_PASS / P0_HUMAN_DEVICE_VALIDATION_PENDING`.

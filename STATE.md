@@ -2,7 +2,7 @@
 Updated: 2026-11-01
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
-Status: P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED
+Status: MVP_PILOT_BLOCKED
 Active contract: TL-TC-TACO-CLUB-P1B (`P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
 Execution HEAD: resolve dynamically with `git rev-parse HEAD`.
@@ -14,8 +14,17 @@ Production: `NOT_AUTHORIZED`
 
 - Read-only staging smoke: health/menu/static asset PASS; anonymous customer session/history boundaries and invalid tracking 401/404 PASS.
 - Operational audit evidence: `docs/evidence/TL-MVP-OPERATIONS-AUDIT-2026-11-01.md`.
-- Pilot blockers: physical WhatsApp return validation pending; account-specific D1 `info`/backup-restore evidence UNKNOWN; tracked staging deployment configuration is not self-contained.
-- No production, migration, deployment, resource creation or remote data mutation performed in this audit.
+- Pilot blockers: physical WhatsApp return validation pending; remote restore remains untested and account-specific retention is UNKNOWN.
+- Read-only D1 `info --json` and Time Travel bookmark checks succeeded after an intermittent provider error 10000; no remote write occurred.
+- Local export/import recovery drill passed. Versioned secret-free staging template, dry-run procedure and pilot runbook are recorded.
+- No production, migration, deployment, resource creation or remote data mutation performed in this readiness block.
+
+## MVP pilot operational readiness — 2026-11-01
+
+- Canonical tracker: GitHub Issue #12, `MVP Pilot Operational Readiness`.
+- Branch: `rework/mvp-pilot-readiness`.
+- Evidence: `docs/evidence/TL-MVP-D1-LOCAL-RECOVERY-DRILL-2026-11-01.md`, `docs/operations/TL-D1-BACKUP-RECOVERY-RUNBOOK-2026-11-01.md`, `docs/operations/TL-MVP-PILOT-RUNBOOK-2026-11-01.md`.
+- Classification: `MVP_PILOT_BLOCKED` until the owner records the four physical WhatsApp scenarios. Production remains `NOT_AUTHORIZED`.
 
 ## Customer tracking return P0 — closure checkpoint — 2026-11-01
 

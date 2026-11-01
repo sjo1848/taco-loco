@@ -1,9 +1,9 @@
 # TL-TC-ORDER-TRACKING-RETURN-P0 — consolidated closure review
 
-Date: 2026-11-01  
-Branch: `rework/tl-order-tracking-return-p0-qa`  
-Base/merge: `fd1ee6be539755b50bb88cf9d118a1019a36bade`  
-Application candidate: `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`  
+Date: 2026-11-01
+Branch: `rework/tl-order-tracking-return-p0-qa`
+Base/merge: `fd1ee6be539755b50bb88cf9d118a1019a36bade`
+Application candidate: `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`
 Production: `NOT_AUTHORIZED`
 
 ## QA
