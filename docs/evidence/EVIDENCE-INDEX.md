@@ -179,6 +179,14 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Human boundary: actual WhatsApp mobile-app/deep-link, WhatsApp Web and no-app behavior remain `HUMAN_TRACKING_WORKFLOW_REVIEW`; no message delivery is asserted.
 - Production: NOT_AUTHORIZED.
 
+## Customer tracking return P0 — closure review — 2026-11-01
+
+- Base/merge: `fd1ee6be539755b50bb88cf9d118a1019a36bade`; application candidate unchanged at `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`.
+- QA: full 30-file/101-test suite, P0-specific 11 tests, typecheck, lint and `build:vinext` PASS.
+- Independent Critic: reused valid PASS. Integration Review: reused valid PASS.
+- Classification: `P0_TECHNICAL_PASS / P0_HUMAN_DEVICE_VALIDATION_PENDING`.
+- Evidence: `docs/reviews/TL-TC-ORDER-TRACKING-RETURN-P0-closure-review-2026-11-01.md`.
+
 ## Taco Club P1a — optional Google identity foundation — 2026-10-27
 
 - Contract: PROVEN local implementation — `docs/contracts/TL-TC-TACO-CLUB-P1A.md`.

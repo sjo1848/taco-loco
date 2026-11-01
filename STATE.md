@@ -10,6 +10,16 @@ Application candidate: `2c15d6f0255fe1df411ef1128d177dc1c8a8206a`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
+## Customer tracking return P0 — closure checkpoint — 2026-11-01
+
+- Base/merge verified: `fd1ee6be539755b50bb88cf9d118a1019a36bade`.
+- Application candidate: `de368359ea18ced8571b8a36e20cd8f73f2f8d7a`; no P0 implementation changes were introduced after its validated staging evidence.
+- Automated QA: full suite 30 files/101 tests, P0-specific 2 files/11 tests, typecheck, lint and `build:vinext` PASS.
+- Independent Critic and Integration Review remain valid PASS for the unchanged candidate.
+- Classification: `P0_TECHNICAL_PASS / P0_HUMAN_DEVICE_VALIDATION_PENDING`.
+- Evidence: `docs/reviews/TL-TC-ORDER-TRACKING-RETURN-P0-closure-review-2026-11-01.md`.
+- Pending only: real WhatsApp mobile-app, WhatsApp Web and no-app/device return checks. No message delivery is claimed.
+
 ## Taco Club P1b-B — claim policy checkpoint
 
 - Branch: `feature/tl-taco-club-p1b-b`, based on integrated P1b-A merge `3197611bd8bf464c29fc1418cd2b5d4b9cefea7d`.

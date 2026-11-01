@@ -1,5 +1,11 @@
 # Taco Loco — Resume / Orchestration State
 
+## Customer tracking return P0 — 2026-11-01
+
+The P0 base/merge `fd1ee6be539755b50bb88cf9d118a1019a36bade` is verified on `rework/tl-order-tracking-return-p0-qa`. Application candidate `de368359ea18ced8571b8a36e20cd8f73f2f8d7a` is unchanged. Full QA is green: 30 files/101 tests, P0-specific 11 tests, typecheck, lint and `build:vinext`. Independent Critic and Integration Review remain valid PASS. Classification: `P0_TECHNICAL_PASS / P0_HUMAN_DEVICE_VALIDATION_PENDING`.
+
+Only real-device WhatsApp app, WhatsApp Web and no-app return behavior remain for human review. No production, merge or infrastructure action is authorized. Evidence: `docs/reviews/TL-TC-ORDER-TRACKING-RETURN-P0-closure-review-2026-11-01.md`.
+
 Updated: 2026-10-28
 
 - Repository: `sjo1848/taco-loco`
