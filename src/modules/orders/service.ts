@@ -188,10 +188,11 @@ export function buildRepeatOrderLines(sourceLines: Array<{ productId: string | n
 export async function repeatCustomerOrder(customerId: string, orderId: string, clientReference: string) {
   const source = await db.order.findFirst({ where: { id: orderId, customerId }, include: { lines: true } });
   if (!source) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
+  if (source.fulfillment === "DINE_IN") throw new AppError("ORDER_REPEAT_UNSUPPORTED", "Este pedido no puede repetirse desde la cuenta.", 409);
   const sourceLines = source.lines as Array<{ productId: string | null; quantity: number; modifiersSnapshot: unknown }>;
   const lines = buildRepeatOrderLines(sourceLines);
   if (lines.some((line) => !line.productId)) throw new AppError("PRODUCT_NOT_AVAILABLE", "Este pedido contiene un producto que ya no puede repetirse.", 409);
-  return createPublicOrderIntent({ clientReference, fulfillment: source.fulfillment === "DINE_IN" ? "PICKUP" : source.fulfillment, deliveryAddress: source.deliveryAddress, deliveryReference: source.deliveryReference, transferHolderName: source.transferHolderName, lines }, customerId);
+  return createPublicOrderIntent({ clientReference, fulfillment: source.fulfillment, deliveryAddress: source.deliveryAddress, deliveryReference: source.deliveryReference, transferHolderName: source.transferHolderName, lines }, customerId);
 }
 
 export async function transitionOrder(input: unknown, actorId: string) {
