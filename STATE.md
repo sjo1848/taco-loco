@@ -10,6 +10,16 @@ Application candidate: `2c15d6f0255fe1df411ef1128d177dc1c8a8206a`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
+## UX/UI roadmap — 2026-11-02
+
+- Canonical tracker: GitHub Issue #19 with children #20, #21, #22, #23 and #24.
+- Composition branch: `integration/tl-ux-roadmap-20261102`; resolve the exact HEAD dynamically.
+- Draft source PRs: #25 menu/checkout, #26 admin operations, #27 account/tracking. The approved brand baseline from #21 is reused; no duplicate implementation was introduced.
+- Local QA: typecheck, 30 files/101 tests and `build:vinext` PASS. Source PR CI is green.
+- Evidence: `docs/evidence/TL-UX-ROADMAP-QA-2026-11-02.md`.
+- Independent Critic and Integration Review: `PASS_WITH_CONDITIONS`; conditions are human visual acceptance, physical WhatsApp validation and staging authorization.
+- No business logic, persistence, payment, authentication, infrastructure or production resources changed.
+
 ## MVP operational audit — 2026-11-01
 
 - Read-only staging smoke: health/menu/static asset PASS; anonymous customer session/history boundaries and invalid tracking 401/404 PASS.

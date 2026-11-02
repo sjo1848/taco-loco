@@ -1,5 +1,15 @@
 # Taco Loco — Resume / Orchestration State
 
+## Active UX roadmap composition — 2026-11-02
+
+- Canonical tracker: GitHub Issue #19; children #20, #21, #22, #23 and #24.
+- Composition branch: `integration/tl-ux-roadmap-20261102`; resolve HEAD dynamically.
+- Draft PRs: #25 menu/checkout, #26 admin operations, #27 account/tracking. Brand system #21 is already present in the approved baseline.
+- Local QA: typecheck, 30 files/101 tests and `build:vinext` PASS; source PR CI is green.
+- Evidence: `docs/evidence/TL-UX-ROADMAP-QA-2026-11-02.md`.
+- Review status: `PASS_WITH_CONDITIONS`; human visual review, physical WhatsApp validation and staging authorization remain pending.
+- Do not merge, deploy, migrate remote D1 or modify production. Rewards remain disabled.
+
 ## Active checkpoint — MVP Pilot Operational Readiness / Issue #12
 
 - Current branch: `rework/mvp-pilot-readiness`; current HEAD: resolve dynamically.

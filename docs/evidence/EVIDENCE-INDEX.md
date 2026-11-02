@@ -1,6 +1,17 @@
 # Evidence Index — Taco Loco
 As of: 2026-10-27
 
+## UX/UI roadmap composition — 2026-11-02
+
+- Issues: #19 epic; #20 menu/checkout, #21 brand baseline, #22 QA, #23 admin operations, #24 account/tracking.
+- Composition branch: `integration/tl-ux-roadmap-20261102`.
+- Draft PRs: #25, #26, #27. Brand baseline from #21 is reused.
+- QA: typecheck PASS; 30 files/101 tests PASS; `build:vinext` PASS; source PR CI PASS. Broad local lint is contaminated by the pre-existing untracked generated `tmp/` tree and is not used as a green signal.
+- Browser evidence: `docs/evidence/TL-UX-ROADMAP-QA-2026-11-02.md` and local captures under `output/playwright/`.
+- Independent Critic: `PASS_WITH_CONDITIONS`; `docs/reviews/TL-UX-ROADMAP-independent-critic-2026-11-02.md`.
+- Integration Review: `PASS_WITH_CONDITIONS`; `docs/reviews/TL-UX-ROADMAP-integration-review-2026-11-02.md`.
+- Boundary: human visual acceptance, physical WhatsApp validation and staging authorization remain pending; production remains `NOT_AUTHORIZED`.
+
 ## Taco Club P1b-A — Mis pedidos local implementation — 2026-10-31
 
 - Base: integrated P1a merge `0a0a9ff370291be04a47d19232954979630fcd01`.
