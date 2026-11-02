@@ -120,3 +120,12 @@ export async function applyD1WorkflowActionWith(db: D1Database, input: D1Workflo
   assertBatchSucceeded(results);
   if (Number(results[0]?.meta?.changes ?? 0) !== 1) throw new Error("D1_WORKFLOW_ACTION_REJECTED");
 }
+
+export async function reportD1CustomerPaymentWith(db: D1Database, token: string) {
+  const now = new Date().toISOString();
+  const update = db.prepare(`UPDATE "Order" SET "paymentStatus" = 'REPORTED', "paymentReportedAt" = ?, "updatedAt" = ? WHERE "publicTrackingToken" = ? AND "fulfillment" = 'DELIVERY' AND "verificationStatus" = 'PENDING' AND "paymentStatus" = 'PENDING'`).bind(now, now, token);
+  const event = db.prepare(`INSERT INTO "OrderEvent" ("id", "sequence", "orderId", "fromStatus", "toStatus", "reason", "kind", "createdAt", "actorId") SELECT ?, COALESCE(MAX("sequence"), 0) + 1, "id", "status", "status", 'Pago informado por el cliente', 'PAYMENT_REPORTED', ?, NULL FROM "Order" WHERE "publicTrackingToken" = ? AND "paymentStatus" = 'REPORTED' AND "paymentReportedAt" = ?`).bind(crypto.randomUUID(), now, token, now);
+  const results = await db.batch([update, event]);
+  assertBatchSucceeded(results);
+  return Number(results[0]?.meta?.changes ?? 0) === 1;
+}

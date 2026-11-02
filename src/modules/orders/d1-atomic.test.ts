@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { D1Database } from "@cloudflare/workers-types";
-import { applyD1WorkflowActionWith, createD1OrderWith, transitionD1OrderWith } from "./d1-atomic";
+import { applyD1WorkflowActionWith, createD1OrderWith, reportD1CustomerPaymentWith, transitionD1OrderWith } from "./d1-atomic";
 
 function fakeD1(options: { changes?: number; reject?: boolean } = {}) {
   const sql: string[] = [];
@@ -101,5 +101,19 @@ describe("D1 atomic order adapter", () => {
     const { db, sql } = fakeD1();
     await transitionD1OrderWith(db, { orderId: order.id, fromStatus: "RECEIVED", toStatus: "CONFIRMED", reason: "Pago verificado", actorId: "44444444-4444-4444-8444-444444444444", cancellationReason: null, confirmedAt: new Date().toISOString(), closedAt: null, verificationStatus: "VERIFIED", verificationResolvedAt: new Date().toISOString(), paymentStatus: "CONFIRMED", paymentConfirmedAt: new Date().toISOString(), requireConfirmedPayment: true });
     expect(sql[0]).toContain('"paymentStatus" = \'CONFIRMED\'');
+  });
+
+  it("reports a customer transfer atomically and only inserts its event for the changed row", async () => {
+    const { db, sql, bindings } = fakeD1();
+    await expect(reportD1CustomerPaymentWith(db, "tracking-token")).resolves.toBe(true);
+    expect(sql[0]).toContain('"paymentStatus" = \'REPORTED\'');
+    expect(sql[0]).toContain('"paymentStatus" = \'PENDING\'');
+    expect(sql[1]).toContain('"paymentReportedAt" = ?');
+    expect(bindings[1]).toContain("tracking-token");
+  });
+
+  it("rejects a payment report when the conditional update changes no row", async () => {
+    const { db } = fakeD1({ changes: 0 });
+    await expect(reportD1CustomerPaymentWith(db, "tracking-token")).resolves.toBe(false);
   });
 });

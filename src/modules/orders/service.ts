@@ -175,6 +175,28 @@ export async function createPublicOrderIntent(input: unknown, customerId: string
   }
 }
 
+export async function reportCustomerPayment(token: string) {
+  if (isD1Runtime) {
+    const { reportD1CustomerPayment } = await import("@/modules/orders/d1-atomic.worker");
+    const changed = await reportD1CustomerPayment(token);
+    if (changed) return { reused: false };
+    const existing = await db.order.findUnique({ where: { publicTrackingToken: token }, select: { fulfillment: true, verificationStatus: true, paymentStatus: true } });
+    if (existing?.fulfillment === "DELIVERY" && existing.verificationStatus === "PENDING" && existing.paymentStatus === "REPORTED") return { reused: true };
+    throw new AppError("PAYMENT_REPORT_NOT_AVAILABLE", "Este pedido no admite informar pago.", 409);
+  }
+  await db.$transaction(async (tx: { order: typeof db.order; orderEvent: typeof db.orderEvent }) => {
+    const order = await tx.order.findUnique({ where: { publicTrackingToken: token } });
+    if (!order || order.fulfillment !== "DELIVERY" || order.verificationStatus !== "PENDING") throw new AppError("PAYMENT_REPORT_NOT_AVAILABLE", "Este pedido no admite informar pago.", 409);
+    if (order.paymentStatus === "REPORTED") return;
+    if (order.paymentStatus !== "PENDING") throw new AppError("PAYMENT_REPORT_NOT_AVAILABLE", "Este pedido no admite informar pago.", 409);
+    const result = await tx.order.updateMany({ where: { id: order.id, paymentStatus: "PENDING", verificationStatus: "PENDING" }, data: { paymentStatus: "REPORTED", paymentReportedAt: new Date() } });
+    if (result.count !== 1) throw new AppError("PAYMENT_REPORT_NOT_AVAILABLE", "Este pedido no admite informar pago.", 409);
+    await tx.orderEvent.create({ data: { orderId: order.id, fromStatus: order.status, toStatus: order.status, reason: "Pago informado por el cliente", kind: "PAYMENT_REPORTED" } });
+  });
+  const order = await db.order.findUnique({ where: { publicTrackingToken: token }, select: { paymentStatus: true } });
+  return { reused: order?.paymentStatus === "REPORTED" };
+}
+
 export async function transitionOrder(input: unknown, actorId: string) {
   const parsed = transitionOrderInputSchema.parse(input);
   const current = await db.order.findUnique({ where: { id: parsed.orderId } });

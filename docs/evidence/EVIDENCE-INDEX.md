@@ -230,3 +230,10 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - `docs/operations/TL-D1-BACKUP-RECOVERY-RUNBOOK-2026-11-01.md` — export, verification and recovery procedure; remote restore not executed.
 - `docs/operations/TL-MVP-PILOT-RUNBOOK-2026-11-01.md` — opening, order handling, monitoring, exception and closing procedure.
 - `ops/staging/wrangler.staging.example.jsonc` / `ops/staging/README.md` — versioned secret-free staging configuration and dry-run procedure.
+
+## Taco Pay manual transfer reporting — 2026-11-01
+
+- Contract: `docs/contracts/TL-TC-TACO-PAY-MANUAL.md` — `IMPLEMENTED_LOCALLY / STAGING_ONLY`.
+- Local evidence: `docs/evidence/TL-TC-TACO-PAY-MANUAL-LOCAL.md`.
+- Customer action is limited to DELIVERY `PENDING → REPORTED`, with atomic `PAYMENT_REPORTED` event and idempotent retries.
+- Operator-only `CONFIRM_PAYMENT_AND_ORDER` remains unchanged; no provider, bank API, wallet, remote migration or deployment was used.
