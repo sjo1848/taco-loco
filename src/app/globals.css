@@ -96,6 +96,17 @@ h1 { margin: 0; font-size: clamp(2.5rem, 12vw, 5rem); line-height: .95; }
 .search-empty { margin: 24px 0; padding: 18px; border: 1px dashed var(--border); border-radius: 12px; color: var(--muted); }
 .selection-help { margin: 0 0 12px; color: var(--muted); font-size: .84rem; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+@media (max-width: 640px) {
+  .admin-page { padding-inline: 12px; }
+  .admin-header { align-items: stretch; flex-direction: column; }
+  .admin-header-actions { justify-content: stretch; }
+  .admin-header-actions .admin-button { flex: 1 1 10rem; }
+  .admin-product-row, .order-row { align-items: stretch; flex-direction: column; }
+  .admin-product-actions { justify-content: flex-start; }
+  .order-row__total { align-self: flex-start; }
+  .order-confirmation__header { flex-direction: column; }
+  .order-actions { display: grid; gap: 8px; }
+}
 .selection-bar { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); left: 16px; z-index: 21; display: flex; align-items: center; justify-content: space-between; width: min(100% - 32px, 748px); min-height: 48px; margin: auto; padding: 0 14px; border: 1px solid var(--yellow); border-radius: 12px; background: var(--surface-2); color: var(--cream); font: inherit; font-size: .85rem; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,.25); animation: selection-bar-in var(--motion-base) var(--ease-emphasis) both; }
 .selection-bar--updated { animation: selection-bar-update var(--motion-emphasis) var(--ease-emphasis); }
 .selection-bar strong { color: var(--yellow); }
