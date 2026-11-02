@@ -1,12 +1,12 @@
 # Taco Loco — Current Authoritative Project State
-Updated: 2026-11-01
+Updated: 2026-11-02
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
 Status: MVP_PILOT_BLOCKED
-Active contract: TL-TC-TACO-CLUB-P1B (`P1B_B_STAGING_VALIDATED / INTEGRATION_AUTHORIZATION_REQUIRED`)
+Active contract: ROADMAP-FINAL-COMPOSITION (`LOCAL_COMPOSED_PASS / STAGING_AUTHORIZATION_REQUIRED`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
 Execution HEAD: resolve dynamically with `git rev-parse HEAD`.
-Application candidate: `2c15d6f0255fe1df411ef1128d177dc1c8a8206a`
+Application candidate: `2fcb3931b567afca7d0cd470cfc159d0dc67e6b`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
@@ -19,6 +19,15 @@ Production: `NOT_AUTHORIZED`
 - Evidence: `docs/evidence/TL-UX-ROADMAP-QA-2026-11-02.md`.
 - Independent Critic and Integration Review: `PASS_WITH_CONDITIONS`; conditions are human visual acceptance, physical WhatsApp validation and staging authorization.
 - No business logic, persistence, payment, authentication, infrastructure or production resources changed.
+
+## Final roadmap composition — 2026-11-02
+
+- Branch: `integration/tl-roadmap-final-20261102`; verified common ancestor `5d422c7fb731144971293ebce3446f7c5bb6d5ca`.
+- PR #18 functional roadmap and PR #28 UX/UI composition are integrated locally without merging remote PRs. Exact technical candidate: `2fcb3931b567afca7d0cd470cfc159d0dc67e6b`.
+- Material regressions corrected: manual order notes survive persistence; manual-order JSON safely serializes BigInt; D1 payment reporting is idempotent and allocates a non-null global event sequence only for the winning update.
+- QA: 32 files/107 tests, typecheck, tracked-source lint and `build:vinext` PASS. Isolated SQLite/D1 regression proof PASS. Fresh browser inspection covered menu/checkout/account at 360, 390, 430, 768 and 1440 px.
+- Evidence: `docs/evidence/TL-ROADMAP-FINAL-COMPOSITION-2026-11-02.md`; review: `docs/reviews/TL-ROADMAP-FINAL-COMPOSITION-review-2026-11-02.md`.
+- Current boundary: local candidate ready for CI/independent review and staging authorization. Physical WhatsApp validation and human visual acceptance remain pending. Production remains `NOT_AUTHORIZED`.
 
 ## MVP operational audit — 2026-11-01
 

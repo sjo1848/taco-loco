@@ -1,5 +1,15 @@
 # Evidence Index — Taco Loco
-As of: 2026-10-27
+As of: 2026-11-02
+
+## Final roadmap composition — 2026-11-02
+
+- Candidate: `2fcb3931b567afca7d0cd470cfc159d0dc67e6b` on `integration/tl-roadmap-final-20261102`, composed from the verified common ancestor `5d422c7fb731144971293ebce3446f7c5bb6d5ca` with PR #18 and PR #28 surfaces.
+- Material fixes: manual `OrderLine.note` preservation, BigInt-safe manual-order response, D1 payment event winner guard and scalar sequence allocation.
+- Evidence: `docs/evidence/TL-ROADMAP-FINAL-COMPOSITION-2026-11-02.md`; regression harness `scripts/d1-final-regression-proof.sh`.
+- QA: typecheck PASS; 32 files/107 tests PASS; tracked-source ESLint PASS with 0 errors and pre-existing warnings; `build:vinext` PASS; isolated SQLite/D1 regression proof PASS.
+- Browser QA: fresh local menu/checkout/account inspection at 360, 390, 430, 768 and 1440 px. Existing tracking/admin/success captures and feature evidence remain valid for unchanged surfaces.
+- Review: `docs/reviews/TL-ROADMAP-FINAL-COMPOSITION-review-2026-11-02.md`, `PASS_WITH_CONDITIONS` pending CI, staging authorization and final human review.
+- Production: `NOT_AUTHORIZED`; no remote migration, deployment, merge or production action performed.
 
 ## UX/UI roadmap composition — 2026-11-02
 
