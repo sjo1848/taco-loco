@@ -1,6 +1,8 @@
 # TL-TC-TACO-CLUB-P2-LEDGER
 
-Status: `DESIGN_READY / BENEFITS_DISABLED`
+Status: `IMPLEMENTED_LOCALLY / BENEFITS_DISABLED`
+
+Authorization basis: the roadmap explicitly authorizes implementation of independent loyalty components while forbidding activation of percentages, discounts, points awards, or other economic benefits. This increment implements only the auditable, disabled foundation and remains subject to a commercial-rule Human Gate before any award path can be enabled.
 
 This increment prepares an auditable, idempotent ledger without deciding or activating commercial rewards. No points, discounts or promotions are credited.
 
