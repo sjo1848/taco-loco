@@ -236,3 +236,10 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Contract: `docs/contracts/TL-TC-TACO-CLUB-P1C.md`.
 - Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1C-LOCAL.md`.
 - Application candidate: `7cad8b4b2e22ea9f49c914e068a3a8710eb94491`; local technical checks PASS. Remote migration/deployment not performed.
+
+## Taco Pay manual transfer reporting — 2026-11-01
+
+- Contract: `docs/contracts/TL-TC-TACO-PAY-MANUAL.md` — `IMPLEMENTED_LOCALLY / STAGING_ONLY`.
+- Local evidence: `docs/evidence/TL-TC-TACO-PAY-MANUAL-LOCAL.md`.
+- Customer action is limited to DELIVERY `PENDING → REPORTED`, with atomic `PAYMENT_REPORTED` event and idempotent retries.
+- Operator-only `CONFIRM_PAYMENT_AND_ORDER` remains unchanged; no provider, bank API, wallet, remote migration or deployment was used.
