@@ -241,3 +241,22 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - `docs/operations/TL-D1-BACKUP-RECOVERY-RUNBOOK-2026-11-01.md` — export, verification and recovery procedure; remote restore not executed.
 - `docs/operations/TL-MVP-PILOT-RUNBOOK-2026-11-01.md` — opening, order handling, monitoring, exception and closing procedure.
 - `ops/staging/wrangler.staging.example.jsonc` / `ops/staging/README.md` — versioned secret-free staging configuration and dry-run procedure.
+
+## Taco Club P1c — preferences and repeat orders — 2026-11-01
+
+- Contract: `docs/contracts/TL-TC-TACO-CLUB-P1C.md`.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1C-LOCAL.md`.
+- Application candidate: `7cad8b4b2e22ea9f49c914e068a3a8710eb94491`; local technical checks PASS. Remote migration/deployment not performed.
+
+## Taco Pay manual transfer reporting — 2026-11-01
+
+- Contract: `docs/contracts/TL-TC-TACO-PAY-MANUAL.md` — `IMPLEMENTED_LOCALLY / STAGING_ONLY`.
+- Local evidence: `docs/evidence/TL-TC-TACO-PAY-MANUAL-LOCAL.md`.
+- Customer action is limited to DELIVERY `PENDING → REPORTED`, with atomic `PAYMENT_REPORTED` event and idempotent retries.
+- Operator-only `CONFIRM_PAYMENT_AND_ORDER` remains unchanged; no provider, bank API, wallet, remote migration or deployment was used.
+
+## Roadmap composed integration — 2026-11-02
+
+- Evidence: `docs/evidence/TL-TACO-CLUB-P2-PAY-INTEGRATION-2026-11-02.md`.
+- Review: `docs/reviews/TL-TACO-ROADMAP-INTEGRATION-2026-11-02.md`.
+- Local composed checks and migrations `0001`–`0007` PASS; no remote migration/deployment.

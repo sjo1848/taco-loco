@@ -9,6 +9,8 @@ function formatPrice(amount: number) { return new Intl.NumberFormat("es-AR", { s
 export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
   const [tracking, setTracking] = useState(initial);
   const [error, setError] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState("");
+  const [reportingPayment, setReportingPayment] = useState(false);
   const timer = useRef<number | undefined>(undefined);
   const delay = useRef(initialTrackingPollDelay);
   const visible = useRef(true);
@@ -18,6 +20,20 @@ export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
   useEffect(() => {
     clearActiveTrackingResume(window.localStorage);
   }, []);
+
+  async function reportPayment() {
+    setReportingPayment(true); setPaymentMessage("");
+    try {
+      const token = window.location.pathname.split("/").filter(Boolean).at(-1);
+      if (!token) throw new Error("TRACKING_TOKEN_MISSING");
+      const response = await fetch(`/api/orders/tracking/${encodeURIComponent(token)}/payment`, { method: "POST", credentials: "same-origin" });
+      if (response.ok) {
+        const result = await response.json() as { reused?: boolean };
+        setPaymentMessage(result.reused ? "El pago ya había sido informado. El local debe verificarlo antes de confirmar el pedido." : "Pago informado. El local debe verificarlo antes de confirmar el pedido.");
+      } else setPaymentMessage("Este pedido ya no admite informar el pago.");
+    } catch { setPaymentMessage("No pudimos informar el pago. Intentá nuevamente."); }
+    finally { setReportingPayment(false); }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -51,6 +67,7 @@ export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
       <section className="tracking-current"><p className="eyebrow">Estado actual</p><h2>{tracking.title}</h2><p>{tracking.message}</p></section></div></section>
     <div className="public-menu__content">
       {error && <p role="status">Estamos intentando actualizar el estado…</p>}
+      {tracking.fulfillment === "DELIVERY" && tracking.currentStage === "WAITING_PAYMENT_CONFIRMATION" && <section className="tracking-payment" aria-labelledby="tracking-payment-title"><h2 id="tracking-payment-title">¿Ya hiciste la transferencia?</h2><p>Informalo para que el local revise el ingreso. La confirmación final la realiza el operador.</p><button className="button" type="button" disabled={reportingPayment} onClick={() => void reportPayment()}>{reportingPayment ? "Informando…" : "Informé la transferencia"}</button>{paymentMessage && <p role="status">{paymentMessage}</p>}</section>}
       <section className="tracking-history" aria-labelledby="tracking-history-title"><h2 id="tracking-history-title">Historial</h2><ol>{tracking.history.map((event, index) => <li key={`${event.at}-${event.stage}-${index}`}><strong>{event.label}</strong><time dateTime={event.at} suppressHydrationWarning>{new Date(event.at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</time></li>)}</ol></section>
       <section className="tracking-summary" aria-labelledby="tracking-summary-title"><h2 id="tracking-summary-title">Pedido</h2>{tracking.lines.map((line, index) => <div key={`${line.name}-${index}`}><span>{line.quantity} × {line.name}</span>{line.modifiers.length > 0 && <small>{line.modifiers.map((modifier) => `${modifier.group}: ${modifier.option}`).join(" · ")}</small>}</div>)}<strong>Total: {formatPrice(tracking.totalAmount)}</strong></section>
     </div>
