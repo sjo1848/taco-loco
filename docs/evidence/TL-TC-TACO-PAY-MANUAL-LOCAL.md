@@ -2,6 +2,7 @@
 
 Date: 2026-11-01
 Branch: `feature/tl-taco-pay-manual`
+Technical candidate: `7d9bb17` (exact full SHA recorded by GitHub after push)
 Scope: local implementation only; no remote migration or deployment.
 
 ## Result
@@ -17,6 +18,8 @@ Repeated reports are idempotent: an already `REPORTED` order returns success wit
 - changed-file ESLint: PASS
 - `pnpm build:vinext`: PASS
 - `git diff --check`: PASS
+- D1 customer-report event insertion is guarded by a per-order `PAYMENT_REPORTED` uniqueness check; concurrent retries cannot append a second report event.
+- Network/error handling resets the customer action state; requests without an explicit Origin are rejected.
 
 ## Security and scope
 
