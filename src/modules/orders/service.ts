@@ -175,6 +175,26 @@ export async function createPublicOrderIntent(input: unknown, customerId: string
   }
 }
 
+export function buildRepeatOrderLines(sourceLines: Array<{ productId: string | null; quantity: number; modifiersSnapshot: unknown }>) {
+  return sourceLines.map((line: { productId: string | null; quantity: number; modifiersSnapshot: unknown }) => {
+    const modifiers = Array.isArray(line.modifiersSnapshot) ? line.modifiersSnapshot.flatMap((item: unknown) => {
+      if (!item || typeof item !== "object" || !("group" in item) || !("option" in item) || typeof item.group !== "string" || typeof item.option !== "string") return [];
+      return [{ group: item.group, option: item.option }];
+    }) : [];
+    return { productId: line.productId, quantity: line.quantity, modifiers };
+  });
+}
+
+export async function repeatCustomerOrder(customerId: string, orderId: string, clientReference: string) {
+  const source = await db.order.findFirst({ where: { publicTrackingToken: orderId, customerId }, include: { lines: true } });
+  if (!source) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
+  if (source.fulfillment === "DINE_IN") throw new AppError("ORDER_REPEAT_UNSUPPORTED", "Este pedido no puede repetirse desde la cuenta.", 409);
+  const sourceLines = source.lines as Array<{ productId: string | null; quantity: number; modifiersSnapshot: unknown }>;
+  const lines = buildRepeatOrderLines(sourceLines);
+  if (lines.some((line) => !line.productId)) throw new AppError("PRODUCT_NOT_AVAILABLE", "Este pedido contiene un producto que ya no puede repetirse.", 409);
+  return createPublicOrderIntent({ clientReference, fulfillment: source.fulfillment, deliveryAddress: source.deliveryAddress, deliveryReference: source.deliveryReference, transferHolderName: source.transferHolderName, lines }, customerId);
+}
+
 export async function transitionOrder(input: unknown, actorId: string) {
   const parsed = transitionOrderInputSchema.parse(input);
   const current = await db.order.findUnique({ where: { id: parsed.orderId } });

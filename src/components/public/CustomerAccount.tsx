@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { GoogleSignInButton } from "@/components/public/GoogleSignInButton";
 import type { PublicCustomer } from "@/modules/auth/customer-types";
 import { CustomerOrders } from "@/components/public/CustomerOrders";
+import { CustomerPreferences } from "@/components/public/CustomerPreferences";
 
 type AccountState = "loading" | "visitor" | "authenticating" | "authenticated" | "error";
 
@@ -74,5 +75,5 @@ export function CustomerAccount() {
     {(state === "visitor" || state === "authenticating") && <><GoogleSignInButton onStatusChange={handleAuthStatus} onAuthenticated={handleAuthenticated} />{state === "authenticating" && <p className="selection-help" role="status" aria-live="polite">Validando tu cuenta…</p>}<p className="selection-help" role="status" aria-live="polite">{message}</p></>}
     {state === "authenticated" && customer && <div className="customer-account" aria-live="polite"><p className="customer-account__welcome">¡Bienvenido{customer.displayName ? `, ${customer.displayName}` : " al Taco Club"}!</p><p className="selection-help">Tu sesión está activa en este navegador.</p><div className="selection-actions"><Link className="button" href="/menu">Ver menú</Link><button className="button button--secondary" type="button" onClick={logout}>Cerrar sesión</button></div>{message && <p className="selection-help" role="status">{message}</p>}</div>}
     <p className="selection-help"><Link href="/menu">Volver al menú</Link></p>
-  </section>{state === "authenticated" && customer && <CustomerOrders />}</main>;
+  </section>{state === "authenticated" && customer && <><CustomerOrders /><CustomerPreferences /></>}</main>;
 }

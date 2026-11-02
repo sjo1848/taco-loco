@@ -33,8 +33,34 @@ model Customer {
   identities     CustomerIdentity[]
   sessions       CustomerSession[]
   orders         Order[]
+  addresses      CustomerAddress[]
+  favorites      CustomerFavorite[]
 
   @@index([email])
+}
+
+model CustomerAddress {
+  id         String   @id @default(uuid()) @db.Uuid
+  customerId String   @db.Uuid
+  label      String
+  address    String
+  reference  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, updatedAt])
+}
+
+model CustomerFavorite {
+  customerId String   @db.Uuid
+  productId  String   @db.Uuid
+  createdAt  DateTime @default(now())
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([customerId, productId])
+  @@index([productId])
 }
 
 model CustomerIdentity {
@@ -267,6 +293,7 @@ model Product {
   updatedAt      DateTime               @updatedAt
   category       Category               @relation(fields: [categoryId], references: [id])
   modifierGroups ProductModifierGroup[]
+  favorites      CustomerFavorite[]
   orderLines     OrderLine[]
 
   @@index([categoryId, published, sortOrder])
