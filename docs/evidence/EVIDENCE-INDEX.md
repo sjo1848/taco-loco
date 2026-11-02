@@ -230,3 +230,9 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - `docs/operations/TL-D1-BACKUP-RECOVERY-RUNBOOK-2026-11-01.md` — export, verification and recovery procedure; remote restore not executed.
 - `docs/operations/TL-MVP-PILOT-RUNBOOK-2026-11-01.md` — opening, order handling, monitoring, exception and closing procedure.
 - `ops/staging/wrangler.staging.example.jsonc` / `ops/staging/README.md` — versioned secret-free staging configuration and dry-run procedure.
+
+## Taco Club P1c — preferences and repeat orders — 2026-11-01
+
+- Contract: `docs/contracts/TL-TC-TACO-CLUB-P1C.md`.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1C-LOCAL.md`.
+- Application candidate: `7cad8b4b2e22ea9f49c914e068a3a8710eb94491`; local technical checks PASS. Remote migration/deployment not performed.
