@@ -2,7 +2,7 @@
 
 Date: 2026-11-01
 Branch: `feature/tl-taco-pay-manual`
-Technical candidate: `7d9bb17` (exact full SHA recorded by GitHub after push)
+Technical candidate: `035133e70cd2a2e0c6498391eaa87106c2a16c8c`
 Scope: local implementation only; no remote migration or deployment.
 
 ## Result
