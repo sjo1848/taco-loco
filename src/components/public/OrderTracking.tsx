@@ -23,14 +23,16 @@ export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
 
   async function reportPayment() {
     setReportingPayment(true); setPaymentMessage("");
-    const token = window.location.pathname.split("/").filter(Boolean).at(-1);
-    if (!token) return;
-    const response = await fetch(`/api/orders/tracking/${encodeURIComponent(token)}/payment`, { method: "POST", credentials: "same-origin" });
-    setReportingPayment(false);
-    if (response.ok) {
-      const result = await response.json() as { reused?: boolean };
-      setPaymentMessage(result.reused ? "El pago ya había sido informado. El local debe verificarlo antes de confirmar el pedido." : "Pago informado. El local debe verificarlo antes de confirmar el pedido.");
-    } else setPaymentMessage("Este pedido ya no admite informar el pago.");
+    try {
+      const token = window.location.pathname.split("/").filter(Boolean).at(-1);
+      if (!token) throw new Error("TRACKING_TOKEN_MISSING");
+      const response = await fetch(`/api/orders/tracking/${encodeURIComponent(token)}/payment`, { method: "POST", credentials: "same-origin" });
+      if (response.ok) {
+        const result = await response.json() as { reused?: boolean };
+        setPaymentMessage(result.reused ? "El pago ya había sido informado. El local debe verificarlo antes de confirmar el pedido." : "Pago informado. El local debe verificarlo antes de confirmar el pedido.");
+      } else setPaymentMessage("Este pedido ya no admite informar el pago.");
+    } catch { setPaymentMessage("No pudimos informar el pago. Intentá nuevamente."); }
+    finally { setReportingPayment(false); }
   }
 
   useEffect(() => {

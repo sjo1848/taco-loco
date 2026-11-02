@@ -6,7 +6,7 @@ import { isPublicTrackingToken } from "@/modules/orders/tracking-token";
 
 const headers = { "cache-control": "no-store", "referrer-policy": "no-referrer" };
 export async function POST(request: Request, context: { params: Promise<{ token: string }> }) {
-  if (!isSameOrigin(request)) return NextResponse.json({ code: "CSRF_REJECTED" }, { status: 403, headers });
+  if (!request.headers.get("origin") || !isSameOrigin(request)) return NextResponse.json({ code: "CSRF_REJECTED" }, { status: 403, headers });
   const token = (await context.params).token;
   if (!isPublicTrackingToken(token)) return NextResponse.json({ code: "PAYMENT_REPORT_NOT_AVAILABLE" }, { status: 404, headers });
   try { const result = await reportCustomerPayment(token); return NextResponse.json({ reported: true, reused: result.reused }, { headers }); }
