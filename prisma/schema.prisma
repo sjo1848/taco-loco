@@ -33,8 +33,33 @@ model Customer {
   identities     CustomerIdentity[]
   sessions       CustomerSession[]
   orders         Order[]
+  loyaltyAccount LoyaltyAccount?
 
   @@index([email])
+}
+
+model LoyaltyAccount {
+  id           String               @id @default(uuid()) @db.Uuid
+  customerId   String               @unique @db.Uuid
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  customer     Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  transactions LoyaltyTransaction[]
+}
+
+model LoyaltyTransaction {
+  id             String         @id @default(uuid()) @db.Uuid
+  accountId      String         @db.Uuid
+  orderId        String?        @db.Uuid
+  kind           String
+  units          Int
+  idempotencyKey String         @unique
+  createdAt      DateTime       @default(now())
+  account        LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  order          Order?         @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([accountId, createdAt])
+  @@index([orderId])
 }
 
 model CustomerIdentity {
@@ -169,6 +194,7 @@ model Order {
   customer               Customer?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
   lines                  OrderLine[]
   events                 OrderEvent[]
+  loyaltyTransactions    LoyaltyTransaction[]
 
   @@index([status, createdAt])
   @@index([verificationStatus, createdAt])
