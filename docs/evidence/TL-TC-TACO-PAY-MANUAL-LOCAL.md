@@ -2,7 +2,7 @@
 
 Date: 2026-11-01
 Branch: `feature/tl-taco-pay-manual`
-Technical candidate: `035133e70cd2a2e0c6498391eaa87106c2a16c8c`
+Technical candidate: `ec66c533625318f6d435eb48d3c638613b260e90`
 Scope: local implementation only; no remote migration or deployment.
 
 ## Result
