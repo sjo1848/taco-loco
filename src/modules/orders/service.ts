@@ -103,14 +103,14 @@ function resolveModifiers(product: ManualProduct, modifiers: CreateManualOrderIn
   return modifiers.map((modifier) => ({ group: modifier.group, option: grouped.get(modifier.group)?.shift() ?? modifier.option }));
 }
 
-async function resolveCurrentProductLines(lines: Array<{ productId: string; quantity: number; modifiers: Array<{ group: string; option: string }> }>) {
+async function resolveCurrentProductLines(lines: Array<{ productId: string; quantity: number; modifiers: Array<{ group: string; option: string }>; note?: string | null }>) {
   const productIds = [...new Set(lines.map((line) => line.productId))];
   const products = await db.product.findMany({ where: { id: { in: productIds }, archivedAt: null, published: true, available: true }, include: { modifierGroups: { include: { modifierGroup: { include: { options: true } } } } } }) as ManualProduct[];
   const productsById = new Map(products.map((product) => [product.id, product]));
   const resolvedLines = lines.map((line) => {
     const product = productsById.get(line.productId);
     if (!product) throw new AppError("PRODUCT_NOT_AVAILABLE", "Uno de los productos ya no está disponible.", 400);
-    return { productId: product.id, productName: product.name, unitPriceAmount: product.priceAmount, quantity: line.quantity, modifiersSnapshot: resolveModifiers(product, line.modifiers), note: null };
+    return { productId: product.id, productName: product.name, unitPriceAmount: product.priceAmount, quantity: line.quantity, modifiersSnapshot: resolveModifiers(product, line.modifiers), note: line.note ?? null };
   });
   return { resolvedLines, subtotalAmount: resolvedLines.reduce((total, line) => total + line.unitPriceAmount * line.quantity, 0) };
 }

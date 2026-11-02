@@ -109,6 +109,8 @@ describe("D1 atomic order adapter", () => {
     expect(sql[0]).toContain('"paymentStatus" = \'REPORTED\'');
     expect(sql[0]).toContain('"paymentStatus" = \'PENDING\'');
     expect(sql[1]).toContain('"paymentReportedAt" = ?');
+    expect(sql[1]).toContain("WHERE changes() = 1");
+    expect(sql[1]).toContain('(SELECT COALESCE(MAX("sequence"), 0) + 1 FROM "OrderEvent")');
     expect(bindings[1]).toContain("tracking-token");
   });
 
