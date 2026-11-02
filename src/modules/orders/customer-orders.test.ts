@@ -9,6 +9,7 @@ const order = {
   verificationStatus: "VERIFIED",
   paymentStatus: "CONFIRMED",
   refundStatus: "NOT_REQUIRED",
+  publicTrackingToken: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ",
   totalAmount: 17000,
   deliveryFeeAmount: 3000,
   createdAt: "2026-10-31T12:00:00.000Z",
@@ -36,5 +37,7 @@ describe("customer order history", () => {
     expect(projection).not.toHaveProperty("publicTrackingToken");
     expect(projection).not.toHaveProperty("deliveryAddress");
     expect(projection).not.toHaveProperty("customerId");
+    expect(projection).not.toHaveProperty("orderId");
+    expect(projection.repeatPath).toMatch(/^\/api\/customer\/orders\/[A-Za-z0-9_-]{43}\/repeat$/);
   });
 });

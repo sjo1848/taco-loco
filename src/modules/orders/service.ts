@@ -186,7 +186,7 @@ export function buildRepeatOrderLines(sourceLines: Array<{ productId: string | n
 }
 
 export async function repeatCustomerOrder(customerId: string, orderId: string, clientReference: string) {
-  const source = await db.order.findFirst({ where: { id: orderId, customerId }, include: { lines: true } });
+  const source = await db.order.findFirst({ where: { publicTrackingToken: orderId, customerId }, include: { lines: true } });
   if (!source) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
   if (source.fulfillment === "DINE_IN") throw new AppError("ORDER_REPEAT_UNSUPPORTED", "Este pedido no puede repetirse desde la cuenta.", 409);
   const sourceLines = source.lines as Array<{ productId: string | null; quantity: number; modifiersSnapshot: unknown }>;

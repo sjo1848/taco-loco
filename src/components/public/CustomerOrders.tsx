@@ -17,11 +17,12 @@ export function CustomerOrders() {
   const [repeating, setRepeating] = useState<string | null>(null);
   const [repeatMessage, setRepeatMessage] = useState("");
 
-  async function repeatOrder(orderId: string) {
-    setRepeating(orderId); setRepeatMessage("");
+  async function repeatOrder(repeatPath: string | null, orderCode: string) {
+    if (!repeatPath) { setRepeatMessage("Este pedido no puede repetirse."); return; }
+    setRepeating(orderCode); setRepeatMessage("");
     const clientReference = `repeat-${crypto.randomUUID()}`;
     try {
-      const response = await fetch(`/api/customer/orders/${encodeURIComponent(orderId)}/repeat`, { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientReference }) });
+      const response = await fetch(repeatPath, { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientReference }) });
       const body = await response.json() as { tracking?: { path?: string } | null; message?: string };
       if (!response.ok) throw new Error(body.message ?? "No pudimos repetir el pedido.");
       setRepeatMessage(body.tracking?.path ? "Pedido repetido. Abrimos su seguimiento." : "Pedido repetido.");
@@ -57,7 +58,7 @@ export function CustomerOrders() {
     {loading && <p className="selection-help" role="status" aria-live="polite">Cargando tus pedidos…</p>}
     {error && <div role="alert"><p className="form-error">No pudimos cargar tus pedidos.</p><button className="button button--secondary" type="button" onClick={() => void load(null, false)}>Reintentar</button></div>}
     {!loading && !error && orders.length === 0 && <p className="selection-help">Todavía no tenés pedidos asociados a esta cuenta. Comprar como invitado sigue siendo posible.</p>}
-    {!loading && !error && orders.length > 0 && <div className="customer-orders" aria-live="polite">{orders.map((order) => <article className="customer-order-card" key={`${order.orderId}-${order.createdAt}`}><header><div><strong>{order.orderCode}</strong><p className="selection-help">{formatDate(order.createdAt)} · {order.fulfillment === "DELIVERY" ? "Delivery" : "Retiro"}</p></div><span className="order-status">{order.title}</span></header><p>{order.message}</p><div>{order.lines.map((line, index) => <div key={`${line.name}-${index}`}><span>{line.quantity} × {line.name}</span>{line.modifiers.length > 0 && <small> · {line.modifiers.map((modifier) => `${modifier.group}: ${modifier.option}`).join(", ")}</small>}</div>)}</div><strong>{formatPrice(order.totalAmount)}</strong><button className="button button--secondary" type="button" disabled={repeating !== null} onClick={() => void repeatOrder(order.orderId)}>{repeating === order.orderId ? "Repitiendo…" : "Repetir pedido"}</button></article>)}</div>}
+    {!loading && !error && orders.length > 0 && <div className="customer-orders" aria-live="polite">{orders.map((order) => <article className="customer-order-card" key={`${order.orderCode}-${order.createdAt}`}><header><div><strong>{order.orderCode}</strong><p className="selection-help">{formatDate(order.createdAt)} · {order.fulfillment === "DELIVERY" ? "Delivery" : "Retiro"}</p></div><span className="order-status">{order.title}</span></header><p>{order.message}</p><div>{order.lines.map((line, index) => <div key={`${line.name}-${index}`}><span>{line.quantity} × {line.name}</span>{line.modifiers.length > 0 && <small> · {line.modifiers.map((modifier) => `${modifier.group}: ${modifier.option}`).join(", ")}</small>}</div>)}</div><strong>{formatPrice(order.totalAmount)}</strong><button className="button button--secondary" type="button" disabled={repeating !== null || !order.repeatPath} onClick={() => void repeatOrder(order.repeatPath, order.orderCode)}>{repeating === order.orderCode ? "Repitiendo…" : order.repeatPath ? "Repetir pedido" : "No disponible"}</button></article>)}</div>}
     {repeatMessage && <p className="selection-help" role="status">{repeatMessage}</p>}
     {!loading && !error && nextCursor && <button className="button button--secondary" type="button" disabled={loadingMore} onClick={() => void load(nextCursor, true)}>{loadingMore ? "Cargando…" : "Ver más pedidos"}</button>}
   </section>;
