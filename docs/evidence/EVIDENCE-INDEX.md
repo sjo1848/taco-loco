@@ -243,3 +243,9 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - Local evidence: `docs/evidence/TL-TC-TACO-PAY-MANUAL-LOCAL.md`.
 - Customer action is limited to DELIVERY `PENDING → REPORTED`, with atomic `PAYMENT_REPORTED` event and idempotent retries.
 - Operator-only `CONFIRM_PAYMENT_AND_ORDER` remains unchanged; no provider, bank API, wallet, remote migration or deployment was used.
+
+## Roadmap composed integration — 2026-11-02
+
+- Evidence: `docs/evidence/TL-TACO-CLUB-P2-PAY-INTEGRATION-2026-11-02.md`.
+- Review: `docs/reviews/TL-TACO-ROADMAP-INTEGRATION-2026-11-02.md`.
+- Local composed checks and migrations `0001`–`0007` PASS; no remote migration/deployment.
