@@ -29,7 +29,7 @@ export type CustomerOrderSummary = {
   updatedAt: string;
   history: PublicTrackingEvent[];
   lines: PublicOrderTracking["lines"];
-  repeatPath: string | null;
+  repeatReference: string | null;
 };
 
 export type PublicOrderRecord = {
@@ -150,7 +150,7 @@ export function toCustomerOrderSummary(order: PublicOrderRecord): CustomerOrderS
     totalAmount: order.totalAmount, deliveryFeeAmount: order.deliveryFeeAmount,
     createdAt: iso(order.createdAt), updatedAt: iso(order.updatedAt), history,
     lines: order.lines.map((line) => ({ name: line.productName, quantity: line.quantity, modifiers: Array.isArray(line.modifiersSnapshot) ? line.modifiersSnapshot.filter((item): item is { group: string; option: string } => Boolean(item) && typeof item === "object" && "group" in item && "option" in item).map((item) => ({ group: item.group, option: item.option })) : [] })),
-    repeatPath: order.publicTrackingToken ? `/api/customer/orders/${order.publicTrackingToken}/repeat` : null,
+    repeatReference: order.id ?? null,
   };
 }
 

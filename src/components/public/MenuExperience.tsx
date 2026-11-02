@@ -74,6 +74,23 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   }, []);
 
   useEffect(() => {
+    try {
+      const saved = window.sessionStorage.getItem("taco-loco-repeat-draft");
+      if (!saved) return;
+      const draft = JSON.parse(saved) as { lines?: Array<{ productId: string; name: string; priceAmount: number; quantity: number; modifiers: SelectionLine["modifiers"] }> };
+      if (!Array.isArray(draft.lines) || draft.lines.length === 0) return;
+      window.setTimeout(() => {
+        setLines(draft.lines!.map((line) => ({ ...line, id: lineId(line.productId, line.modifiers) })));
+        setCheckout({ fulfillment: "PICKUP" });
+        setShowSummary(true);
+      }, 0);
+      window.sessionStorage.removeItem("taco-loco-repeat-draft");
+    } catch {
+      window.sessionStorage.removeItem("taco-loco-repeat-draft");
+    }
+  }, []);
+
+  useEffect(() => {
     const resumeTracking = () => {
       const resume = readActiveTrackingResume(window.localStorage);
       const handoff = handoffRef.current;

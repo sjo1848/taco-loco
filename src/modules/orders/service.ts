@@ -103,17 +103,21 @@ function resolveModifiers(product: ManualProduct, modifiers: CreateManualOrderIn
   return modifiers.map((modifier) => ({ group: modifier.group, option: grouped.get(modifier.group)?.shift() ?? modifier.option }));
 }
 
-export async function createManualOrder(input: unknown, actorId: string | null, clientReference: string | null = null, reason = "Pedido registrado manualmente", source: "WHATSAPP" | "PUBLIC_MENU" = "WHATSAPP", workflow: OrderWorkflow = { verificationStatus: "VERIFIED", paymentStatus: "NOT_REQUIRED", deliveryAddress: null, deliveryReference: null, deliveryFeeAmount: 0, transferHolderName: null, customerId: null }) {
-  const parsed = createManualOrderInputSchema.parse(input);
-  const productIds = [...new Set(parsed.lines.map((line) => line.productId))];
+async function resolveCurrentProductLines(lines: Array<{ productId: string; quantity: number; modifiers: Array<{ group: string; option: string }> }>) {
+  const productIds = [...new Set(lines.map((line) => line.productId))];
   const products = await db.product.findMany({ where: { id: { in: productIds }, archivedAt: null, published: true, available: true }, include: { modifierGroups: { include: { modifierGroup: { include: { options: true } } } } } }) as ManualProduct[];
   const productsById = new Map(products.map((product) => [product.id, product]));
-  const resolvedLines = parsed.lines.map((line) => {
+  const resolvedLines = lines.map((line) => {
     const product = productsById.get(line.productId);
     if (!product) throw new AppError("PRODUCT_NOT_AVAILABLE", "Uno de los productos ya no está disponible.", 400);
-    return { productId: product.id, productName: product.name, unitPriceAmount: product.priceAmount, quantity: line.quantity, modifiersSnapshot: resolveModifiers(product, line.modifiers), note: line.note ?? null };
+    return { productId: product.id, productName: product.name, unitPriceAmount: product.priceAmount, quantity: line.quantity, modifiersSnapshot: resolveModifiers(product, line.modifiers), note: null };
   });
-  const subtotalAmount = resolvedLines.reduce((total, line) => total + line.unitPriceAmount * line.quantity, 0);
+  return { resolvedLines, subtotalAmount: resolvedLines.reduce((total, line) => total + line.unitPriceAmount * line.quantity, 0) };
+}
+
+export async function createManualOrder(input: unknown, actorId: string | null, clientReference: string | null = null, reason = "Pedido registrado manualmente", source: "WHATSAPP" | "PUBLIC_MENU" = "WHATSAPP", workflow: OrderWorkflow = { verificationStatus: "VERIFIED", paymentStatus: "NOT_REQUIRED", deliveryAddress: null, deliveryReference: null, deliveryFeeAmount: 0, transferHolderName: null, customerId: null }) {
+  const parsed = createManualOrderInputSchema.parse(input);
+  const { resolvedLines, subtotalAmount } = await resolveCurrentProductLines(parsed.lines.map((line) => ({ ...line, modifiers: line.modifiers })));
   const totalAmount = subtotalAmount + parsed.adjustmentAmount;
   if (totalAmount < 0) throw new AppError("INVALID_ORDER_TOTAL", "El total del pedido no puede ser negativo.", 400);
   if (isD1Runtime) {
@@ -186,13 +190,23 @@ export function buildRepeatOrderLines(sourceLines: Array<{ productId: string | n
 }
 
 export async function repeatCustomerOrder(customerId: string, orderId: string, clientReference: string) {
-  const source = await db.order.findFirst({ where: { publicTrackingToken: orderId, customerId }, include: { lines: true } });
+  const source = await db.order.findFirst({ where: { id: orderId, customerId }, include: { lines: true } });
   if (!source) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
   if (source.fulfillment === "DINE_IN") throw new AppError("ORDER_REPEAT_UNSUPPORTED", "Este pedido no puede repetirse desde la cuenta.", 409);
   const sourceLines = source.lines as Array<{ productId: string | null; quantity: number; modifiersSnapshot: unknown }>;
   const lines = buildRepeatOrderLines(sourceLines);
   if (lines.some((line) => !line.productId)) throw new AppError("PRODUCT_NOT_AVAILABLE", "Este pedido contiene un producto que ya no puede repetirse.", 409);
-  return createPublicOrderIntent({ clientReference, fulfillment: source.fulfillment, deliveryAddress: source.deliveryAddress, deliveryReference: source.deliveryReference, transferHolderName: source.transferHolderName, lines }, customerId);
+  return createPublicOrderIntent({ clientReference, fulfillment: source.fulfillment, lines }, customerId);
+}
+
+export async function prepareCustomerOrderRepeat(customerId: string, orderId: string) {
+  const source = await db.order.findFirst({ where: { id: orderId, customerId }, include: { lines: true } });
+  if (!source) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
+  if (source.fulfillment === "DINE_IN") throw new AppError("ORDER_REPEAT_UNSUPPORTED", "Este pedido no puede repetirse desde la cuenta.", 409);
+  const sourceLines = buildRepeatOrderLines(source.lines as Array<{ productId: string | null; quantity: number; modifiersSnapshot: unknown }>);
+  if (sourceLines.some((line) => !line.productId)) throw new AppError("PRODUCT_NOT_AVAILABLE", "Este pedido contiene un producto que ya no puede repetirse.", 409);
+  const { resolvedLines, subtotalAmount } = await resolveCurrentProductLines(sourceLines as Array<{ productId: string; quantity: number; modifiers: Array<{ group: string; option: string }> }>);
+  return { fulfillment: source.fulfillment, subtotalAmount, lines: resolvedLines.map((line) => ({ productId: line.productId, name: line.productName, priceAmount: line.unitPriceAmount, quantity: line.quantity, modifiers: line.modifiersSnapshot })) };
 }
 
 export async function reportCustomerPayment(token: string) {
