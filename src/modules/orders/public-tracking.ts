@@ -18,6 +18,7 @@ export type PublicOrderTracking = {
 };
 
 export type CustomerOrderSummary = {
+  orderId: string;
   orderCode: string;
   fulfillment: "PICKUP" | "DELIVERY";
   currentStage: PublicOrderStage;
@@ -32,6 +33,7 @@ export type CustomerOrderSummary = {
 };
 
 export type PublicOrderRecord = {
+  id?: string;
   orderNumber: number; fulfillment: "PICKUP" | "DINE_IN" | "DELIVERY"; status: string; verificationStatus: string; paymentStatus: string; refundStatus: string;
   totalAmount: number; deliveryFeeAmount: number; createdAt: Date | string; updatedAt: Date | string;
   lines: Array<{ productName: string; quantity: number; modifiersSnapshot: unknown }>;
@@ -143,6 +145,7 @@ export function toCustomerOrderSummary(order: PublicOrderRecord): CustomerOrderS
   const [title, message] = stageTitle(currentStage, fulfillment);
   const history = toPublicOrderHistory({ fulfillment, events: order.events });
   return {
+    orderId: order.id ?? "",
     orderCode: formatOrderNumber(order.orderNumber), fulfillment, currentStage, title, message,
     totalAmount: order.totalAmount, deliveryFeeAmount: order.deliveryFeeAmount,
     createdAt: iso(order.createdAt), updatedAt: iso(order.updatedAt), history,
