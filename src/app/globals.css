@@ -14,6 +14,12 @@ h1 { margin: 0; font-size: clamp(2.5rem, 12vw, 5rem); line-height: .95; }
 .button--whatsapp:hover, .button--whatsapp:focus-visible { background: #2f9b4d; }
 .whatsapp-icon { width: 1.25rem; height: 1.25rem; flex: 0 0 auto; }
 .public-menu { min-height: 100svh; padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
+.public-navigation { position: sticky; top: 0; z-index: 12; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 58px; padding: 8px 16px; background: rgba(25, 45, 30, .96); color: #fff; box-shadow: 0 4px 16px rgb(0 0 0 / 12%); }
+.public-navigation__brand { color: var(--yellow); font-weight: 900; letter-spacing: .03em; text-decoration: none; }
+.public-navigation__links { display: flex; align-items: center; gap: 6px; overflow-x: auto; }
+.public-navigation__links a, .public-navigation__links button { display: inline-flex; min-height: 38px; align-items: center; gap: 5px; border: 0; border-radius: 999px; background: transparent; color: #fff; padding: 0 10px; font: inherit; font-size: .78rem; font-weight: 800; text-decoration: none; white-space: nowrap; }
+.public-navigation__links a:hover, .public-navigation__links a:focus-visible, .public-navigation__links button:hover, .public-navigation__links button:focus-visible { background: rgba(255,255,255,.16); outline: 2px solid var(--yellow); outline-offset: 2px; }
+.public-navigation__count { display: inline-grid; min-width: 20px; min-height: 20px; place-items: center; border-radius: 999px; background: var(--yellow); color: #241a17; font-size: .7rem; }
 .brand-pattern { position: relative; isolation: isolate; overflow: hidden; background: var(--brand-green); color: #fff; }
 .brand-pattern::before { position: absolute; inset: 0; z-index: -1; background-image: var(--brand-pattern-primary); background-position: center; background-repeat: no-repeat; background-size: cover; content: ""; opacity: .22; }
 .brand-pattern--hero { border-bottom: 4px solid var(--brand-yellow); box-shadow: 0 12px 28px rgba(0,0,0,.18); }
@@ -83,6 +89,12 @@ h1 { margin: 0; font-size: clamp(2.5rem, 12vw, 5rem); line-height: .95; }
 .sauces-info__label { color: var(--cream); font-weight: 700; }
 .whatsapp-fallback { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); left: 16px; z-index: 21; margin: 0 auto; width: min(100% - 32px, 748px); padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--cream); text-align: center; box-shadow: 0 8px 24px rgb(0 0 0 / 12%); }
 .whatsapp-fallback a { color: var(--green); font-weight: 800; }
+.whatsapp-fallback { display: grid; gap: 8px; text-align: left; }
+.whatsapp-fallback > span { color: var(--muted); font-size: .88rem; }
+.checkout-name, .checkout-delivery-fields > label { display: grid; gap: 7px; margin-top: 12px; color: var(--cream); font-size: .9rem; font-weight: 700; }
+.checkout-name input, .checkout-delivery-fields input, .checkout-delivery-fields select { min-height: 46px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); color: var(--cream); padding: 0 12px; font: inherit; }
+.checkout-save-address { display: flex; align-items: center; gap: 8px; margin-top: 10px; color: var(--muted); font-size: .84rem; }
+.checkout-save-address input { width: 18px; height: 18px; }
 .operating-status { display: grid; gap: 4px; margin: 18px 0 26px; padding: 13px 15px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-2); }
 .operating-status strong { font-size: .9rem; }
 .operating-status span { color: var(--muted); font-size: .82rem; }
@@ -205,6 +217,8 @@ h1 { margin: 0; font-size: clamp(2.5rem, 12vw, 5rem); line-height: .95; }
 .admin-user { width: min(100%, 980px); margin: 16px auto 24px; color: var(--muted); font-size: .9rem; }
 .admin-panel { padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
 .admin-toolbar { display: grid; gap: 10px; margin-bottom: 16px; }
+.order-pending-toggle { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: .82rem; }
+.order-pending-toggle input { width: 18px; min-height: 18px; }
 .admin-product-list { display: grid; gap: 10px; }
 .admin-product-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
 .admin-product-row:last-child { border-bottom: 0; }

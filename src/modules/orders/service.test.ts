@@ -18,6 +18,10 @@ describe("public order intent checkout", () => {
     expect(createPublicOrderIntentInputSchema.parse({ clientReference: "client-reference-0003", fulfillment: "DELIVERY", deliveryAddress: "Calle 1 123", deliveryReference: "Portón negro", transferHolderName: "Ana Pérez", lines: [line] })).toMatchObject({ fulfillment: "DELIVERY", deliveryAddress: "Calle 1 123", transferHolderName: "Ana Pérez" });
   });
 
+  it("accepts an optional customer name without making guest checkout require an account", () => {
+    expect(createPublicOrderIntentInputSchema.parse({ clientReference: "client-reference-name-01", customerName: "  Sol Pérez  ", lines: [line] })).toMatchObject({ fulfillment: "PICKUP", customerName: "Sol Pérez" });
+  });
+
   it("only allows delivery confirmation after confirmed or explicitly verified reported payment", () => {
     expect(canConfirmDelivery("NOT_REQUIRED")).toBe(false);
     expect(canConfirmDelivery("PENDING")).toBe(false);
