@@ -93,8 +93,10 @@ async function runBrowser(name, launcher) {
         if (!successText || !(await trackingLink.count())) throw new Error("ORDER_SUCCESS_OR_TRACKING_MISSING");
         record("chromium:checkout:synthetic-order", "PASS", "Synthetic order created; success, tracking and WhatsApp fallback surfaced", [await screenshot(page, "chromium-success-390")]);
         if (popup) await popup.close();
-        await trackingLink.click();
-        await page.waitForURL(/\/pedido\//, { timeout: 30_000 });
+        await Promise.all([
+          page.waitForURL(/\/pedido\//, { timeout: 30_000 }),
+          trackingLink.click(),
+        ]);
         await page.waitForLoadState("domcontentloaded");
         if (!(await page.getByRole("heading", { name: /Pedido TL-/ }).count())) throw new Error("TRACKING_HEADING_MISSING");
         record("chromium:tracking:synthetic-order", "PASS", "Tracking deep-link loaded from the created order", [await screenshot(page, "chromium-tracking-390")]);
