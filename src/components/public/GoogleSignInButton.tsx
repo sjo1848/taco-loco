@@ -111,5 +111,5 @@ export function GoogleSignInButton({ onAuthenticated, onStatusChange }: { onAuth
 
   if (config && !config.enabled) return <p className="selection-help">El acceso con Google todavía no está habilitado.</p>;
   if (configError) return <div><p className="form-error" role="alert">No pudimos preparar el acceso con Google.</p><button className="admin-button admin-button--secondary" type="button" onClick={() => setConfigRetry((value) => value + 1)}>Reintentar acceso</button></div>;
-  return <div><div ref={containerRef} aria-label="Continuar con Google" />{error && <p className="form-error" role="alert">{error}</p>}{!error && <p className="selection-help" role="status" aria-live="polite">{config ? "Elegí una cuenta Google para continuar." : "Preparando el acceso…"}</p>}</div>;
+  return <div><div ref={containerRef} />{error && <p className="form-error" role="alert">{error}</p>}{!error && <p className="selection-help" role="status" aria-live="polite">{config ? "Elegí una cuenta Google para continuar." : "Preparando el acceso…"}</p>}</div>;
 }
