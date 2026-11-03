@@ -1,5 +1,5 @@
 # Taco Loco — Current Authoritative Project State
-Updated: 2026-11-02
+Updated: 2026-11-03
 Mode: DELIVERY
 Phase: IMPLEMENT / VALIDATE
 Status: MVP_PILOT_BLOCKED
@@ -9,6 +9,14 @@ Execution HEAD: resolve dynamically with `git rev-parse HEAD`.
 Application candidate: `1b568a91d0c7f32bdb1b7cf53073265af876edce`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
+
+## Final roadmap staging — 2026-11-03
+
+- PR #29 is integrated in `rework/tl-order-tracking-return-p0` at `29531325f3ccff8deddebd6935c28979a50395af`; the composed application candidate remains `1b568a91d0c7f32bdb1b7cf53073265af876edce`.
+- Existing staging D1 was backed up locally and verified, Time Travel bookmark was available, and exactly migrations `0006_customer_preferences.sql` and `0007_loyalty_ledger.sql` were applied.
+- Existing staging Worker deployment: `9a4f9f23-d59b-4d87-ace0-0c9c09bbeaca`; evidence: `docs/evidence/TL-ROADMAP-STAGING-2026-11-03.md`.
+- Bounded anonymous/admin staging journeys and fresh deployed visual evidence pass. Google account selection/history and physical WhatsApp return remain human acceptance controls; rewards remain disabled.
+- Current classification: `STAGING_INTEGRATION_PASS_WITH_HUMAN_ACCEPTANCE_PENDING`. MVP remains `MVP_PILOT_BLOCKED`; production remains `NOT_AUTHORIZED`.
 
 ## UX/UI roadmap — 2026-11-02
 

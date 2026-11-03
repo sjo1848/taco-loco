@@ -1,5 +1,13 @@
 # Taco Loco — Resume / Orchestration State
 
+## Final roadmap staging — 2026-11-03
+
+- Protected PR #29 merge: `29531325f3ccff8deddebd6935c28979a50395af` into `rework/tl-order-tracking-return-p0`.
+- Existing staging D1 backup, Time Travel check and migrations 0006/0007 passed. Final Worker deployment is `9a4f9f23-d59b-4d87-ace0-0c9c09bbeaca` at `https://taco-loco-staging-20260913.sjo1848.workers.dev`.
+- Bounded remote menu, pickup, delivery, admin payment/state transitions, tracking and cleanup passed. Fresh visual captures are in `output/playwright/staging-final/`.
+- Google account chooser was prepared but not completed in this run; physical WhatsApp app/Web return is also still human-device pending. Do not claim those controls as PASS.
+- Next action: one human acceptance session. Production remains `NOT_AUTHORIZED`; rewards remain disabled.
+
 ## Active UX roadmap composition — 2026-11-02
 
 - Canonical tracker: GitHub Issue #19; children #20, #21, #22, #23 and #24.
