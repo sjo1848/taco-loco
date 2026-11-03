@@ -22,6 +22,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "dev:vinext": "vinext dev --port 3001",
     "build:vinext": "prisma generate --no-engine && prisma generate --schema prisma/schema.d1.prisma && vinext build",
+    "qa:staging": "node scripts/qa-staging-agent.mjs",
     "start:vinext": "wrangler dev --config dist/server/wrangler.json",
     "deploy:vinext": "vinext-cloudflare deploy --config dist/server/wrangler.json"
   },
@@ -39,7 +40,9 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.11.0",
     "@cloudflare/vite-plugin": "^1.54.4",
+    "@axe-core/playwright": "4.11.0",
     "@cloudflare/workers-types": "5.20260911.1",
     "@types/node": "24.10.0",
     "@types/pg": "^8.21.0",
@@ -49,7 +52,9 @@
     "@vitejs/plugin-rsc": "^0.5.34",
     "eslint": "9.37.0",
     "eslint-config-next": "16.3.3",
+    "playwright": "1.56.1",
     "prisma": "6.19.3",
+    "playwright": "1.56.1",
     "tsx": "4.20.6",
     "typescript": "5.9.3",
     "vite": "^8.3.5",
