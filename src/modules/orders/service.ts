@@ -41,6 +41,7 @@ const publicOrderIntentLineSchema = manualOrderLineSchema.omit({ note: true });
 export const createPublicOrderIntentInputSchema = z.object({
   clientReference: z.string().trim().min(16).max(100),
   fulfillment: orderFulfillmentSchema.extract(["PICKUP", "DELIVERY"]).default("PICKUP"),
+  customerName: z.string().trim().max(160).nullable().optional(),
   deliveryAddress: z.string().trim().max(500).nullable().optional(),
   deliveryReference: z.string().trim().max(200).nullable().optional(),
   transferHolderName: z.string().trim().max(160).nullable().optional(),
@@ -168,7 +169,7 @@ export async function createPublicOrderIntent(input: unknown, customerId: string
   if (parsed.fulfillment === "DELIVERY" && !settings.deliveryEnabled) throw new AppError("DELIVERY_UNAVAILABLE", "El delivery no está disponible en este momento.", 400);
   const deliveryFeeAmount = parsed.fulfillment === "DELIVERY" ? settings.deliveryFeeAmount : 0;
   try {
-    return await createManualOrder({ fulfillment: parsed.fulfillment, customerName: null, customerPhone: null, tableLabel: null, notes: "Intención registrada desde el menú. Confirmar recepción por WhatsApp.", adjustmentAmount: deliveryFeeAmount, lines: parsed.lines }, null, parsed.clientReference, "Intención preparada desde el menú público", "PUBLIC_MENU", { verificationStatus: "PENDING", paymentStatus: parsed.fulfillment === "DELIVERY" ? "PENDING" : "NOT_REQUIRED", deliveryAddress: parsed.deliveryAddress ?? null, deliveryReference: parsed.deliveryReference ?? null, deliveryFeeAmount, transferHolderName: parsed.transferHolderName ?? null, publicTrackingToken: createPublicTrackingToken(), customerId });
+    return await createManualOrder({ fulfillment: parsed.fulfillment, customerName: parsed.customerName ?? null, customerPhone: null, tableLabel: null, notes: "Intención registrada desde el menú. Confirmar recepción por WhatsApp.", adjustmentAmount: deliveryFeeAmount, lines: parsed.lines }, null, parsed.clientReference, "Intención preparada desde el menú público", "PUBLIC_MENU", { verificationStatus: "PENDING", paymentStatus: parsed.fulfillment === "DELIVERY" ? "PENDING" : "NOT_REQUIRED", deliveryAddress: parsed.deliveryAddress ?? null, deliveryReference: parsed.deliveryReference ?? null, deliveryFeeAmount, transferHolderName: parsed.transferHolderName ?? null, publicTrackingToken: createPublicTrackingToken(), customerId });
   } catch (error) {
     const isClientReferenceConflict = error && typeof error === "object" && (("code" in error && error.code === "P2002") || ("message" in error && typeof error.message === "string" && error.message.includes("Order.clientReference")));
     if (isClientReferenceConflict) {

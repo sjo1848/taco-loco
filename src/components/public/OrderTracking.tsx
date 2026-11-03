@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { PublicOrderTracking } from "@/modules/orders/public-tracking";
 import { clearActiveTrackingResume } from "@/modules/orders/tracking-resume";
 import { initialTrackingPollDelay, nextTrackingPollDelay, terminalTrackingStages } from "./tracking-polling";
+import { PublicNavigation } from "@/components/public/PublicNavigation";
 function formatPrice(amount: number) { return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(amount); }
 
 export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
@@ -62,7 +63,7 @@ export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
     return () => { cancelled = true; generation += 1; requestController.current?.abort(); clear(); document.removeEventListener("visibilitychange", onVisibility); };
   }, []);
 
-  return <main className="public-menu public-tracking" ref={(node) => { if (node) node.setAttribute("aria-live", "polite"); }}>
+  return <main className="public-menu public-tracking" ref={(node) => { if (node) node.setAttribute("aria-live", "polite"); }}><PublicNavigation />
     <section className="brand-pattern brand-pattern--hero tracking-hero"><div className="public-menu__content"><p className="eyebrow">Taco Loco · Seguimiento</p><h1>Pedido {tracking.orderCode}</h1>
       <section className="tracking-current"><p className="eyebrow">Estado actual</p><h2>{tracking.title}</h2><p>{tracking.message}</p></section></div></section>
     <div className="public-menu__content">

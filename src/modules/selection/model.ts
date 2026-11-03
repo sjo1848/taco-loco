@@ -11,6 +11,7 @@ export type SelectionLine = {
 
 export type CheckoutDetails = {
   fulfillment: "PICKUP" | "DELIVERY";
+  customerName?: string;
   deliveryAddress?: string;
   deliveryReference?: string;
   transferHolderName?: string;

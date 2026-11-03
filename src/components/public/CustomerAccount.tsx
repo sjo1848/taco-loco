@@ -7,6 +7,7 @@ import { GoogleSignInButton } from "@/components/public/GoogleSignInButton";
 import type { PublicCustomer } from "@/modules/auth/customer-types";
 import { CustomerOrders } from "@/components/public/CustomerOrders";
 import { CustomerPreferences } from "@/components/public/CustomerPreferences";
+import { PublicNavigation } from "@/components/public/PublicNavigation";
 
 type AccountState = "loading" | "visitor" | "authenticating" | "authenticated" | "error";
 
@@ -66,7 +67,7 @@ export function CustomerAccount() {
     setMessage("Sesión cerrada.");
   }
 
-  return <main className="public-shell"><section className="public-panel" aria-labelledby="account-title">
+  return <main className="public-shell"><PublicNavigation /><section className="public-panel" aria-labelledby="account-title">
     <p className="eyebrow">Taco Club</p>
     <h1 id="account-title">Tu cuenta, cuando quieras</h1>
     <p className="selection-help">Comprar como invitado sigue siendo siempre posible. El acceso al Taco Club es opcional.</p>
