@@ -216,6 +216,7 @@
   "finalRoadmapMergeCommit": "29531325f3ccff8deddebd6935c28979a50395af",
   "finalRoadmapStagingDeploymentVersion": "9a4f9f23-d59b-4d87-ace0-0c9c09bbeaca",
   "finalRoadmapStagingEvidence": "docs/evidence/TL-ROADMAP-STAGING-2026-11-03.md",
+  "finalRoadmapStagingReview": "docs/reviews/TL-ROADMAP-STAGING-review-2026-11-03.md",
   "finalRoadmapStagingBackup": "LOCAL_RESTRICTED_EXPORT_VERIFIED",
   "finalRoadmapStagingMigrations": "0006_0007_APPLIED_REMOTE",
   "finalRoadmapStagingTimeTravel": "BOOKMARK_VERIFIED_PRE_MIGRATION",
