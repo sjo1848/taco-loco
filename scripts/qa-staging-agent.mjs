@@ -95,10 +95,12 @@ async function runBrowser(name, launcher) {
         if (popup) await popup.close();
         const trackingHref = await trackingLink.getAttribute("href");
         if (!trackingHref || !/^\/pedido\/[A-Za-z0-9_-]{40,}$/.test(trackingHref)) throw new Error("TRACKING_HREF_INVALID");
-        await Promise.all([
-          page.waitForURL(/\/pedido\//, { timeout: 10_000, waitUntil: "commit" }),
-          trackingLink.click({ noWaitAfter: true }),
-        ]);
+        await trackingLink.waitFor({ state: "visible" });
+        for (let attempt = 0; attempt < 3 && !/\/pedido\//.test(page.url()); attempt += 1) {
+          await trackingLink.click({ noWaitAfter: true });
+          await page.waitForTimeout(500);
+        }
+        if (!/\/pedido\//.test(page.url())) throw new Error("TRACKING_LINK_DID_NOT_NAVIGATE");
         await page.waitForLoadState("domcontentloaded");
         if (!(await page.getByRole("heading", { name: /Pedido TL-/ }).count())) throw new Error("TRACKING_HEADING_MISSING");
         record("chromium:tracking:synthetic-order", "PASS", "Tracking deep-link loaded from the created order", [await screenshot(page, "chromium-tracking-390")]);
