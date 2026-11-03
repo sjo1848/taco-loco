@@ -31,7 +31,7 @@ Production: `NOT_AUTHORIZED`
 
 ## Final QA closure — 2026-11-02
 
-- Exact HEAD `1b568a91d0c7f32bdb1b7cf53073265af876edce` adds the audited `fflate` override (`0.7.5`) and passes the full QA rerun.
+- Technical candidate `1b568a91d0c7f32bdb1b7cf53073265af876edce` adds the audited `fflate` override (`0.7.5`) and passes the full QA rerun. Execution HEAD after evidence synchronization: `449958b66cbf528bad1ede0f5f266f582a06086f`.
 - Fresh Playwright captures are preserved in `output/playwright/final-qa/` for required viewports and effective menu/checkout/account/tracking/admin surfaces.
 - D1 local isolated migrations 0006/0007 and the manual-notes/payment-sequence regression proof pass. Production audit reports zero vulnerabilities.
 - Classification: `READY_FOR_STAGING_AUTHORIZATION`; staging remains unexecuted and production remains `NOT_AUTHORIZED`.

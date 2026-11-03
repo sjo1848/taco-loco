@@ -1,6 +1,7 @@
 # Independent Review — Taco Loco PR #29
 
-HEAD revisado: `1b568a91d0c7f32bdb1b7cf53073265af876edce`  
+Execution HEAD revisado: `449958b66cbf528bad1ede0f5f266f582a06086f`  
+Technical candidate: `1b568a91d0c7f32bdb1b7cf53073265af876edce`  
 PR: #29
 
 ## Controles

@@ -2,7 +2,8 @@
 
 Fecha: 2026-11-02  
 Rama: `integration/tl-roadmap-final-20261102`  
-HEAD: `1b568a91d0c7f32bdb1b7cf53073265af876edce`  
+Execution HEAD: `449958b66cbf528bad1ede0f5f266f582a06086f`  
+Technical candidate: `1b568a91d0c7f32bdb1b7cf53073265af876edce`  
 Base: `rework/tl-order-tracking-return-p0`  
 PR: #29
 
@@ -11,7 +12,7 @@ PR: #29
 - HEAD local y remoto coinciden.
 - Base remota verificada: `5d422c7fb731144971293ebce3446f7c5bb6d5ca`.
 - PR #29 permanece draft y mergeable CLEAN.
-- CI `quality`: PASS.
+- CI `quality`: PASS on execution HEAD `449958b66cbf528bad1ede0f5f266f582a06086f`.
 - El diff funcional contiene la composición de PR #18 y #28 más el override de seguridad descrito abajo.
 
 ## QA funcional
