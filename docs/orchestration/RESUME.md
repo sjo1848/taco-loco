@@ -1,5 +1,15 @@
 # Taco Loco — Resume / Orchestration State
 
+## Active UX roadmap composition — 2026-11-02
+
+- Canonical tracker: GitHub Issue #19; children #20, #21, #22, #23 and #24.
+- Composition branch: `integration/tl-ux-roadmap-20261102`; resolve HEAD dynamically.
+- Draft PRs: #25 menu/checkout, #26 admin operations, #27 account/tracking. Brand system #21 is already present in the approved baseline.
+- Local QA: typecheck, 30 files/101 tests and `build:vinext` PASS; source PR CI is green.
+- Evidence: `docs/evidence/TL-UX-ROADMAP-QA-2026-11-02.md`.
+- Review status: `PASS_WITH_CONDITIONS`; human visual review, physical WhatsApp validation and staging authorization remain pending.
+- Do not merge, deploy, migrate remote D1 or modify production. Rewards remain disabled.
+
 ## Active checkpoint — MVP Pilot Operational Readiness / Issue #12
 
 - Current branch: `rework/mvp-pilot-readiness`; current HEAD: resolve dynamically.
@@ -122,6 +132,18 @@ The existing staging Worker now serves 26 real product WebP assets through Worke
 The fixed staging setting `deliveryEnabled=1`, `deliveryFeeAmount=3000`, `currency=ARS` enabled a bounded real DELIVERY journey on candidate `e6f2465`: server-side fee, address/transfer data, idempotency, payment report, atomic payment-and-order confirmation, operation gate, final delivery, events/SSE replay, admin/session and PICKUP regression all passed. Evidence: `docs/evidence/TL-TC-ORDER-FLOW-STAGING-e6f2465-delivery-2026-09-15.md`.
 
 The corrective workflow on exact candidate `ea99ca8` makes `/admin` redirect to `/admin/orders`, preserves product CRUD at `/admin/products`, and proves owner SSE arrival of pending PICKUP/DELIVERY submissions without refresh. Evidence: `docs/evidence/TL-STAGING-MANUAL-REVIEW-WORKFLOW-94719f8-2026-09-15.md`. Independent Critic and Integration Review: PASS.
+
+## Final roadmap composition — 2026-11-02
+
+The current local branch is `integration/tl-roadmap-final-20261102`. It composes PR #18 and PR #28 from the verified common ancestor `5d422c7fb731144971293ebce3446f7c5bb6d5ca`. Technical candidate: `1b568a91d0c7f32bdb1b7cf53073265af876edce`.
+
+The candidate fixes two material regressions found during composition: manual order line notes are preserved, and D1 `PAYMENT_REPORTED` uses a winner-only event insert with a scalar global sequence allocation. The isolated D1/SQLite proof passes with one event, `reused=false` then `true`, sequences `10,12`, and preserved manual line notes.
+
+Local QA is PASS: 32 test files/107 tests, typecheck, tracked-source ESLint (0 errors), `build:vinext`, and the D1 regression harness. Fresh browser inspection covered menu/checkout/account at 360, 390, 430, 768 and 1440 px. Evidence: `docs/evidence/TL-ROADMAP-FINAL-COMPOSITION-2026-11-02.md`.
+
+Next action: publish the composed branch and run CI/independent review, then request one bounded staging authorization. Do not merge, deploy, migrate remote D1 or modify production. Physical WhatsApp validation, human visual acceptance and production remain pending; production is `NOT_AUTHORIZED`.
+
+Final QA closure: final execution HEAD `1cc5ae4aee7ada47f5a0efe3765088eddaac1a53`, technical candidate `1b568a91d0c7f32bdb1b7cf53073265af876edce`, CI quality PASS, fresh Playwright captures preserved in `output/playwright/final-qa/`, isolated 0006/0007 migration proof PASS, security audit PASS after the fflate override. Classification is `READY_FOR_STAGING_AUTHORIZATION`; next remote action is the grouped staging authorization only.
 
 ## Next authorized objective
 

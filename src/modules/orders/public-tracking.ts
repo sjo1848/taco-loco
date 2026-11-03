@@ -29,13 +29,16 @@ export type CustomerOrderSummary = {
   updatedAt: string;
   history: PublicTrackingEvent[];
   lines: PublicOrderTracking["lines"];
+  repeatReference: string | null;
 };
 
 export type PublicOrderRecord = {
+  id?: string;
   orderNumber: number; fulfillment: "PICKUP" | "DINE_IN" | "DELIVERY"; status: string; verificationStatus: string; paymentStatus: string; refundStatus: string;
   totalAmount: number; deliveryFeeAmount: number; createdAt: Date | string; updatedAt: Date | string;
   lines: Array<{ productName: string; quantity: number; modifiersSnapshot: unknown }>;
   events: Array<{ sequence: bigint | number; kind?: string; toStatus: string; createdAt: Date | string }>;
+  publicTrackingToken?: string | null;
 };
 
 const MAX_SAFE_SEQUENCE = BigInt(Number.MAX_SAFE_INTEGER);
@@ -147,6 +150,7 @@ export function toCustomerOrderSummary(order: PublicOrderRecord): CustomerOrderS
     totalAmount: order.totalAmount, deliveryFeeAmount: order.deliveryFeeAmount,
     createdAt: iso(order.createdAt), updatedAt: iso(order.updatedAt), history,
     lines: order.lines.map((line) => ({ name: line.productName, quantity: line.quantity, modifiers: Array.isArray(line.modifiersSnapshot) ? line.modifiersSnapshot.filter((item): item is { group: string; option: string } => Boolean(item) && typeof item === "object" && "group" in item && "option" in item).map((item) => ({ group: item.group, option: item.option })) : [] })),
+    repeatReference: order.id ?? null,
   };
 }
 

@@ -103,17 +103,21 @@ function resolveModifiers(product: ManualProduct, modifiers: CreateManualOrderIn
   return modifiers.map((modifier) => ({ group: modifier.group, option: grouped.get(modifier.group)?.shift() ?? modifier.option }));
 }
 
-export async function createManualOrder(input: unknown, actorId: string | null, clientReference: string | null = null, reason = "Pedido registrado manualmente", source: "WHATSAPP" | "PUBLIC_MENU" = "WHATSAPP", workflow: OrderWorkflow = { verificationStatus: "VERIFIED", paymentStatus: "NOT_REQUIRED", deliveryAddress: null, deliveryReference: null, deliveryFeeAmount: 0, transferHolderName: null, customerId: null }) {
-  const parsed = createManualOrderInputSchema.parse(input);
-  const productIds = [...new Set(parsed.lines.map((line) => line.productId))];
+async function resolveCurrentProductLines(lines: Array<{ productId: string; quantity: number; modifiers: Array<{ group: string; option: string }>; note?: string | null }>) {
+  const productIds = [...new Set(lines.map((line) => line.productId))];
   const products = await db.product.findMany({ where: { id: { in: productIds }, archivedAt: null, published: true, available: true }, include: { modifierGroups: { include: { modifierGroup: { include: { options: true } } } } } }) as ManualProduct[];
   const productsById = new Map(products.map((product) => [product.id, product]));
-  const resolvedLines = parsed.lines.map((line) => {
+  const resolvedLines = lines.map((line) => {
     const product = productsById.get(line.productId);
     if (!product) throw new AppError("PRODUCT_NOT_AVAILABLE", "Uno de los productos ya no está disponible.", 400);
     return { productId: product.id, productName: product.name, unitPriceAmount: product.priceAmount, quantity: line.quantity, modifiersSnapshot: resolveModifiers(product, line.modifiers), note: line.note ?? null };
   });
-  const subtotalAmount = resolvedLines.reduce((total, line) => total + line.unitPriceAmount * line.quantity, 0);
+  return { resolvedLines, subtotalAmount: resolvedLines.reduce((total, line) => total + line.unitPriceAmount * line.quantity, 0) };
+}
+
+export async function createManualOrder(input: unknown, actorId: string | null, clientReference: string | null = null, reason = "Pedido registrado manualmente", source: "WHATSAPP" | "PUBLIC_MENU" = "WHATSAPP", workflow: OrderWorkflow = { verificationStatus: "VERIFIED", paymentStatus: "NOT_REQUIRED", deliveryAddress: null, deliveryReference: null, deliveryFeeAmount: 0, transferHolderName: null, customerId: null }) {
+  const parsed = createManualOrderInputSchema.parse(input);
+  const { resolvedLines, subtotalAmount } = await resolveCurrentProductLines(parsed.lines.map((line) => ({ ...line, modifiers: line.modifiers })));
   const totalAmount = subtotalAmount + parsed.adjustmentAmount;
   if (totalAmount < 0) throw new AppError("INVALID_ORDER_TOTAL", "El total del pedido no puede ser negativo.", 400);
   if (isD1Runtime) {
@@ -173,6 +177,58 @@ export async function createPublicOrderIntent(input: unknown, customerId: string
     }
     throw error;
   }
+}
+
+export function buildRepeatOrderLines(sourceLines: Array<{ productId: string | null; quantity: number; modifiersSnapshot: unknown }>) {
+  return sourceLines.map((line: { productId: string | null; quantity: number; modifiersSnapshot: unknown }) => {
+    const modifiers = Array.isArray(line.modifiersSnapshot) ? line.modifiersSnapshot.flatMap((item: unknown) => {
+      if (!item || typeof item !== "object" || !("group" in item) || !("option" in item) || typeof item.group !== "string" || typeof item.option !== "string") return [];
+      return [{ group: item.group, option: item.option }];
+    }) : [];
+    return { productId: line.productId, quantity: line.quantity, modifiers };
+  });
+}
+
+export async function repeatCustomerOrder(customerId: string, orderId: string, clientReference: string) {
+  const source = await db.order.findFirst({ where: { id: orderId, customerId }, include: { lines: true } });
+  if (!source) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
+  if (source.fulfillment === "DINE_IN") throw new AppError("ORDER_REPEAT_UNSUPPORTED", "Este pedido no puede repetirse desde la cuenta.", 409);
+  const sourceLines = source.lines as Array<{ productId: string | null; quantity: number; modifiersSnapshot: unknown }>;
+  const lines = buildRepeatOrderLines(sourceLines);
+  if (lines.some((line) => !line.productId)) throw new AppError("PRODUCT_NOT_AVAILABLE", "Este pedido contiene un producto que ya no puede repetirse.", 409);
+  return createPublicOrderIntent({ clientReference, fulfillment: source.fulfillment, lines }, customerId);
+}
+
+export async function prepareCustomerOrderRepeat(customerId: string, orderId: string) {
+  const source = await db.order.findFirst({ where: { id: orderId, customerId }, include: { lines: true } });
+  if (!source) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
+  if (source.fulfillment === "DINE_IN") throw new AppError("ORDER_REPEAT_UNSUPPORTED", "Este pedido no puede repetirse desde la cuenta.", 409);
+  const sourceLines = buildRepeatOrderLines(source.lines as Array<{ productId: string | null; quantity: number; modifiersSnapshot: unknown }>);
+  if (sourceLines.some((line) => !line.productId)) throw new AppError("PRODUCT_NOT_AVAILABLE", "Este pedido contiene un producto que ya no puede repetirse.", 409);
+  const { resolvedLines, subtotalAmount } = await resolveCurrentProductLines(sourceLines as Array<{ productId: string; quantity: number; modifiers: Array<{ group: string; option: string }> }>);
+  return { fulfillment: source.fulfillment, subtotalAmount, lines: resolvedLines.map((line) => ({ productId: line.productId, name: line.productName, priceAmount: line.unitPriceAmount, quantity: line.quantity, modifiers: line.modifiersSnapshot })) };
+}
+
+export async function reportCustomerPayment(token: string) {
+  if (isD1Runtime) {
+    const { reportD1CustomerPayment } = await import("@/modules/orders/d1-atomic.worker");
+    const changed = await reportD1CustomerPayment(token);
+    if (changed) return { reused: false };
+    const existing = await db.order.findUnique({ where: { publicTrackingToken: token }, select: { fulfillment: true, verificationStatus: true, paymentStatus: true } });
+    if (existing?.fulfillment === "DELIVERY" && existing.verificationStatus === "PENDING" && existing.paymentStatus === "REPORTED") return { reused: true };
+    throw new AppError("PAYMENT_REPORT_NOT_AVAILABLE", "Este pedido no admite informar pago.", 409);
+  }
+  let reused = false;
+  await db.$transaction(async (tx: { order: typeof db.order; orderEvent: typeof db.orderEvent }) => {
+    const order = await tx.order.findUnique({ where: { publicTrackingToken: token } });
+    if (!order || order.fulfillment !== "DELIVERY" || order.verificationStatus !== "PENDING") throw new AppError("PAYMENT_REPORT_NOT_AVAILABLE", "Este pedido no admite informar pago.", 409);
+    if (order.paymentStatus === "REPORTED") { reused = true; return; }
+    if (order.paymentStatus !== "PENDING") throw new AppError("PAYMENT_REPORT_NOT_AVAILABLE", "Este pedido no admite informar pago.", 409);
+    const result = await tx.order.updateMany({ where: { id: order.id, paymentStatus: "PENDING", verificationStatus: "PENDING" }, data: { paymentStatus: "REPORTED", paymentReportedAt: new Date() } });
+    if (result.count !== 1) throw new AppError("PAYMENT_REPORT_NOT_AVAILABLE", "Este pedido no admite informar pago.", 409);
+    await tx.orderEvent.create({ data: { orderId: order.id, fromStatus: order.status, toStatus: order.status, reason: "Pago informado por el cliente", kind: "PAYMENT_REPORTED" } });
+  });
+  return { reused };
 }
 
 export async function transitionOrder(input: unknown, actorId: string) {

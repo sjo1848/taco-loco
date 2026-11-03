@@ -1,5 +1,35 @@
 # Evidence Index — Taco Loco
-As of: 2026-10-27
+As of: 2026-11-02
+
+## Final QA and security review — 2026-11-02
+
+- HEAD: `1b568a91d0c7f32bdb1b7cf53073265af876edce`; PR #29 remains draft and CI quality PASS.
+- Evidence: `docs/evidence/TL-ROADMAP-FINAL-QA-2026-11-02.md`.
+- Fresh Playwright captures: `output/playwright/final-qa/`, menu at 360/390/430/768/1440 plus checkout, account, tracking boundary and admin.
+- D1 local isolated migration proof: 0006/0007 PASS. Full suite 32 files/107 tests, typecheck, tracked-source lint and build:vinext PASS.
+- Security: `fflate` override to 0.7.5; production audit reports 0 vulnerabilities.
+- Review: `docs/reviews/TL-ROADMAP-FINAL-QA-independent-review-2026-11-02.md`, PASS_WITH_CONDITIONS. Staging authorization and human visual/WhatsApp acceptance remain pending.
+
+## Final roadmap composition — 2026-11-02
+
+- Candidate: `2fcb3931b567afca7d0cd470cfc159d0dc67e6b` on `integration/tl-roadmap-final-20261102`, composed from the verified common ancestor `5d422c7fb731144971293ebce3446f7c5bb6d5ca` with PR #18 and PR #28 surfaces.
+- Material fixes: manual `OrderLine.note` preservation, BigInt-safe manual-order response, D1 payment event winner guard and scalar sequence allocation.
+- Evidence: `docs/evidence/TL-ROADMAP-FINAL-COMPOSITION-2026-11-02.md`; regression harness `scripts/d1-final-regression-proof.sh`.
+- QA: typecheck PASS; 32 files/107 tests PASS; tracked-source ESLint PASS with 0 errors and pre-existing warnings; `build:vinext` PASS; isolated SQLite/D1 regression proof PASS.
+- Browser QA: fresh local menu/checkout/account inspection at 360, 390, 430, 768 and 1440 px. Existing tracking/admin/success captures and feature evidence remain valid for unchanged surfaces.
+- Review: `docs/reviews/TL-ROADMAP-FINAL-COMPOSITION-review-2026-11-02.md`, `PASS_WITH_CONDITIONS` pending CI, staging authorization and final human review.
+- Production: `NOT_AUTHORIZED`; no remote migration, deployment, merge or production action performed.
+
+## UX/UI roadmap composition — 2026-11-02
+
+- Issues: #19 epic; #20 menu/checkout, #21 brand baseline, #22 QA, #23 admin operations, #24 account/tracking.
+- Composition branch: `integration/tl-ux-roadmap-20261102`.
+- Draft PRs: #25, #26, #27. Brand baseline from #21 is reused.
+- QA: typecheck PASS; 30 files/101 tests PASS; `build:vinext` PASS; source PR CI PASS. Broad local lint is contaminated by the pre-existing untracked generated `tmp/` tree and is not used as a green signal.
+- Browser evidence: `docs/evidence/TL-UX-ROADMAP-QA-2026-11-02.md` and local captures under `output/playwright/`.
+- Independent Critic: `PASS_WITH_CONDITIONS`; `docs/reviews/TL-UX-ROADMAP-independent-critic-2026-11-02.md`.
+- Integration Review: `PASS_WITH_CONDITIONS`; `docs/reviews/TL-UX-ROADMAP-integration-review-2026-11-02.md`.
+- Boundary: human visual acceptance, physical WhatsApp validation and staging authorization remain pending; production remains `NOT_AUTHORIZED`.
 
 ## Taco Club P1b-A — Mis pedidos local implementation — 2026-10-31
 
@@ -230,3 +260,22 @@ Coverage is conservative; no historical process or PASS state is fabricated.
 - `docs/operations/TL-D1-BACKUP-RECOVERY-RUNBOOK-2026-11-01.md` — export, verification and recovery procedure; remote restore not executed.
 - `docs/operations/TL-MVP-PILOT-RUNBOOK-2026-11-01.md` — opening, order handling, monitoring, exception and closing procedure.
 - `ops/staging/wrangler.staging.example.jsonc` / `ops/staging/README.md` — versioned secret-free staging configuration and dry-run procedure.
+
+## Taco Club P1c — preferences and repeat orders — 2026-11-01
+
+- Contract: `docs/contracts/TL-TC-TACO-CLUB-P1C.md`.
+- Evidence: `docs/evidence/TL-TC-TACO-CLUB-P1C-LOCAL.md`.
+- Application candidate: `7cad8b4b2e22ea9f49c914e068a3a8710eb94491`; local technical checks PASS. Remote migration/deployment not performed.
+
+## Taco Pay manual transfer reporting — 2026-11-01
+
+- Contract: `docs/contracts/TL-TC-TACO-PAY-MANUAL.md` — `IMPLEMENTED_LOCALLY / STAGING_ONLY`.
+- Local evidence: `docs/evidence/TL-TC-TACO-PAY-MANUAL-LOCAL.md`.
+- Customer action is limited to DELIVERY `PENDING → REPORTED`, with atomic `PAYMENT_REPORTED` event and idempotent retries.
+- Operator-only `CONFIRM_PAYMENT_AND_ORDER` remains unchanged; no provider, bank API, wallet, remote migration or deployment was used.
+
+## Roadmap composed integration — 2026-11-02
+
+- Evidence: `docs/evidence/TL-TACO-CLUB-P2-PAY-INTEGRATION-2026-11-02.md`.
+- Review: `docs/reviews/TL-TACO-ROADMAP-INTEGRATION-2026-11-02.md`.
+- Local composed checks and migrations `0001`–`0007` PASS; no remote migration/deployment.

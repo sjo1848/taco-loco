@@ -22,7 +22,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const admin = await requireAdmin();
-    return NextResponse.json(await createManualOrder(await request.json(), admin.id), { status: 201 });
+    const result = await createManualOrder(await request.json(), admin.id);
+    return new NextResponse(JSON.stringify(result, (_key, value) => typeof value === "bigint" ? value.toString() : value), { status: 201, headers: { "content-type": "application/json" } });
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") return NextResponse.json({ code: "UNAUTHORIZED" }, { status: 401 });
     if (error instanceof AppError) return NextResponse.json({ code: error.code, message: error.message }, { status: error.status });
