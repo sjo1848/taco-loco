@@ -87,9 +87,11 @@ async function runBrowser(name, launcher) {
         let popup;
         page.on("popup", (child) => { popup = child; });
         await page.getByRole("link", { name: /Enviar pedido/ }).click();
-        await page.waitForTimeout(1800);
-        const successText = await page.getByText(/Pedido preparado/).count();
+        const successNotice = page.getByText(/Pedido preparado/);
+        await successNotice.waitFor({ state: "visible", timeout: 15_000 });
+        const successText = await successNotice.count();
         const trackingLink = page.getByRole("link", { name: "Ver estado de mi pedido" });
+        await trackingLink.waitFor({ state: "visible", timeout: 5_000 });
         if (!successText || !(await trackingLink.count())) throw new Error("ORDER_SUCCESS_OR_TRACKING_MISSING");
         record("chromium:checkout:synthetic-order", "PASS", "Synthetic order created; success, tracking and WhatsApp fallback surfaced", [await screenshot(page, "chromium-success-390")]);
         if (popup) await popup.close();
