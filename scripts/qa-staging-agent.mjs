@@ -93,9 +93,11 @@ async function runBrowser(name, launcher) {
         if (!successText || !(await trackingLink.count())) throw new Error("ORDER_SUCCESS_OR_TRACKING_MISSING");
         record("chromium:checkout:synthetic-order", "PASS", "Synthetic order created; success, tracking and WhatsApp fallback surfaced", [await screenshot(page, "chromium-success-390")]);
         if (popup) await popup.close();
+        const trackingHref = await trackingLink.getAttribute("href");
+        if (!trackingHref || !/^\/pedido\/[A-Za-z0-9_-]{40,}$/.test(trackingHref)) throw new Error("TRACKING_HREF_INVALID");
         await Promise.all([
-          page.waitForURL(/\/pedido\//, { timeout: 30_000 }),
-          trackingLink.click(),
+          page.waitForURL(/\/pedido\//, { timeout: 10_000, waitUntil: "commit" }),
+          trackingLink.click({ noWaitAfter: true }),
         ]);
         await page.waitForLoadState("domcontentloaded");
         if (!(await page.getByRole("heading", { name: /Pedido TL-/ }).count())) throw new Error("TRACKING_HEADING_MISSING");
