@@ -93,6 +93,8 @@ async function runBrowser(name, launcher) {
         if (!successText || !(await trackingLink.count())) throw new Error("ORDER_SUCCESS_OR_TRACKING_MISSING");
         record("chromium:checkout:synthetic-order", "PASS", "Synthetic order created; success, tracking and WhatsApp fallback surfaced", [await screenshot(page, "chromium-success-390")]);
         if (popup) await popup.close();
+        // The success dialog is server-result driven; wait for its hydrated action before clicking.
+        await page.waitForTimeout(2_500);
         const trackingHref = await trackingLink.getAttribute("href");
         if (!trackingHref || !/^\/pedido\/[A-Za-z0-9_-]{40,}$/.test(trackingHref)) throw new Error("TRACKING_HREF_INVALID");
         await trackingLink.waitFor({ state: "visible" });
