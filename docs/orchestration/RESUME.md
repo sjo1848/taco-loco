@@ -135,13 +135,15 @@ The corrective workflow on exact candidate `ea99ca8` makes `/admin` redirect to 
 
 ## Final roadmap composition — 2026-11-02
 
-The current local branch is `integration/tl-roadmap-final-20261102`. It composes PR #18 and PR #28 from the verified common ancestor `5d422c7fb731144971293ebce3446f7c5bb6d5ca`. Technical candidate: `2fcb3931b567afca7d0cd470cfc159d0dc67e6b`.
+The current local branch is `integration/tl-roadmap-final-20261102`. It composes PR #18 and PR #28 from the verified common ancestor `5d422c7fb731144971293ebce3446f7c5bb6d5ca`. Technical candidate: `1b568a91d0c7f32bdb1b7cf53073265af876edce`.
 
 The candidate fixes two material regressions found during composition: manual order line notes are preserved, and D1 `PAYMENT_REPORTED` uses a winner-only event insert with a scalar global sequence allocation. The isolated D1/SQLite proof passes with one event, `reused=false` then `true`, sequences `10,12`, and preserved manual line notes.
 
 Local QA is PASS: 32 test files/107 tests, typecheck, tracked-source ESLint (0 errors), `build:vinext`, and the D1 regression harness. Fresh browser inspection covered menu/checkout/account at 360, 390, 430, 768 and 1440 px. Evidence: `docs/evidence/TL-ROADMAP-FINAL-COMPOSITION-2026-11-02.md`.
 
 Next action: publish the composed branch and run CI/independent review, then request one bounded staging authorization. Do not merge, deploy, migrate remote D1 or modify production. Physical WhatsApp validation, human visual acceptance and production remain pending; production is `NOT_AUTHORIZED`.
+
+Final QA closure: CI quality PASS, fresh Playwright captures preserved in `output/playwright/final-qa/`, isolated 0006/0007 migration proof PASS, security audit PASS after the fflate override. Classification is `READY_FOR_STAGING_AUTHORIZATION`; next remote action is the grouped staging authorization only.
 
 ## Next authorized objective
 

@@ -1,6 +1,15 @@
 # Evidence Index — Taco Loco
 As of: 2026-11-02
 
+## Final QA and security review — 2026-11-02
+
+- HEAD: `1b568a91d0c7f32bdb1b7cf53073265af876edce`; PR #29 remains draft and CI quality PASS.
+- Evidence: `docs/evidence/TL-ROADMAP-FINAL-QA-2026-11-02.md`.
+- Fresh Playwright captures: `output/playwright/final-qa/`, menu at 360/390/430/768/1440 plus checkout, account, tracking boundary and admin.
+- D1 local isolated migration proof: 0006/0007 PASS. Full suite 32 files/107 tests, typecheck, tracked-source lint and build:vinext PASS.
+- Security: `fflate` override to 0.7.5; production audit reports 0 vulnerabilities.
+- Review: `docs/reviews/TL-ROADMAP-FINAL-QA-independent-review-2026-11-02.md`, PASS_WITH_CONDITIONS. Staging authorization and human visual/WhatsApp acceptance remain pending.
+
 ## Final roadmap composition — 2026-11-02
 
 - Candidate: `2fcb3931b567afca7d0cd470cfc159d0dc67e6b` on `integration/tl-roadmap-final-20261102`, composed from the verified common ancestor `5d422c7fb731144971293ebce3446f7c5bb6d5ca` with PR #18 and PR #28 surfaces.

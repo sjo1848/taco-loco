@@ -6,7 +6,7 @@ Status: MVP_PILOT_BLOCKED
 Active contract: ROADMAP-FINAL-COMPOSITION (`LOCAL_COMPOSED_PASS / STAGING_AUTHORIZATION_REQUIRED`)
 Brand visual candidate: `23c1a6622f0b91d3a0ca2a95b0585a01acaef27c` (historical validated baseline)
 Execution HEAD: resolve dynamically with `git rev-parse HEAD`.
-Application candidate: `2fcb3931b567afca7d0cd470cfc159d0dc67e6b`
+Application candidate: `1b568a91d0c7f32bdb1b7cf53073265af876edce`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
@@ -28,6 +28,13 @@ Production: `NOT_AUTHORIZED`
 - QA: 32 files/107 tests, typecheck, tracked-source lint and `build:vinext` PASS. Isolated SQLite/D1 regression proof PASS. Fresh browser inspection covered menu/checkout/account at 360, 390, 430, 768 and 1440 px.
 - Evidence: `docs/evidence/TL-ROADMAP-FINAL-COMPOSITION-2026-11-02.md`; review: `docs/reviews/TL-ROADMAP-FINAL-COMPOSITION-review-2026-11-02.md`.
 - Current boundary: local candidate ready for CI/independent review and staging authorization. Physical WhatsApp validation and human visual acceptance remain pending. Production remains `NOT_AUTHORIZED`.
+
+## Final QA closure — 2026-11-02
+
+- Exact HEAD `1b568a91d0c7f32bdb1b7cf53073265af876edce` adds the audited `fflate` override (`0.7.5`) and passes the full QA rerun.
+- Fresh Playwright captures are preserved in `output/playwright/final-qa/` for required viewports and effective menu/checkout/account/tracking/admin surfaces.
+- D1 local isolated migrations 0006/0007 and the manual-notes/payment-sequence regression proof pass. Production audit reports zero vulnerabilities.
+- Classification: `READY_FOR_STAGING_AUTHORIZATION`; staging remains unexecuted and production remains `NOT_AUTHORIZED`.
 
 ## MVP operational audit — 2026-11-01
 
