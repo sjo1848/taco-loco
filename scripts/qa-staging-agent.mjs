@@ -94,6 +94,7 @@ async function runBrowser(name, launcher) {
         record("chromium:checkout:synthetic-order", "PASS", "Synthetic order created; success, tracking and WhatsApp fallback surfaced", [await screenshot(page, "chromium-success-390")]);
         if (popup) await popup.close();
         await trackingLink.click();
+        await page.waitForURL(/\/pedido\//, { timeout: 30_000 });
         await page.waitForLoadState("domcontentloaded");
         if (!(await page.getByRole("heading", { name: /Pedido TL-/ }).count())) throw new Error("TRACKING_HEADING_MISSING");
         record("chromium:tracking:synthetic-order", "PASS", "Tracking deep-link loaded from the created order", [await screenshot(page, "chromium-tracking-390")]);
@@ -104,7 +105,9 @@ async function runBrowser(name, launcher) {
       const expectedUnauthenticatedProbes = consoleErrors.length > 0 && consoleErrors.every((message) => message.includes("401"));
       if (consoleErrors.length && !expectedUnauthenticatedProbes) record(`${name}:console:${viewport.width}`, "FAIL", `${consoleErrors.length} console errors`, consoleErrors.slice(0, 10));
       if (expectedUnauthenticatedProbes) record(`${name}:console:${viewport.width}`, "PASS", "Only expected 401 probes for unauthenticated customer session", consoleErrors.slice(0, 10));
-      if (failedRequests.length) record(`${name}:network:${viewport.width}`, "FAIL", `${failedRequests.length} failed requests`, failedRequests.slice(0, 10));
+      const unexpectedFailedRequests = failedRequests.filter((request) => !request.startsWith("GET whatsapp://"));
+      if (unexpectedFailedRequests.length) record(`${name}:network:${viewport.width}`, "FAIL", `${unexpectedFailedRequests.length} failed requests`, unexpectedFailedRequests.slice(0, 10));
+      if (failedRequests.length > unexpectedFailedRequests.length) record(`${name}:network:${viewport.width}:handoff`, "PASS", "Expected whatsapp:// navigation was aborted by the automated browser", failedRequests.filter((request) => request.startsWith("GET whatsapp://")).slice(0, 10));
       const trace = path.join(outputDir, `${name}-${viewport.width}.zip`);
       await context.tracing.stop({ path: trace });
       await context.close();
