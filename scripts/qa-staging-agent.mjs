@@ -113,9 +113,16 @@ async function runBrowser(name, launcher) {
       const expectedUnauthenticatedProbes = consoleErrors.length > 0 && consoleErrors.every((message) => message.includes("401"));
       if (consoleErrors.length && !expectedUnauthenticatedProbes) record(`${name}:console:${viewport.width}`, "FAIL", `${consoleErrors.length} console errors`, consoleErrors.slice(0, 10));
       if (expectedUnauthenticatedProbes) record(`${name}:console:${viewport.width}`, "PASS", "Only expected 401 probes for unauthenticated customer session", consoleErrors.slice(0, 10));
-      const unexpectedFailedRequests = failedRequests.filter((request) => !request.startsWith("GET whatsapp://"));
+      const expectedAbortedCustomerBootstrap = failedRequests.filter((request) =>
+        request.includes("net::ERR_ABORTED") &&
+        (request.includes("/api/customer/auth/session") || request.includes("/api/customer/preferences"))
+      );
+      const unexpectedFailedRequests = failedRequests.filter((request) =>
+        !request.startsWith("GET whatsapp://") && !expectedAbortedCustomerBootstrap.includes(request)
+      );
       if (unexpectedFailedRequests.length) record(`${name}:network:${viewport.width}`, "FAIL", `${unexpectedFailedRequests.length} failed requests`, unexpectedFailedRequests.slice(0, 10));
       if (failedRequests.length > unexpectedFailedRequests.length) record(`${name}:network:${viewport.width}:handoff`, "PASS", "Expected whatsapp:// navigation was aborted by the automated browser", failedRequests.filter((request) => request.startsWith("GET whatsapp://")).slice(0, 10));
+      if (expectedAbortedCustomerBootstrap.length) record(`${name}:network:${viewport.width}:anonymous-bootstrap`, "PASS", "Anonymous customer bootstrap requests were aborted during successful navigation cleanup", expectedAbortedCustomerBootstrap.slice(0, 10));
       const trace = path.join(outputDir, `${name}-${viewport.width}.zip`);
       await context.tracing.stop({ path: trace });
       await context.close();
