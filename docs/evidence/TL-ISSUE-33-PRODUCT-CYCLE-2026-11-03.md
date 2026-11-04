@@ -16,7 +16,15 @@ Result: `45 PASS`, `0 FAIL`.
 
 ## Operator/backend agent
 
-The operator credential was not supplied to staging, so authenticated admin UI workflows remain external. The local isolated D1 regression proof exercised the real SQLite/D1 runtime path without touching the remote database:
+The authorized staging operator identity was used transiently in a real Playwright browser session; its credential is not recorded here. The real admin UI exposed the order console, date-period filters, pending queue, customer name, fulfillment, payment status, total and order detail actions. A pre-existing synthetic DELIVERY order was used so no new order was needed for the operator mutation pass.
+
+The operator completed, against real staging D1, the sequence:
+
+`PENDING → payment reported → payment and order confirmed → IN_PREPARATION → READY → DELIVERED`
+
+The public tracking endpoint for that synthetic order returned `COMPLETED`, ordered milestones, and no forbidden internal fields. No production data or real customer order was touched.
+
+The local isolated D1 regression proof also exercised the real SQLite/D1 runtime path without touching the remote database:
 
 - manual order persisted with line note `sin cebolla`;
 - first customer transfer report returned `reused=false`;
@@ -25,7 +33,7 @@ The operator credential was not supplied to staging, so authenticated admin UI w
 - event sequences and manual-order note were read back successfully;
 - final result: `D1_SQLITE_PAYMENT_SEQUENCE_AND_MANUAL_NOTES=PASS`.
 
-No admin credential bypass or alternate staging authentication path was created.
+No admin credential bypass or alternate staging authentication path was created. One initial UI attempt occurred after the staging schedule had closed at 22:00; it correctly followed the WhatsApp fallback path and did not create an order. The authenticated operator pass used an existing synthetic staging order and did not repeat that checkout.
 
 ## UX/UI critical review
 
