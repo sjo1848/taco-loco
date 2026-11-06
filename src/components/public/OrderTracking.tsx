@@ -24,9 +24,14 @@ export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
     clearActiveTrackingResume(window.localStorage);
     const token = window.location.pathname.split("/").filter(Boolean).at(-1);
     if (!token) return;
-    try {
-      if (window.localStorage.getItem(`taco-loco:tracking-spotlight:${token}`) !== "seen") setSpotlightOpen(true);
-    } catch { setSpotlightOpen(true); }
+    let cancelled = false;
+    const reveal = window.setTimeout(() => {
+      if (cancelled) return;
+      try {
+        if (window.localStorage.getItem(`taco-loco:tracking-spotlight:${token}`) !== "seen") setSpotlightOpen(true);
+      } catch { setSpotlightOpen(true); }
+    }, 0);
+    return () => { cancelled = true; window.clearTimeout(reveal); };
   }, []);
 
   function dismissSpotlight() {
