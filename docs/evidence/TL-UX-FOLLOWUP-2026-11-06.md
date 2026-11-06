@@ -2,10 +2,10 @@
 
 Fecha: 2026-11-06
 Composición: `integration/tl-ux-followup-20261106`
-HEAD: `50cf8bd5bdb385d038a7b380fc9bbcd8d12b2ac2`
+HEAD: `f334e6099870fb4dc269ad41e0866c869211124e`
 Worker staging: `taco-loco-staging-20260913`
 URL: https://taco-loco-staging-20260913.sjo1848.workers.dev
-Deployment: `bf85aa87-bdd8-4231-9af5-3bd083fb1fa4`
+Deployment: `d452ee87-69bb-432e-8e80-5e5806f9f42b`
 
 ## Seguimiento
 
@@ -15,6 +15,9 @@ Deployment: `bf85aa87-bdd8-4231-9af5-3bd083fb1fa4`
 - La recarga conserva el estado cerrado; no se usa como credencial ni se expone el token en logs.
 - El polling existente activa una animación breve sólo cuando cambia `currentStage`.
 - `prefers-reduced-motion` elimina la animación y mantiene una indicación estática.
+- El halo suave permanece alrededor del estado actual aun después de cerrar el spotlight.
+- El botón `Entendido` recibe foco al abrirse y el spotlight expone nombre/descripción accesibles.
+- La marca de primera visita usa una huella SHA-256 del token; el token no se almacena como clave ni valor de `localStorage`.
 - No se inventan estados y el copy no afirma que WhatsApp haya enviado el mensaje.
 
 Capturas nuevas:
@@ -36,6 +39,8 @@ Validación staging con datos sintéticos:
 - La fila mostró `Marcar listo` después de la transición.
 - Los pedidos pendientes mostraron `Revisar pedido/pago`, sin acción que pueda saltar la verificación manual.
 
+La prueba completa cliente → administrador → polling no se pudo cerrar en este despliegue: la cuenta administrativa staging disponible respondió `Datos de login inválidos` después de la prueba anterior. No se declara PASS de actualización cross-client; se requiere restaurar una credencial administrativa staging válida.
+
 Capturas:
 
 - `output/playwright/ux-followup-20261106/admin-pending-quick-action.png`
@@ -50,7 +55,8 @@ Capturas:
 - `pnpm build:vinext`: PASS.
 - `git diff --check`: PASS.
 - `/api/health`: PASS.
+- Spotlight staging: foco inicial, clave local sin token, cierre y halo permanente: PASS.
 
-Limitación: el retorno físico desde WhatsApp sigue siendo una validación externa pendiente; las pruebas de navegador no se presentan como envío real confirmado.
+Limitaciones: el retorno físico desde WhatsApp sigue siendo una validación externa pendiente; la transición administrativa reflejada por polling queda `HUMAN_ACTION / STAGING_ADMIN_CREDENTIAL` por credencial inválida, no por un defecto demostrado del polling.
 
 Producción: `NOT_AUTHORIZED`.
