@@ -55,7 +55,7 @@ export function CustomerOrders() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void load(null, false); }, [load]);
 
-  return <section className="public-panel" aria-labelledby="customer-orders-title">
+  return <section id="customer-orders" className="public-panel" aria-labelledby="customer-orders-title">
     <div className="selection-sheet__header"><div><p className="eyebrow">Taco Club</p><h2 id="customer-orders-title">Mis pedidos</h2></div></div>
     {loading && <p className="selection-help" role="status" aria-live="polite">Cargando tus pedidos…</p>}
     {error && <div role="alert"><p className="form-error">No pudimos cargar tus pedidos.</p><button className="button button--secondary" type="button" onClick={() => void load(null, false)}>Reintentar</button></div>}
