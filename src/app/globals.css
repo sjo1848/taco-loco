@@ -425,11 +425,18 @@ body { background: var(--background); color: var(--cream); }
 .order-timeline small { display: block; margin-top: 4px; color: var(--muted); font-size: .8rem; }
 .order-timeline p { margin: 8px 0 0; color: var(--muted); font-size: .86rem; }
 .tracking-hero { padding-bottom: 4px; }
+.tracking-hero--spotlight::before { content: ""; position: fixed; inset: 0; z-index: 1; background: rgba(8,12,9,.58); pointer-events: none; }
 .tracking-hero .public-menu__content { padding-top: 32px; padding-bottom: 28px; }
 .tracking-hero h1 { font-size: clamp(2.4rem, 11vw, 5rem); }
 .tracking-current { margin-top: 24px; padding: 18px; border: 1px solid rgba(255,255,255,.3); border-radius: 16px; background: rgba(0,0,0,.3); }
 .tracking-current h2 { margin: 0; color: #fff; font-size: clamp(1.45rem, 5vw, 2rem); }
 .tracking-current p:last-child { margin-bottom: 0; color: rgba(255,255,255,.88); }
+.tracking-current--spotlight { position: relative; z-index: 2; background: #193d25; border-color: var(--yellow); box-shadow: 0 0 0 4px rgba(253,185,19,.2), 0 0 42px rgba(253,185,19,.42); }
+.tracking-current--spotlight::after { content: ""; position: absolute; inset: -8px; z-index: -1; border: 1px solid rgba(253,185,19,.62); border-radius: 22px; pointer-events: none; }
+.tracking-current--changed { animation: tracking-status-change 900ms var(--ease-emphasis); }
+.tracking-spotlight-dismiss { margin-top: 14px; min-height: 42px; padding: 0 16px; border: 1px solid var(--yellow); border-radius: 999px; background: var(--yellow); color: #1c241c; font: inherit; font-weight: 800; cursor: pointer; }
+@keyframes tracking-status-change { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(253,185,19,0); } 35% { transform: scale(1.025); box-shadow: 0 0 0 7px rgba(253,185,19,.32), 0 0 32px rgba(253,185,19,.5); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(253,185,19,0); } }
+@media (prefers-reduced-motion: reduce) { .tracking-current--changed { animation: none; box-shadow: 0 0 0 4px rgba(253,185,19,.25); } }
 .public-tracking .public-menu__content > .tracking-history, .public-tracking .public-menu__content > .tracking-summary { background: var(--surface); }
 .tracking-history, .tracking-summary { margin-top: 16px; padding: 18px 16px; border: 1px solid var(--border); border-radius: 16px; }
 .tracking-history h2, .tracking-summary h2 { margin-top: 0; }
