@@ -438,7 +438,8 @@ body { background: var(--background); color: var(--cream); }
 .tracking-current { margin-top: 24px; padding: 18px; border: 1px solid rgba(255,255,255,.3); border-radius: 16px; background: rgba(0,0,0,.3); }
 .tracking-current h2 { margin: 0; color: #fff; font-size: clamp(1.45rem, 5vw, 2rem); }
 .tracking-current p:last-child { margin-bottom: 0; color: rgba(255,255,255,.88); }
-.tracking-current--spotlight { position: relative; z-index: 2; background: #193d25; border-color: var(--yellow); box-shadow: 0 0 0 4px rgba(253,185,19,.2), 0 0 42px rgba(253,185,19,.42); }
+.tracking-current--active { position: relative; z-index: 2; box-shadow: 0 0 0 2px rgba(253,185,19,.16), 0 0 22px rgba(253,185,19,.2); }
+.tracking-current--spotlight { background: #193d25; border-color: var(--yellow); box-shadow: 0 0 0 4px rgba(253,185,19,.2), 0 0 42px rgba(253,185,19,.42); }
 .tracking-current--spotlight::after { content: ""; position: absolute; inset: -8px; z-index: -1; border: 1px solid rgba(253,185,19,.62); border-radius: 22px; pointer-events: none; }
 .tracking-current--changed { animation: tracking-status-change 900ms var(--ease-emphasis); }
 .tracking-spotlight-dismiss { margin-top: 14px; min-height: 42px; padding: 0 16px; border: 1px solid var(--yellow); border-radius: 999px; background: var(--yellow); color: #1c241c; font: inherit; font-weight: 800; cursor: pointer; }
