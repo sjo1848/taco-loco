@@ -12,11 +12,12 @@ Production: `NOT_AUTHORIZED`
 
 ## Issue #47 — S6–S8 staging release candidate — 2026-11-06
 
-- Execution HEAD: `dd6d97ef4a1a8fcea867481acd55d24fc48afe42` (governance/evidence).
+- Execution HEAD: `185e3716cf322511d441d3c16c651c0309db09cd` (governance/evidence).
 - Application candidate deployed: `8cbbc0170edaac69eddeb6d211039bb73eabd2ef`.
 - Staging: `taco-loco-staging-20260913`, version `b8b8629c-e83e-4359-8b0d-777b57372bee`.
 - S6/S7/S8 classification: `READY_FOR_SINGLE_HUMAN_FINAL_TEST_WITH_EXTERNAL_GATES`.
-- Real staging operator lifecycle and public tracking passed; real Google provider and physical WhatsApp send/return remain external gates.
+- Real staging operator lifecycle and public tracking passed; physical WhatsApp send/return remains an external gate.
+- Real Google customer session, logout, re-login, favorite, saved address and DELIVERY address selection passed in staging; a second independent real Google account was not available for a two-account comparison.
 - D1 read-only info, Time Travel bookmark and local recovery drill passed. Remote restore was not executed.
 - Evidence: `docs/evidence/TL-ISSUE-47-S6-S8-STAGING-2026-11-06.md`; review: `docs/reviews/TL-ISSUE-47-CONSOLIDATED-REVIEW-2026-11-06.md`.
 - Production remains `NOT_AUTHORIZED`.

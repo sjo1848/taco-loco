@@ -2,11 +2,11 @@
 
 ## Active checkpoint — Issue #47 S6–S8 final staging handoff — 2026-11-06
 
-- Execution HEAD: `dd6d97ef4a1a8fcea867481acd55d24fc48afe42`.
+- Execution HEAD: `185e3716cf322511d441d3c16c651c0309db09cd`.
 - Application candidate: `8cbbc0170edaac69eddeb6d211039bb73eabd2ef`.
 - Staging Worker: `taco-loco-staging-20260913`; deployment version: `b8b8629c-e83e-4359-8b0d-777b57372bee`.
 - Staging URL: `https://taco-loco-staging-20260913.sjo1848.workers.dev`.
-- Real operator lifecycle/tracking and bounded S6–S8 QA passed. Google provider selection and physical WhatsApp send/return remain external gates; remote restore remains untested.
+- Real operator lifecycle/tracking and bounded S6–S8 QA passed. One real Google customer session, logout/re-login, favorite, saved address and DELIVERY selection passed. Physical WhatsApp send/return remains an external gate; remote restore remains untested.
 - Evidence: `docs/evidence/TL-ISSUE-47-S6-S8-STAGING-2026-11-06.md`.
 - Next: one owner final staging session. Do not deploy production, perform remote restore, or add paid infrastructure. Production remains `NOT_AUTHORIZED`.
 

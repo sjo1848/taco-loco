@@ -215,7 +215,7 @@
   "finalRoadmapCI": "PASS_41560178008",
   "issue47": {
     "status": "READY_FOR_SINGLE_HUMAN_FINAL_TEST_WITH_EXTERNAL_GATES",
-    "executionHead": "dd6d97ef4a1a8fcea867481acd55d24fc48afe42",
+    "executionHead": "185e3716cf322511d441d3c16c651c0309db09cd",
     "applicationCandidate": "8cbbc0170edaac69eddeb6d211039bb73eabd2ef",
     "stagingWorker": "taco-loco-staging-20260913",
     "stagingDeploymentVersion": "b8b8629c-e83e-4359-8b0d-777b57372bee",
@@ -229,10 +229,11 @@
     "publicBrowserBaseline": "55_PASS_0_FAIL_9_EXTERNAL_BLOCKED",
     "authFixtureBaseline": "45_PASS_0_FAIL_0_EXTERNAL_BLOCKED_ISOLATED_FIXTURES",
     "operatorStaging": "PASS_TL0065_PAYMENT_CONFIRM_PREPARE_READY_DELIVERED_TRACKING_COMPLETED",
-    "googleReal": "EXTERNAL_BLOCKED",
+    "googleReal": "PASS_ONE_REAL_ACCOUNT_SESSION_LOGOUT_RELOGIN_PREFERENCES_DELIVERY_SELECTION",
+    "googleSecondAccountIsolation": "NOT_INDEPENDENTLY_PROVEN_REAL_SECOND_ACCOUNT_FIXTURE_AUTHORIZATION_COVERAGE_ONLY",
     "whatsappRealSendReturn": "EXTERNAL_BLOCKED",
     "evidence": "docs/evidence/TL-ISSUE-47-S6-S8-STAGING-2026-11-06.md",
     "production": "NOT_AUTHORIZED"
   },
-  "resumePoint": "Issue #47 S6-S8 staging candidate is ready for one final human staging session. Application candidate 8cbbc0170edaac69eddeb6d211039bb73eabd2ef is deployed at the existing Worker; governance/evidence HEAD is dd6d97ef4a1a8fcea867481acd55d24fc48afe42. Real Google provider selection, physical WhatsApp send/return and remote restore remain explicitly unproven. Production is NOT_AUTHORIZED."
+  "resumePoint": "Issue #47 S6-S8 staging candidate is ready for one final human staging session. Application candidate 8cbbc0170edaac69eddeb6d211039bb73eabd2ef is deployed at the existing Worker; governance/evidence HEAD is 185e3716cf322511d441d3c16c651c0309db09cd. One real Google customer session, logout/relogin, preferences and DELIVERY address selection passed. Physical WhatsApp send/return, second-real-account comparison and remote restore remain explicitly unproven. Production is NOT_AUTHORIZED."
 }
