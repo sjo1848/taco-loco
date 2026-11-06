@@ -5,7 +5,7 @@ Composición: `integration/tl-ux-followup-20261106`
 HEAD: `f334e6099870fb4dc269ad41e0866c869211124e`
 Worker staging: `taco-loco-staging-20260913`
 URL: https://taco-loco-staging-20260913.sjo1848.workers.dev
-Deployment: `50b36d08-f0bb-488f-a36b-c5476c50b233`
+Latest deployment: `e3e5a2fc-af78-4b36-bbaa-f8377f8c94cf`
 
 ## Seguimiento
 
