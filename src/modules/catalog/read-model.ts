@@ -1,4 +1,3 @@
-import { db } from "@/lib/db";
 import { normalizeWhatsAppUrl, type PublicSettings } from "@/modules/settings/service";
 import { getOperatingContext } from "@/modules/settings/operating-context";
 
@@ -74,6 +73,11 @@ export function buildMenuReadModel(input: ReadModelInput): MenuReadModel {
 }
 
 export async function getPublicMenu(): Promise<MenuReadModel> {
+  if ("WebSocketPair" in globalThis) {
+    const { getWorkerPublicMenu } = await import("./read-model.worker");
+    return getWorkerPublicMenu();
+  }
+  const { db } = await import("@/lib/db");
   const [settings, categories] = await Promise.all([
     db.menuSettings.findFirst(),
     db.category.findMany({
