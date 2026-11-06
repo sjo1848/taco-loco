@@ -11,6 +11,27 @@ describe("selection model", () => {
     expect(selectionTotal(twice)).toBe(10000);
   });
 
+  it("accumulates quantity on repeated adds without replacing the previous selection", () => {
+    const twice = addSelectionLine([], taco, 2);
+    const three = addSelectionLine(twice, taco, 1);
+    expect(three).toHaveLength(1);
+    expect(selectionCount(three)).toBe(3);
+    expect(selectionTotal(three)).toBe(15000);
+    expect(addSelectionLine([], taco, 1)[0].quantity).toBe(1);
+    expect(addSelectionLine(addSelectionLine([], taco, 1), taco, 1)[0].quantity).toBe(2);
+  });
+
+  it("caps accumulated quantity and keeps different modifiers on separate lines", () => {
+    const first = addSelectionLine([], taco, 19);
+    const maxed = addSelectionLine(first, taco, 3);
+    expect(maxed[0].quantity).toBe(20);
+    const other = { ...taco, modifiers: [{ group: "Salsa", option: "Criolla" }] };
+    const variants = addSelectionLine(maxed, other, 2);
+    expect(variants).toHaveLength(2);
+    expect(variants.map((line) => line.quantity)).toEqual([20, 2]);
+    expect(selectionTotal(variants)).toBe(110000);
+  });
+
   it("removes a line when quantity reaches zero and builds a WhatsApp message", () => {
     const line = addSelectionLine([], taco)[0];
     expect(updateSelectionQuantity([line], line.id, 0)).toEqual([]);
