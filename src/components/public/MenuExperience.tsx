@@ -279,13 +279,14 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     if (missingRequired) { setSelectionError("Completá las opciones obligatorias para continuar."); return; }
     setLines((current) => {
       const nextLine = { productId: pendingProduct.id, name: pendingProduct.name, priceAmount: pendingProduct.priceAmount, modifiers };
-      if (!editingLineId) {
-        const added = addSelectionLine(current, nextLine);
-        return added.map((line) => line.id === lineId(nextLine.productId, nextLine.modifiers) ? { ...line, quantity: pendingQuantity } : line);
-      }
+      if (!editingLineId) return addSelectionLine(current, nextLine, pendingQuantity);
       const previous = current.find((line) => line.id === editingLineId);
       if (!previous) return current;
-      return current.map((line) => line.id === editingLineId ? { ...nextLine, id: lineId(nextLine.productId, nextLine.modifiers), quantity: pendingQuantity } : line);
+      const nextId = lineId(nextLine.productId, nextLine.modifiers);
+      const others = current.filter((line) => line.id !== editingLineId);
+      const matching = others.find((line) => line.id === nextId);
+      if (matching) return others.map((line) => line.id === nextId ? { ...line, quantity: Math.min(line.quantity + pendingQuantity, 20) } : line);
+      return [...others, { ...nextLine, id: nextId, quantity: pendingQuantity }];
     });
     flashAdded(pendingProduct.id);
     setFeedbackMessage(editingLineId ? `${pendingProduct.name} actualizado.` : `${pendingProduct.name} agregado al pedido.`);
