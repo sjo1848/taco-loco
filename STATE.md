@@ -10,6 +10,17 @@ Application candidate: `1b568a91d0c7f32bdb1b7cf53073265af876edce`
 Frozen source: `sjo1848/taco-loco-foodtrack@a9a9e2c1c70d2a654f7d6b181bf2b18778b49f48`
 Production: `NOT_AUTHORIZED`
 
+## Issue #47 — S6–S8 staging release candidate — 2026-11-06
+
+- Execution HEAD: `dd6d97ef4a1a8fcea867481acd55d24fc48afe42` (governance/evidence).
+- Application candidate deployed: `8cbbc0170edaac69eddeb6d211039bb73eabd2ef`.
+- Staging: `taco-loco-staging-20260913`, version `b8b8629c-e83e-4359-8b0d-777b57372bee`.
+- S6/S7/S8 classification: `READY_FOR_SINGLE_HUMAN_FINAL_TEST_WITH_EXTERNAL_GATES`.
+- Real staging operator lifecycle and public tracking passed; real Google provider and physical WhatsApp send/return remain external gates.
+- D1 read-only info, Time Travel bookmark and local recovery drill passed. Remote restore was not executed.
+- Evidence: `docs/evidence/TL-ISSUE-47-S6-S8-STAGING-2026-11-06.md`; review: `docs/reviews/TL-ISSUE-47-CONSOLIDATED-REVIEW-2026-11-06.md`.
+- Production remains `NOT_AUTHORIZED`.
+
 ## UX/UI roadmap — 2026-11-02
 
 - Canonical tracker: GitHub Issue #19 with children #20, #21, #22, #23 and #24.

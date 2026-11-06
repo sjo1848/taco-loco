@@ -213,5 +213,26 @@
   "finalRoadmapSecurityAudit": "PASS_FFLATE_OVERRIDE_0.7.5_ZERO_PROD_VULNERABILITIES",
   "finalRoadmapRemoteActions": "NOT_PERFORMED",
   "finalRoadmapCI": "PASS_41560178008",
-  "resumePoint": "Final local roadmap composition candidate 2fcb3931b567afca7d0cd470cfc159d0dc67e6b on integration/tl-roadmap-final-20261102. PR #18 and PR #28 surfaces are composed; manual notes and D1 payment event sequence regressions are fixed and proven in isolated SQLite/D1. Next: publish draft PR, run CI/independent review, then request bounded staging authorization. Physical WhatsApp and human visual acceptance remain pending; production is NOT_AUTHORIZED."
+  "issue47": {
+    "status": "READY_FOR_SINGLE_HUMAN_FINAL_TEST_WITH_EXTERNAL_GATES",
+    "executionHead": "dd6d97ef4a1a8fcea867481acd55d24fc48afe42",
+    "applicationCandidate": "8cbbc0170edaac69eddeb6d211039bb73eabd2ef",
+    "stagingWorker": "taco-loco-staging-20260913",
+    "stagingDeploymentVersion": "b8b8629c-e83e-4359-8b0d-777b57372bee",
+    "stagingUrl": "https://taco-loco-staging-20260913.sjo1848.workers.dev",
+    "stagingD1": "taco-loco-staging-20260913",
+    "stagingD1Id": "266d23b2-4056-41c0-82d9-4f063ba48d78",
+    "d1ReadOnlyInfo": "PASS",
+    "d1TimeTravel": "PASS_BOOKMARK_READ_ONLY",
+    "localRecovery": "PASS",
+    "qa": "32_TEST_FILES_108_PASS_TYPECHECK_PASS_TRACKED_LINT_0_ERRORS_BUILD_VINEXT_PASS",
+    "publicBrowserBaseline": "55_PASS_0_FAIL_9_EXTERNAL_BLOCKED",
+    "authFixtureBaseline": "45_PASS_0_FAIL_0_EXTERNAL_BLOCKED_ISOLATED_FIXTURES",
+    "operatorStaging": "PASS_TL0065_PAYMENT_CONFIRM_PREPARE_READY_DELIVERED_TRACKING_COMPLETED",
+    "googleReal": "EXTERNAL_BLOCKED",
+    "whatsappRealSendReturn": "EXTERNAL_BLOCKED",
+    "evidence": "docs/evidence/TL-ISSUE-47-S6-S8-STAGING-2026-11-06.md",
+    "production": "NOT_AUTHORIZED"
+  },
+  "resumePoint": "Issue #47 S6-S8 staging candidate is ready for one final human staging session. Application candidate 8cbbc0170edaac69eddeb6d211039bb73eabd2ef is deployed at the existing Worker; governance/evidence HEAD is dd6d97ef4a1a8fcea867481acd55d24fc48afe42. Real Google provider selection, physical WhatsApp send/return and remote restore remain explicitly unproven. Production is NOT_AUTHORIZED."
 }
