@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { readActiveTrackingResume } from "@/modules/orders/tracking-resume";
 
 export function PublicNavigation({ cartCount = 0, onCartClick }: { cartCount?: number; onCartClick?: () => void }) {
@@ -18,12 +19,12 @@ export function PublicNavigation({ cartCount = 0, onCartClick }: { cartCount?: n
 
   const menuActive = pathname === "/menu";
   const accountActive = pathname === "/cuenta";
-  const ordersActive = Boolean(trackingPath && pathname?.startsWith("/pedido/")) || (!trackingPath && accountActive);
-  const ordersHref = trackingPath ?? "/cuenta";
+  const ordersActive = Boolean(trackingPath && pathname?.startsWith("/pedido/"));
+  const ordersHref = trackingPath ?? "/cuenta#customer-orders";
 
   return <>
     <header className="public-navigation" aria-label="Navegación principal">
-      <Link className="public-navigation__brand" href="/menu"><span className="public-navigation__brand-mark">TL</span><span><strong>Taco Loco</strong><small>Resto bar</small></span></Link>
+      <Link className="public-navigation__brand" href="/menu"><Image className="public-navigation__logo" src="/brand/logo-taco-loco.jpg" alt="Taco Loco" width={42} height={42} priority /><span><strong>Taco Loco</strong><small>Menú digital</small></span></Link>
       <div className="public-navigation__links">
         {onCartClick ? <button className="public-navigation__cart" type="button" onClick={onCartClick} aria-label={`Abrir carrito${cartCount ? `, ${cartCount} productos` : ""}`}><span aria-hidden="true">🛒</span> Carrito{cartCount > 0 && <span className="public-navigation__count">{cartCount}</span>}</button> : <Link className="public-navigation__cart" href="/menu"><span aria-hidden="true">🛒</span> Carrito</Link>}
       </div>
