@@ -383,10 +383,10 @@ body { background: var(--background); color: var(--cream); }
 .orders-board__lane span { font-size: .87rem; font-weight: 750; }
 .orders-board__lane strong { grid-row: span 2; align-self: center; font-size: 1.8rem; line-height: 1; }
 .orders-board__lane small { color: var(--muted); font-size: .76rem; }
-.orders-board__lane:hover, .orders-board__lane.is-active { border-color: var(--brand-green); background: #edf7ef; }
+.orders-board__lane:hover, .orders-board__lane.is-active { border-color: var(--brand-green); background: #203326; }
 .orders-board__lane--pending { border-left: 4px solid var(--brand-red); }
 .orders-board__lane:focus-visible { outline: 3px solid var(--brand-green); outline-offset: 2px; }
-.order-row--pending { border-left: 4px solid var(--brand-red); background: #fffaf8; }
+.order-row--pending { border-left: 4px solid var(--brand-red); background: #2b1d1a; }
 .order-row__actions .admin-button { min-height: 42px; }
 @media (max-width: 699px) { .orders-board__header { flex-direction: column; } .orders-board__lanes { grid-template-columns: 1fr; gap: 8px; } .orders-board__lane { min-height: 70px; } .orders-board__summary { flex-wrap: wrap; } }
 .orders-list, .order-detail, .order-lines, .order-timeline { display: grid; gap: 10px; }
