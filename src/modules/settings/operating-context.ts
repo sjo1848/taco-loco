@@ -26,6 +26,6 @@ export function getOperatingContext(settings: { acceptingOrders: boolean; status
   const isOpen = settings.acceptingOrders && (!hasAutomaticSchedule || withinSchedule);
   const status = !settings.acceptingOrders ? "PAUSED" : isOpen ? "OPEN" : "CLOSED";
   const label = status === "OPEN" ? "Estamos tomando pedidos" : status === "PAUSED" ? "Pedidos pausados" : "Fuera de horario";
-  const detail = settings.statusMessage || (status === "OPEN" ? "Podés armar tu pedido y enviarlo por WhatsApp." : status === "PAUSED" ? "Podés consultar el menú y escribirnos para confirmar disponibilidad." : "Podés consultar el menú. Revisá nuestros horarios para volver a pedir.");
+  const detail = status === "OPEN" ? (settings.statusMessage || "Podés armar tu pedido y enviarlo por WhatsApp.") : status === "PAUSED" ? "No estamos tomando pedidos en este momento. Podés consultar el menú." : "No estamos tomando pedidos en este momento. Revisá nuestros horarios para volver a pedir.";
   return { acceptingOrders: settings.acceptingOrders, isOpen, status, label, detail, weeklySchedule };
 }
