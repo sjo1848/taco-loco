@@ -387,10 +387,16 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     event.preventDefault();
     if (submittingOrder) return;
     if (count === 0) return;
+    if (!operatingContext.isOpen) {
+      setFeedbackMessage(operatingContext.detail);
+      void refreshOperatingStatus().catch(() => undefined);
+      return;
+    }
     // Register before opening the desktop popup: opening it can blur this page
     // while the order-intent request is still in flight.
     handoffRef.current = { sawBackground: false };
-    const popup = isMobileDevice ? null : window.open("about:blank", "_blank", "noopener,noreferrer");
+    const popup = isMobileDevice ? null : window.open("about:blank", "_blank");
+    if (popup) popup.opener = null;
     const clientReference = currentOrderIntent?.reference ?? createClientReference();
     setSubmittingOrder(true);
     setFeedbackMessage("Preparando tu pedido para WhatsApp…");
