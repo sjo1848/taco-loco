@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type ScheduleEntry = { day: number; enabled: boolean; open: string; close: string };
 type Settings = { businessName: string; whatsappPhone: string; whatsappMessage: string; currency: string; acceptingOrders: boolean; statusMessage: string | null; weeklySchedule: ScheduleEntry[]; deliveryEnabled: boolean; deliveryFeeAmount: number };
@@ -9,6 +9,11 @@ export function SettingsForm({ initial }: { initial: Settings }) {
   const [form, setForm] = useState(initial);
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
+  useEffect(() => {
+    if (!message) return;
+    const timer = window.setTimeout(() => setMessage(""), 4_000);
+    return () => window.clearTimeout(timer);
+  }, [message]);
   async function save(event: React.FormEvent) {
     event.preventDefault(); setPending(true); setMessage("");
     try {
