@@ -64,7 +64,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   const whatsappAppHref = useMemo(() => lines.length > 0 ? buildWhatsAppAppUrl(menu.settings.whatsappUrl, buildWhatsAppMessage(lines, menu.settings.businessName)) : menu.settings.whatsappUrl, [lines, menu.settings.businessName, menu.settings.whatsappUrl]);
 
   useEffect(() => {
-    if (!feedbackMessage) return;
+    if (!feedback.message) return;
     const timer = window.setTimeout(() => setFeedbackMessage(""), 4_000);
     return () => window.clearTimeout(timer);
   }, [feedback]);
