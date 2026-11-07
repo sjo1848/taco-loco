@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { buildMenuReadModel, type MenuReadModel } from "./read-model";
+import { getOperatingContext } from "@/modules/settings/operating-context";
 
 type SettingsRow = {
   businessName: string; whatsappPhone: string; whatsappMessage: string; currency: string;
@@ -14,6 +15,13 @@ type CatalogRow = {
   groupId: string | null; groupName: string | null; required: number | null;
   minSelections: number | null; maxSelections: number | null; optionName: string | null;
 };
+
+export async function getWorkerOperatingContext() {
+  const settings = await env.DB.prepare('SELECT "acceptingOrders", "statusMessage", "weeklySchedule" FROM "MenuSettings" LIMIT 1').first<Pick<SettingsRow, "acceptingOrders" | "statusMessage" | "weeklySchedule">>();
+  if (!settings) throw new Error("MenuSettings is not configured");
+  return getOperatingContext({ acceptingOrders: Boolean(settings.acceptingOrders), statusMessage: settings.statusMessage,
+    weeklySchedule: typeof settings.weeklySchedule === "string" ? JSON.parse(settings.weeklySchedule) : settings.weeklySchedule });
+}
 
 // The public menu is read-only. A single flat D1 query avoids loading Prisma's
 // WASM query compiler for every dynamic page render on the Worker CPU budget.
