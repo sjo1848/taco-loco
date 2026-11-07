@@ -11,7 +11,7 @@ export function normalizeWeeklySchedule(value: unknown): WeeklyScheduleEntry[] {
 }
 
 function localDateParts(date: Date) {
-  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/Argentina/Buenos_Aires", weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(date);
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/Argentina/Buenos_Aires", weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(date);
   const weekday = parts.find((part) => part.type === "weekday")?.value ?? "Sun";
   const day = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(weekday);
   return { day: day < 0 ? 0 : day, time: `${parts.find((part) => part.type === "hour")?.value ?? "00"}:${parts.find((part) => part.type === "minute")?.value ?? "00"}` };
@@ -22,7 +22,10 @@ export function getOperatingContext(settings: { acceptingOrders: boolean; status
   const hasAutomaticSchedule = weeklySchedule.some((entry) => entry.enabled);
   const local = localDateParts(now);
   const today = weeklySchedule.find((entry) => entry.day === local.day);
-  const withinSchedule = Boolean(today?.enabled && local.time >= today.open && local.time <= today.close);
+  const previousDay = weeklySchedule.find((entry) => entry.day === (local.day + 6) % 7);
+  const withinToday = Boolean(today?.enabled && local.time >= today.open && (today.close < today.open || local.time <= today.close));
+  const withinPreviousOvernight = Boolean(previousDay?.enabled && previousDay.close < previousDay.open && local.time <= previousDay.close);
+  const withinSchedule = withinToday || withinPreviousOvernight;
   const isOpen = settings.acceptingOrders && (!hasAutomaticSchedule || withinSchedule);
   const status = !settings.acceptingOrders ? "PAUSED" : isOpen ? "OPEN" : "CLOSED";
   const label = status === "OPEN" ? "Estamos tomando pedidos" : status === "PAUSED" ? "Pedidos pausados" : "Fuera de horario";
