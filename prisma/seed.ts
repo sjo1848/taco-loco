@@ -95,17 +95,20 @@ async function main() {
   const salsa = await prisma.modifierGroup.findFirstOrThrow({ where: { name: "Salsa a elección" } });
   const daikiri = await prisma.modifierGroup.findFirstOrThrow({ where: { name: "Sabor de daikiri" } });
   const selectableModifiers = [
-    { product: "Taco x2 común", groupId: salsa.id },
-    { product: "Uspallatina", groupId: salsa.id },
-    { product: "Gordita mexicana", groupId: salsa.id },
-    { product: "Daikiri", groupId: daikiri.id },
+    { product: "Taco x2 común", groupId: salsa.id, required: true },
+    { product: "Taco especial x2", groupId: salsa.id, required: false },
+    { product: "Burrito", groupId: salsa.id, required: false },
+    { product: "Chimichanga", groupId: salsa.id, required: false },
+    { product: "Uspallatina", groupId: salsa.id, required: true },
+    { product: "Gordita mexicana", groupId: salsa.id, required: true },
+    { product: "Daikiri", groupId: daikiri.id, required: true },
   ];
   for (const association of selectableModifiers) {
     const product = await prisma.product.findFirstOrThrow({ where: { name: association.product, archivedAt: null } });
     await prisma.productModifierGroup.upsert({
       where: { productId_modifierGroupId: { productId: product.id, modifierGroupId: association.groupId } },
-      update: { required: true, minSelections: 1, maxSelections: 1 },
-      create: { productId: product.id, modifierGroupId: association.groupId, required: true, minSelections: 1, maxSelections: 1 },
+      update: { required: association.required, minSelections: association.required ? 1 : 0, maxSelections: 1 },
+      create: { productId: product.id, modifierGroupId: association.groupId, required: association.required, minSelections: association.required ? 1 : 0, maxSelections: 1 },
     });
   }
 

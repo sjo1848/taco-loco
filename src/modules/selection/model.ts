@@ -21,11 +21,12 @@ export function lineId(productId: string, modifiers: SelectionModifier[]) {
   return `${productId}:${JSON.stringify(modifiers)}`;
 }
 
-export function addSelectionLine(lines: SelectionLine[], line: Omit<SelectionLine, "id" | "quantity">) {
+export function addSelectionLine(lines: SelectionLine[], line: Omit<SelectionLine, "id" | "quantity">, quantity = 1) {
   const id = lineId(line.productId, line.modifiers);
+  const increment = Math.max(1, Math.min(Math.trunc(quantity), 20));
   const existing = lines.find((item) => item.id === id);
-  if (existing) return lines.map((item) => item.id === id ? { ...item, quantity: Math.min(item.quantity + 1, 20) } : item);
-  return [...lines, { ...line, id, quantity: 1 }];
+  if (existing) return lines.map((item) => item.id === id ? { ...item, quantity: Math.min(item.quantity + increment, 20) } : item);
+  return [...lines, { ...line, id, quantity: increment }];
 }
 
 export function removeSelectionLine(lines: SelectionLine[], id: string) {
