@@ -43,11 +43,24 @@ export function OrdersBoard({ orders, initialCursor }: { orders: Order[]; initia
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [keepPending, setKeepPending] = useState(true);
-  const [streamStatus, setStreamStatus] = useState<"connecting" | "live" | "reconnecting">("connecting");
+  const [streamStatus, setStreamStatus] = useState<"connecting" | "live" | "reconnecting" | "expired">("connecting");
   useEffect(() => {
+    let active = true;
+    let checkingSession = false;
     const stream = new EventSource("/api/admin/orders/events?after=" + encodeURIComponent(initialCursor));
     const handleOrder = (event: MessageEvent<string>) => { try { const payload = JSON.parse(event.data) as { order: Order }; setCurrentOrders((current) => { const index = current.findIndex((order) => order.id === payload.order.id); if (index === -1) return [payload.order, ...current]; const next = [...current]; next[index] = payload.order; return next; }); } catch { /* cursor stream remains recoverable */ } };
-    stream.addEventListener("order", handleOrder as EventListener); stream.onopen = () => setStreamStatus("live"); stream.onerror = () => setStreamStatus("reconnecting"); return () => stream.close();
+    stream.addEventListener("order", handleOrder as EventListener);
+    stream.onopen = () => setStreamStatus("live");
+    stream.onerror = () => {
+      setStreamStatus("reconnecting");
+      if (checkingSession) return;
+      checkingSession = true;
+      void fetch("/api/auth/session", { cache: "no-store" }).then((response) => {
+        if (active && response.status === 401) { stream.close(); setStreamStatus("expired"); }
+      }).catch(() => { /* transient network errors keep EventSource retry active */ })
+        .finally(() => { checkingSession = false; });
+    };
+    return () => { active = false; stream.close(); };
   }, [initialCursor]);
   const filtered = useMemo(() => {
     const now = new Date();
@@ -67,7 +80,7 @@ export function OrdersBoard({ orders, initialCursor }: { orders: Order[]; initia
   const preparingCount = currentOrders.filter((order) => order.verificationStatus !== "PENDING" && order.status === "IN_PREPARATION").length;
   const readyCount = currentOrders.filter((order) => order.verificationStatus !== "PENDING" && order.status === "READY").length;
   return <section className="admin-panel orders-board">
-    <header className="orders-board__header"><div><p className="eyebrow">Operación en vivo</p><h2>Pedidos del local</h2><p>Revisá los nuevos, prepará los confirmados y entregá los listos.</p></div><span className={`orders-board__live orders-board__live--${streamStatus}`} role="status">{streamStatus === "live" ? "En vivo" : streamStatus === "connecting" ? "Conectando…" : "Reconectando…"}</span></header>
+    <header className="orders-board__header"><div><p className="eyebrow">Operación en vivo</p><h2>Pedidos del local</h2><p>Revisá los nuevos, prepará los confirmados y entregá los listos.</p></div><span className={`orders-board__live orders-board__live--${streamStatus}`} role="status">{streamStatus === "expired" ? <Link href="/admin/login">Sesión vencida · Ingresar</Link> : streamStatus === "live" ? "En vivo" : streamStatus === "connecting" ? "Conectando…" : "Reconectando…"}</span></header>
     <div className="orders-board__lanes" aria-label="Colas de pedidos">
       <button type="button" className={`orders-board__lane orders-board__lane--pending${queue === "PENDING" ? " is-active" : ""}`} onClick={() => { setQueue("PENDING"); setStatus("ALL"); setPeriod("ALL"); }}><span>Pendientes de verificación</span><strong>{pendingCount}</strong><small>Revisar pedido o pago</small></button>
       <button type="button" className={`orders-board__lane${status === "IN_PREPARATION" ? " is-active" : ""}`} onClick={() => { setQueue("OPERATING"); setStatus("IN_PREPARATION"); setPeriod("ALL"); }}><span>Preparando</span><strong>{preparingCount}</strong><small>Trabajo en cocina</small></button>
