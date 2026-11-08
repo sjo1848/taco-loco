@@ -29,7 +29,10 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   const [pendingQuantity, setPendingQuantity] = useState(1);
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
-  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [feedback, setFeedback] = useState({ message: "", revision: 0 });
+  const feedbackMessage = feedback.message;
+  function setFeedbackMessage(message: string) { setFeedback((current) => ({ message, revision: current.revision + 1 })); }
+  const [operatingContext, setOperatingContext] = useState(menu.settings.operatingContext);
   const [selectionError, setSelectionError] = useState("");
   const [showSummary, setShowSummary] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "details">("cart");
@@ -59,6 +62,29 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   const currentOrderIntent = orderIntent?.signature === selectionSignature ? orderIntent : null;
   const whatsappHref = useMemo(() => lines.length > 0 ? buildWhatsAppUrl(menu.settings.whatsappUrl, buildWhatsAppMessage(lines, menu.settings.businessName)) : menu.settings.whatsappUrl, [lines, menu.settings.businessName, menu.settings.whatsappUrl]);
   const whatsappAppHref = useMemo(() => lines.length > 0 ? buildWhatsAppAppUrl(menu.settings.whatsappUrl, buildWhatsAppMessage(lines, menu.settings.businessName)) : menu.settings.whatsappUrl, [lines, menu.settings.businessName, menu.settings.whatsappUrl]);
+
+  useEffect(() => {
+    if (!feedback.message) return;
+    const timer = window.setTimeout(() => setFeedbackMessage(""), 4_000);
+    return () => window.clearTimeout(timer);
+  }, [feedback]);
+
+  async function refreshOperatingStatus() {
+    const response = await fetch("/api/menu/status", { cache: "no-store" });
+    if (!response.ok) throw new Error("STATUS_UNAVAILABLE");
+    const result = await response.json() as { operatingContext: Menu["settings"]["operatingContext"] };
+    setOperatingContext(result.operatingContext);
+    return result.operatingContext;
+  }
+
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState === "visible") void refreshOperatingStatus().catch(() => undefined); };
+    refresh();
+    const timer = window.setInterval(refresh, 30_000);
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", refresh); window.removeEventListener("focus", refresh); };
+  }, []);
 
   function hasNewSelectionInStorage() {
     try {
@@ -368,24 +394,40 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   async function submitOrderIntent(event: MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
     if (submittingOrder) return;
-    if (!menu.settings.operatingContext.isOpen || count === 0) {
-      if (isMobileDevice) openMobileWhatsApp();
-      else window.location.assign(whatsappHref);
+    if (count === 0) return;
+    if (!operatingContext.isOpen) {
+      setFeedbackMessage(operatingContext.detail);
+      void refreshOperatingStatus().catch(() => undefined);
       return;
     }
     // Register before opening the desktop popup: opening it can blur this page
     // while the order-intent request is still in flight.
     handoffRef.current = { sawBackground: false };
-    const popup = isMobileDevice ? null : window.open("about:blank", "_blank", "noopener,noreferrer");
+    const popup = isMobileDevice ? null : window.open("about:blank", "_blank");
+    if (popup) popup.opener = null;
     const clientReference = currentOrderIntent?.reference ?? createClientReference();
     setSubmittingOrder(true);
     setFeedbackMessage("Preparando tu pedido para WhatsApp…");
     try {
+      const currentStatus = await refreshOperatingStatus();
+      if (!currentStatus.isOpen) {
+        popup?.close();
+        handoffRef.current = null;
+        setFeedbackMessage(currentStatus.detail);
+        return;
+      }
       if (saveNewAddress && authenticatedCustomer && checkout.fulfillment === "DELIVERY" && checkout.deliveryAddress?.trim() && addressLabel.trim()) {
         await fetch("/api/customer/preferences", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ label: addressLabel.trim(), address: checkout.deliveryAddress.trim(), reference: checkout.deliveryReference?.trim() || null }) });
       }
       const response = await fetch("/api/orders/intents", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientReference, customerName: customerName.trim() || null, fulfillment: checkout.fulfillment, deliveryAddress: checkout.deliveryAddress || null, deliveryReference: checkout.deliveryReference || null, transferHolderName: checkout.transferHolderName || null, lines: lines.map((line) => ({ productId: line.productId, quantity: line.quantity, modifiers: line.modifiers })) }) });
-      if (!response.ok) throw new Error("ORDER_INTENT_FAILED");
+      if (!response.ok) {
+        const error = await response.json().catch(() => null) as { code?: string; message?: string } | null;
+        if (error?.code === "ORDERS_CLOSED") {
+          await refreshOperatingStatus().catch(() => undefined);
+          throw new Error("ORDERS_CLOSED");
+        }
+        throw new Error("ORDER_INTENT_FAILED");
+      }
       const result = await response.json() as { order: { orderNumber: number; totalAmount: number }; tracking: { path: string; url: string } | null };
       if (!result.tracking) throw new Error("TRACKING_UNAVAILABLE");
       const preparedMessage = buildWhatsAppMessageWithCheckout(lines, menu.settings.businessName, result.order.orderNumber, checkout, result.tracking.url);
@@ -416,18 +458,19 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       } else {
         setShowWhatsAppWebFallback(true);
       }
-    } catch {
+    } catch (error) {
       popup?.close();
       handoffRef.current = null;
-      setFeedbackMessage("No pudimos registrar el pedido. Revisá la conexión e intentá nuevamente.");
+      setFeedbackMessage(error instanceof Error && error.message === "ORDERS_CLOSED" ? "No estamos tomando pedidos en este momento. Revisá nuestros horarios para volver a pedir." : "No pudimos registrar el pedido. Revisá la conexión e intentá nuevamente.");
     } finally {
       setSubmittingOrder(false);
     }
   }
 
-  return <main className="public-menu"><PublicNavigation cartCount={count} onCartClick={openCart} /><section className="brand-pattern brand-pattern--hero brand-hero"><div className="brand-hero__copy"><p className="eyebrow">{menu.settings.businessName} · Menú digital</p><h1>Elegí tu próximo antojo</h1><p>Sabores para compartir, pedir y volver a disfrutar.</p></div></section><CategoryNav categories={visibleCategories} /><p className="sr-only" aria-live="polite">{feedbackMessage || (addedProductId ? "Producto agregado al pedido" : "")}</p>
+  return <main className="public-menu"><PublicNavigation cartCount={count} onCartClick={openCart} /><section className="brand-pattern brand-pattern--hero brand-hero"><div className="brand-hero__copy"><p className="eyebrow">{menu.settings.businessName} · Menú digital</p><h1>Elegí tu próximo antojo</h1><p>Sabores para compartir, pedir y volver a disfrutar.</p></div></section><CategoryNav categories={visibleCategories} /><p className="sr-only" aria-live="polite">{addedProductId ? "Producto agregado al pedido" : ""}</p>
     <div className="public-menu__content">
-      <section className={`operating-status operating-status--${menu.settings.operatingContext.isOpen ? "open" : "closed"}`} aria-live="polite"><strong>{menu.settings.operatingContext.label}</strong><span>{menu.settings.operatingContext.detail}</span></section>
+      <section className={`operating-status operating-status--${operatingContext.isOpen ? "open" : "closed"}`} aria-live="polite"><strong>{operatingContext.label}</strong><span>{operatingContext.detail}</span></section>
+      {feedbackMessage && <p className="menu-order-feedback" role="status">{feedbackMessage}</p>}
       <label className="menu-search">Buscar en el menú<input type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Ej.: taco, pizza, bebida…" /></label>
       {searchQuery.trim() && visibleCategories.length === 0 && <p className="search-empty" role="status">No encontramos productos con “{searchQuery}”. Probá con otro término.</p>}
       {featured.length > 0 && <section className="menu-section menu-section--featured" aria-labelledby="featured-heading"><h2 id="featured-heading">Favoritos de la casa</h2>{featured.map((product) => <FeaturedProductCard key={product.id} product={product} onAdd={addProduct} added={addedProductId === product.id} />)}</section>}
@@ -435,7 +478,6 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       <SaucesInfo />
     </div>
     {count > 0 && <button className={`selection-bar${addedProductId ? " selection-bar--updated" : ""}`} type="button" onClick={openCart}><span>Pedido · {count} {count === 1 ? "producto" : "productos"}</span><strong>{formatPrice(total)}</strong></button>}
-    {currentOrderIntent && <p className="order-intent-feedback" role="status">Pedido TL-{String(currentOrderIntent.number).padStart(4, "0")} preparado. El local lo ve como recibido y debe confirmarlo por WhatsApp.</p>}
     {showWhatsAppWebFallback && <aside className="whatsapp-fallback" role="status"><strong>WhatsApp no confirma el envío</strong><span>Si la ventana quedó en blanco o no se abrió, copiá el mensaje o abrí WhatsApp manualmente.</span>{completedOrder && <div className="selection-actions"><button className="button button--secondary" type="button" onClick={() => void copyWhatsAppMessage(completedOrder.message)}>{copiedMessage ? "Mensaje copiado" : "Copiar mensaje"}</button><a className="button" href={completedOrder?.whatsappHref || whatsappWebFallbackHref || whatsappHref} target="_blank" rel="noreferrer">Abrir WhatsApp Web</a><a className="button button--secondary" href={completedOrder?.trackingHref}>Ver seguimiento</a></div>}</aside>}
     {completedOrder && <div className="selection-overlay" role="presentation"><section ref={dialogRef} className="selection-sheet selection-sheet--success" role="dialog" aria-modal="true" aria-labelledby="completed-order-title" aria-describedby="completed-order-help"><div className="brand-pattern brand-pattern--accent success-pattern"><div className="success-mark" aria-hidden="true">✓</div><p className="eyebrow">Pedido preparado</p><h2 id="completed-order-title">¡Listo, tu pedido está armado!</h2></div><p id="completed-order-help" className="selection-help">Pedido TL-{String(completedOrder.number).padStart(4, "0")}. El mensaje está preparado en WhatsApp; confirmá el envío desde la aplicación.</p><div className="completed-order-summary"><strong>Resumen del pedido</strong>{completedOrder.lines.map((line) => <div key={line.id}><span>{line.quantity} × {line.name}</span><span>{formatPrice(line.priceAmount * line.quantity)}</span></div>)}<div className="completed-order-total"><span>Total informativo</span><strong>{formatPrice(completedOrder.total)}</strong></div></div><div className="selection-actions"><a className="button button--secondary" href={completedOrder.trackingHref}>Ver estado de mi pedido</a><a className="button" href={isMobileDevice ? completedOrder.whatsappAppHref : completedOrder.whatsappHref} target="_blank" rel="noreferrer">Volver a WhatsApp</a><button className="button button--secondary" type="button" onClick={() => void copyWhatsAppMessage(completedOrder.message)}>{copiedMessage ? "Mensaje copiado" : "Copiar mensaje"}</button><button className="button button--secondary" type="button" onClick={startAnotherOrder}>Realizar otro pedido</button><button className="selection-clear" type="button" onClick={dismissCompletedOrder}>Seguir viendo el menú</button></div></section></div>}
     {pendingProduct && <div className="selection-overlay" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) { setPendingProduct(null); setEditingLineId(null); } }}><section ref={dialogRef} className="selection-sheet selection-sheet--product" role="dialog" aria-modal="true" aria-labelledby="selection-title" aria-describedby="selection-help"><span className="selection-sheet__handle" aria-hidden="true" /><div className="selection-sheet__header"><div><p className="eyebrow">Paso 1 · Personalizá</p><h2 id="selection-title">{pendingProduct.name}</h2></div><button ref={dialogCloseRef} className="selection-close" type="button" onClick={() => { setPendingProduct(null); setEditingLineId(null); }} aria-label="Cerrar">×</button></div><p id="selection-help" className="selection-help">Elegí las opciones necesarias, la cantidad y confirmá para sumar el producto.</p><div className="product-quantity"><span>Cantidad</span><div className="quantity-control"><button type="button" onClick={() => setPendingQuantity((quantity) => Math.max(1, quantity - 1))} aria-label="Quitar una unidad">−</button><strong>{pendingQuantity}</strong><button type="button" onClick={() => setPendingQuantity((quantity) => Math.min(20, quantity + 1))} aria-label="Agregar una unidad">+</button></div><strong>{formatPrice(pendingProduct.priceAmount * pendingQuantity)}</strong></div>{pendingProduct.modifiers.map((group) => <fieldset className="modifier-group" key={group.name}><legend>{group.name}{group.required ? " · obligatorio" : ""}</legend><div className="modifier-options">{group.options.map((option) => { const checked = (selectedOptions[group.name] ?? []).includes(option); return <button className={`modifier-option${checked ? " modifier-option--selected" : ""}`} type="button" aria-pressed={checked} key={option} onClick={() => toggleOption(group, option)}>{option}</button>; })}</div></fieldset>)}{selectionError && <p className="selection-error" role="alert">{selectionError}</p>}<button className="button selection-confirm" type="button" onClick={confirmProduct}>{editingLineId ? "Guardar cambios" : "Agregar al pedido"} · {formatPrice(pendingProduct.priceAmount * pendingQuantity)}</button></section></div>}

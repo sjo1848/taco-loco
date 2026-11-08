@@ -166,6 +166,8 @@ export async function createPublicOrderIntent(input: unknown, customerId: string
   const existing = await db.order.findUnique({ where: { clientReference: parsed.clientReference }, include: { lines: true } });
   if (existing) return { order: existing, event: null, reused: true };
   const settings = await db.menuSettings.findFirstOrThrow();
+  const { getOperatingContext } = await import("@/modules/settings/operating-context");
+  if (!getOperatingContext(settings).isOpen) throw new AppError("ORDERS_CLOSED", "No estamos tomando pedidos en este momento. Revisá nuestros horarios para volver a pedir.", 409);
   if (parsed.fulfillment === "DELIVERY" && !settings.deliveryEnabled) throw new AppError("DELIVERY_UNAVAILABLE", "El delivery no está disponible en este momento.", 400);
   const deliveryFeeAmount = parsed.fulfillment === "DELIVERY" ? settings.deliveryFeeAmount : 0;
   try {
