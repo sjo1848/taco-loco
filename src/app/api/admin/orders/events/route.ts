@@ -93,12 +93,26 @@ export async function GET(request: Request) {
       if (request.signal.aborted) stopStream();
       if (closed) return;
 
+      const ensureSession = async () => {
+        if (closed) return false;
+        if (await isAdminSessionHashActive(sessionHash)) {
+          lastSessionCheck = Date.now();
+          return !closed;
+        }
+        if (!closed) {
+          controller.enqueue(encoder.encode(sseEvent("session-expired", {})));
+          close();
+        }
+        return false;
+      };
+
       const sendNotification = async (notification: { sequence: bigint; orderId: string }) => {
         if (closed) return;
         const sequence = notification.sequence;
         if (sequence <= lastSent) return;
         try {
           const order = await orderRepository.findById(notification.orderId);
+          if (!await ensureSession()) return;
           if (!closed) controller.enqueue(encoder.encode(sseEvent("order", { order: serializeOrder(order) }, sequence)));
         } catch (error) {
           if (!(error instanceof AppError && error.code === "ORDER_NOT_FOUND")) throw error;
@@ -108,17 +122,11 @@ export async function GET(request: Request) {
 
       try {
         controller.enqueue(encoder.encode("retry: 3000\n\n"));
+        if (!await ensureSession()) return;
         const replay = await orderRepository.eventsAfter(cursor);
         for (const event of replay) await sendNotification(event);
         while (!closed) {
-          if (Date.now() - lastSessionCheck >= SESSION_RECHECK_MS) {
-            if (!await isAdminSessionHashActive(sessionHash)) {
-              controller.enqueue(encoder.encode(sseEvent("session-expired", {})));
-              close();
-              break;
-            }
-            lastSessionCheck = Date.now();
-          }
+          if (Date.now() - lastSessionCheck >= SESSION_RECHECK_MS && !await ensureSession()) break;
           const events = await orderRepository.eventsAfter(lastSent, 100);
           for (const event of events) await sendNotification(event);
           await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));

@@ -4,13 +4,14 @@ const mocks = vi.hoisted(() => ({
   getActiveAdminSessionHash: vi.fn(async () => "session-hash" as string | null),
   isAdminSessionHashActive: vi.fn(async () => true),
   eventsAfter: vi.fn(async () => []),
+  findById: vi.fn(),
 }));
 
 vi.mock("@/modules/auth/session", () => ({
   getActiveAdminSessionHash: mocks.getActiveAdminSessionHash,
   isAdminSessionHashActive: mocks.isAdminSessionHashActive,
 }));
-vi.mock("@/modules/orders/repository", () => ({ orderRepository: { eventsAfter: mocks.eventsAfter } }));
+vi.mock("@/modules/orders/repository", () => ({ orderRepository: { eventsAfter: mocks.eventsAfter, findById: mocks.findById } }));
 
 import { GET } from "./route";
 
@@ -18,6 +19,7 @@ beforeEach(() => {
   mocks.getActiveAdminSessionHash.mockResolvedValue("session-hash");
   mocks.isAdminSessionHashActive.mockResolvedValue(true);
   mocks.eventsAfter.mockResolvedValue([]);
+  mocks.findById.mockResolvedValue(null);
 });
 afterEach(() => { vi.useRealTimers(); vi.resetAllMocks(); });
 
@@ -67,5 +69,26 @@ describe("admin order stream", () => {
     mocks.getActiveAdminSessionHash.mockResolvedValue(null);
     expect((await GET(new Request("https://example.test/api/admin/orders/events"))).status).toBe(401);
     expect(mocks.eventsAfter).not.toHaveBeenCalled();
+  });
+
+  it("does not expose a replayed order when authorization is revoked during its D1 read", async () => {
+    let releaseOrder!: (order: unknown) => void;
+    const orderRead = new Promise((resolve) => { releaseOrder = resolve; });
+    mocks.eventsAfter.mockResolvedValueOnce([{ sequence: 1n, orderId: "synthetic-order" }]).mockResolvedValue([]);
+    mocks.findById.mockReturnValue(orderRead);
+    const response = await GET(new Request("https://example.test/api/admin/orders/events?after=0"));
+    const reader = response.body!.getReader();
+    await reader.read();
+    await vi.waitFor(() => expect(mocks.findById).toHaveBeenCalledWith("synthetic-order"));
+    mocks.isAdminSessionHashActive.mockResolvedValue(false);
+    releaseOrder({ id: "synthetic-order", createdAt: new Date(), lines: [] });
+    const chunks: string[] = [];
+    for (;;) {
+      const result = await reader.read();
+      if (result.done) break;
+      chunks.push(new TextDecoder().decode(result.value));
+    }
+    expect(chunks.join("")).toContain("event: session-expired");
+    expect(chunks.join("")).not.toContain("event: order");
   });
 });
