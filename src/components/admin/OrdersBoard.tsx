@@ -50,6 +50,7 @@ export function OrdersBoard({ orders, initialCursor }: { orders: Order[]; initia
     const stream = new EventSource("/api/admin/orders/events?after=" + encodeURIComponent(initialCursor));
     const handleOrder = (event: MessageEvent<string>) => { try { const payload = JSON.parse(event.data) as { order: Order }; setCurrentOrders((current) => { const index = current.findIndex((order) => order.id === payload.order.id); if (index === -1) return [payload.order, ...current]; const next = [...current]; next[index] = payload.order; return next; }); } catch { /* cursor stream remains recoverable */ } };
     stream.addEventListener("order", handleOrder as EventListener);
+    stream.addEventListener("session-expired", () => { stream.close(); setStreamStatus("expired"); });
     stream.onopen = () => setStreamStatus("live");
     stream.onerror = () => {
       setStreamStatus("reconnecting");

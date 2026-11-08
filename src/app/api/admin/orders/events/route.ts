@@ -1,10 +1,11 @@
 import { AppError } from "@/lib/errors";
-import { requireAdmin } from "@/modules/auth/session";
+import { getActiveAdminSessionHash, isAdminSessionHashActive } from "@/modules/auth/session";
 import { orderRepository } from "@/modules/orders/repository";
 
 export const dynamic = "force-dynamic";
 
 const POLL_INTERVAL_MS = 2_000;
+const SESSION_RECHECK_MS = 10_000;
 
 type OrderSnapshot = {
   id: string;
@@ -51,12 +52,13 @@ function sseEvent(event: string, data: unknown, id?: bigint) {
 }
 
 export async function GET(request: Request) {
+  let sessionHash: string | null;
   try {
-    await requireAdmin();
-  } catch (error) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") return new Response("Unauthorized", { status: 401 });
+    sessionHash = await getActiveAdminSessionHash();
+  } catch {
     return new Response("Internal Server Error", { status: 500 });
   }
+  if (!sessionHash) return new Response("Unauthorized", { status: 401 });
 
   const url = new URL(request.url);
   const cursor = parseCursor(request.headers.get("last-event-id") ?? url.searchParams.get("after"));
@@ -66,6 +68,7 @@ export async function GET(request: Request) {
     async start(controller) {
       let closed = false;
       let lastSent = cursor;
+      let lastSessionCheck = Date.now();
       const heartbeat = setInterval(() => {
         if (!closed) {
           try { controller.enqueue(encoder.encode(": heartbeat\n\n")); }
@@ -108,6 +111,14 @@ export async function GET(request: Request) {
         const replay = await orderRepository.eventsAfter(cursor);
         for (const event of replay) await sendNotification(event);
         while (!closed) {
+          if (Date.now() - lastSessionCheck >= SESSION_RECHECK_MS) {
+            if (!await isAdminSessionHashActive(sessionHash)) {
+              controller.enqueue(encoder.encode(sseEvent("session-expired", {})));
+              close();
+              break;
+            }
+            lastSessionCheck = Date.now();
+          }
           const events = await orderRepository.eventsAfter(lastSent, 100);
           for (const event of events) await sendNotification(event);
           await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));

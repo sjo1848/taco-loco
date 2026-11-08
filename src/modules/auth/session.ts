@@ -23,6 +23,22 @@ export async function getCurrentAdmin() {
   return session.user;
 }
 
+/** A hash is retained by SSE so a revoked session can be checked without keeping its cookie token. */
+export async function getActiveAdminSessionHash() {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (!token) return null;
+  const tokenHash = hashSessionToken(token);
+  return await isAdminSessionHashActive(tokenHash) ? tokenHash : null;
+}
+
+export async function isAdminSessionHashActive(tokenHash: string) {
+  const session = await db.session.findUnique({
+    where: { tokenHash },
+    select: { expiresAt: true, user: { select: { active: true } } },
+  });
+  return Boolean(session && session.expiresAt > new Date() && session.user.active);
+}
+
 export async function requireAdmin() {
   const user = await getCurrentAdmin();
   if (!user) throw new Error("UNAUTHORIZED");
