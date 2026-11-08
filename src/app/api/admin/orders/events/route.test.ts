@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   getActiveAdminSessionHash: vi.fn(async () => "session-hash" as string | null),
   isAdminSessionHashActive: vi.fn(async () => true),
-  eventsAfter: vi.fn(async () => []),
+  eventsAfter: vi.fn(async (): Promise<Array<{ sequence: bigint; orderId: string }>> => []),
   findById: vi.fn(),
 }));
 
@@ -74,7 +74,7 @@ describe("admin order stream", () => {
   it("does not expose a replayed order when authorization is revoked during its D1 read", async () => {
     let releaseOrder!: (order: unknown) => void;
     const orderRead = new Promise((resolve) => { releaseOrder = resolve; });
-    mocks.eventsAfter.mockResolvedValueOnce([{ sequence: 1n, orderId: "synthetic-order" }]).mockResolvedValue([]);
+    mocks.eventsAfter.mockResolvedValueOnce([{ sequence: BigInt(1), orderId: "synthetic-order" }]).mockResolvedValue([]);
     mocks.findById.mockReturnValue(orderRead);
     const response = await GET(new Request("https://example.test/api/admin/orders/events?after=0"));
     const reader = response.body!.getReader();
