@@ -4,8 +4,7 @@ import { orderRepository } from "@/modules/orders/repository";
 
 export const dynamic = "force-dynamic";
 
-const MAX_STREAM_MS = 50_000;
-const POLL_INTERVAL_MS = 1_000;
+const POLL_INTERVAL_MS = 2_000;
 
 type OrderSnapshot = {
   id: string;
@@ -62,22 +61,34 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const cursor = parseCursor(request.headers.get("last-event-id") ?? url.searchParams.get("after"));
   const encoder = new TextEncoder();
+  let stopStream = () => {};
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let closed = false;
       let lastSent = cursor;
-      const deadline = Date.now() + MAX_STREAM_MS;
       const heartbeat = setInterval(() => {
-        if (!closed) controller.enqueue(encoder.encode(": heartbeat\n\n"));
+        if (!closed) {
+          try { controller.enqueue(encoder.encode(": heartbeat\n\n")); }
+          catch { stopStream(); }
+        }
       }, 15000);
 
-      const close = (error?: unknown) => {
-        if (closed) return;
+      const stop = () => {
+        if (closed) return false;
         closed = true;
         clearInterval(heartbeat);
+        request.signal.removeEventListener("abort", stopStream);
+        return true;
+      };
+      const close = (error?: unknown) => {
+        if (!stop()) return;
         if (error) controller.error(error);
         else controller.close();
       };
+      stopStream = () => { stop(); };
+      request.signal.addEventListener("abort", stopStream, { once: true });
+      if (request.signal.aborted) stopStream();
+      if (closed) return;
 
       const sendNotification = async (notification: { sequence: bigint; orderId: string }) => {
         if (closed) return;
@@ -96,19 +107,16 @@ export async function GET(request: Request) {
         controller.enqueue(encoder.encode("retry: 3000\n\n"));
         const replay = await orderRepository.eventsAfter(cursor);
         for (const event of replay) await sendNotification(event);
-        while (!closed && Date.now() < deadline) {
+        while (!closed) {
           const events = await orderRepository.eventsAfter(lastSent, 100);
           for (const event of events) await sendNotification(event);
           await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
         }
-        close();
       } catch (error) {
         close(error);
       }
-
-      request.signal.addEventListener("abort", () => close(), { once: true });
     },
-    cancel() {},
+    cancel() { stopStream(); },
   });
 
   return new Response(stream, { headers: {

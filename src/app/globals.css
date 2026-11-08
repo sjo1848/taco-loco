@@ -378,6 +378,8 @@ body { background: var(--background); color: var(--cream); }
 .orders-board__header p:last-child { margin: 0; color: var(--muted); font-size: .9rem; }
 .orders-board__live { flex: 0 0 auto; padding: 7px 11px; border-radius: 999px; background: #edf7ef; color: #176b2c; font-size: .78rem; font-weight: 700; }
 .orders-board__live--reconnecting { background: #fff0ed; color: #a72a20; }
+.orders-board__live--expired { background: #fff0ed; color: #a72a20; }
+.orders-board__live--expired a { color: inherit; font-weight: inherit; }
 .orders-board__lanes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 20px; }
 .orders-board__lane { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; min-height: 88px; padding: 13px 15px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface); color: var(--cream); text-align: left; font: inherit; cursor: pointer; }
 .orders-board__lane span { font-size: .87rem; font-weight: 750; }
