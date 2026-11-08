@@ -242,7 +242,7 @@ body { background: var(--background); color: var(--cream); }
 .operating-status--open strong { color: #1d762e; }
 .operating-status--closed { border-left-color: var(--brand-red); background: #fff0ed; }
 .operating-status--closed strong { color: #a72a20; }
-.menu-order-feedback { position: fixed; z-index: 60; top: calc(12px + env(safe-area-inset-top)); left: 16px; right: 16px; width: max-content; max-width: min(560px, calc(100vw - 32px)); margin: 0 auto; padding: 12px 16px; border: 1px solid var(--brand-green); border-radius: 12px; background: #fff; color: #23362a; box-shadow: 0 8px 28px rgba(0,0,0,.2); font-weight: 600; }
+.menu-order-feedback { position: fixed; z-index: 60; top: calc(76px + env(safe-area-inset-top)); left: 16px; right: 16px; width: max-content; max-width: min(560px, calc(100vw - 32px)); margin: 0 auto; padding: 12px 16px; border: 1px solid var(--brand-green); border-radius: 12px; background: #fff; color: #23362a; box-shadow: 0 8px 28px rgba(0,0,0,.2); font-weight: 600; pointer-events: none; }
 .menu-search { margin-bottom: 20px; color: var(--cream); }
 .menu-search input { border-color: var(--border); background: #fff; color: var(--cream); box-shadow: 0 2px 9px rgba(57,47,35,.04); }
 .menu-section { margin-top: 26px; scroll-margin-top: 116px; }
