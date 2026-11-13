@@ -212,6 +212,7 @@ body { background: var(--background); color: var(--cream); }
 .public-navigation__brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 11px; background: var(--brand-green); color: #fff; font-size: .72rem; font-weight: 900; box-shadow: 0 4px 10px rgba(45,164,74,.2); }
 .public-navigation__logo { width: 42px; height: 42px; border-radius: 11px; object-fit: contain; }
 .public-navigation__links { overflow: visible; }
+.public-navigation__links a.public-navigation__desktop-link { display: none; }
 .public-navigation__links a, .public-navigation__links button { min-height: 42px; padding: 0 13px; color: var(--cream); }
 .public-navigation__cart { display: inline-flex !important; align-items: center; gap: 6px; border: 1px solid var(--border) !important; background: var(--surface-2) !important; }
 .public-navigation__links a:hover, .public-navigation__links a:focus-visible, .public-navigation__links button:hover, .public-navigation__links button:focus-visible { background: #edf7ef !important; color: #1d762e; outline: 2px solid var(--brand-green); }
@@ -307,6 +308,7 @@ body { background: var(--background); color: var(--cream); }
 .tracking-history, .tracking-summary, .tracking-payment { margin-top: 18px; padding: 18px; border: 1px solid var(--border); border-radius: 16px; background: #fff; box-shadow: 0 4px 16px rgba(57,47,35,.05); }
 .tracking-history h2, .tracking-summary h2, .tracking-payment h2 { color: var(--cream); }
 @media (min-width: 768px) {
+  .public-navigation__links a.public-navigation__desktop-link { display: inline-flex; }
   .public-bottom-nav { display: none; }
   .public-menu { padding-bottom: 32px; }
   .public-navigation { position: sticky; }

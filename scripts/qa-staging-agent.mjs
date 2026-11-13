@@ -71,7 +71,12 @@ async function runBrowser(name, launcher) {
       await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
       if (response?.status() !== 200) throw new Error(`MENU_HTTP_${response?.status()}`);
       if (viewport.width < 768) await page.getByRole("navigation", { name: "Navegación de la app" }).waitFor();
-      else await page.locator(".public-navigation").waitFor();
+      else {
+        await page.locator(".public-navigation").waitFor();
+        for (const label of ["Menú", "Pedidos", "Cuenta"]) {
+          if (!(await page.getByRole("navigation", { name: "Secciones principales" }).getByRole("link", { name: label }).isVisible())) throw new Error(`DESKTOP_NAV_${label.toUpperCase()}_HIDDEN`);
+        }
+      }
       const menuShot = await screenshot(page, `${name}-menu-${viewport.width}`); evidence.push(menuShot);
       record(`${name}:menu:${viewport.width}`, "PASS", "Menu, global navigation and catalog rendered on staging", evidence);
       await axe(page, `${name}-menu-${viewport.width}`, evidence);
