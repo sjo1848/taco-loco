@@ -70,13 +70,20 @@ async function runBrowser(name, launcher) {
       const response = await page.goto(`${baseUrl}/menu`, { waitUntil: "domcontentloaded", timeout: 45_000 });
       await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
       if (response?.status() !== 200) throw new Error(`MENU_HTTP_${response?.status()}`);
-      if (viewport.width < 768) await page.getByRole("navigation", { name: "Navegación de la app" }).waitFor();
+      if (viewport.width < 768) {
+        const mobileNavigation = page.getByRole("navigation", { name: "Navegación de la app" });
+        await mobileNavigation.waitFor({ state: "visible" });
+        if (!(await mobileNavigation.getByRole("link", { name: "Pedidos" }).isVisible())) throw new Error("MOBILE_ORDERS_LINK_HIDDEN");
+        if (await page.getByRole("navigation", { name: "Secciones principales" }).getByRole("link", { name: "Pedidos" }).isVisible()) throw new Error("DESKTOP_LINK_VISIBLE_ON_MOBILE");
+      }
       else {
         await page.locator(".public-navigation").waitFor();
         for (const label of ["Menú", "Pedidos", "Cuenta"]) {
           if (!(await page.getByRole("navigation", { name: "Secciones principales" }).getByRole("link", { name: label }).isVisible())) throw new Error(`DESKTOP_NAV_${label.toUpperCase()}_HIDDEN`);
         }
       }
+      const visibleNavigation = page.getByRole("navigation", { name: viewport.width < 768 ? "Navegación de la app" : "Secciones principales" });
+      if ((await visibleNavigation.getByRole("link", { name: "Pedidos" }).getAttribute("href")) !== "/cuenta") throw new Error("VISITOR_ORDERS_FALLBACK_INVALID");
       const menuShot = await screenshot(page, `${name}-menu-${viewport.width}`); evidence.push(menuShot);
       record(`${name}:menu:${viewport.width}`, "PASS", "Menu, global navigation and catalog rendered on staging", evidence);
       await axe(page, `${name}-menu-${viewport.width}`, evidence);

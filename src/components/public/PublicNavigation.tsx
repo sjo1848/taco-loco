@@ -20,7 +20,7 @@ export function PublicNavigation({ cartCount = 0, onCartClick }: { cartCount?: n
   const menuActive = pathname === "/menu";
   const accountActive = pathname === "/cuenta";
   const ordersActive = Boolean(trackingPath && pathname?.startsWith("/pedido/"));
-  const ordersHref = trackingPath ?? "/cuenta#customer-orders";
+  const ordersHref = trackingPath ?? "/cuenta";
 
   return <>
     <header className="public-navigation" aria-label="Navegación principal">
