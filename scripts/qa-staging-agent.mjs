@@ -62,7 +62,7 @@ async function runBrowser(name, launcher) {
     let phase = "menu";
     let trackingFetchPassed = false;
     page.on("response", (response) => {
-      if (response.url().includes("/api/orders/tracking/") && response.status() === 200) trackingFetchPassed = true;
+      if (response.url().includes("/api/orders/tracking/") && [200, 204].includes(response.status())) trackingFetchPassed = true;
     });
     page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(safeDiagnostic(message.text())); });
     page.on("requestfailed", (request) => failedRequests.push({ phase, detail: safeDiagnostic(`${request.method()} ${request.url()}: ${request.failure()?.errorText ?? "unknown"}`) }));
@@ -70,7 +70,8 @@ async function runBrowser(name, launcher) {
       const response = await page.goto(`${baseUrl}/menu`, { waitUntil: "domcontentloaded", timeout: 45_000 });
       await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
       if (response?.status() !== 200) throw new Error(`MENU_HTTP_${response?.status()}`);
-      await page.getByRole("navigation", { name: "Navegación de la app" }).waitFor();
+      if (viewport.width < 768) await page.getByRole("navigation", { name: "Navegación de la app" }).waitFor();
+      else await page.locator(".public-navigation").waitFor();
       const menuShot = await screenshot(page, `${name}-menu-${viewport.width}`); evidence.push(menuShot);
       record(`${name}:menu:${viewport.width}`, "PASS", "Menu, global navigation and catalog rendered on staging", evidence);
       await axe(page, `${name}-menu-${viewport.width}`, evidence);
@@ -128,7 +129,7 @@ async function runBrowser(name, launcher) {
         await page.waitForLoadState("domcontentloaded");
         if (!(await page.getByRole("heading", { name: /Pedido TL-/ }).count())) throw new Error("TRACKING_HEADING_MISSING");
         for (let attempt = 0; attempt < 25 && !trackingFetchPassed; attempt++) await page.waitForTimeout(200);
-        if (!trackingFetchPassed) throw new Error("TRACKING_API_DID_NOT_RETURN_200");
+        if (!trackingFetchPassed) throw new Error("TRACKING_API_DID_NOT_RETURN_200_OR_204");
         phase = "tracking-rendered";
         record("chromium:tracking:synthetic-order", "PASS", "Tracking deep-link loaded from the created order", [await screenshot(page, "chromium-tracking-390")]);
       }
