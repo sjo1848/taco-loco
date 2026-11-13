@@ -73,11 +73,14 @@ async function runBrowser(name, launcher) {
       if (viewport.width < 768) {
         const mobileNavigation = page.getByRole("navigation", { name: "Navegación de la app" });
         await mobileNavigation.waitFor({ state: "visible" });
-        if (!(await mobileNavigation.getByRole("link", { name: "Pedidos" }).isVisible())) throw new Error("MOBILE_ORDERS_LINK_HIDDEN");
-        if (await page.getByRole("navigation", { name: "Secciones principales" }).getByRole("link", { name: "Pedidos" }).isVisible()) throw new Error("DESKTOP_LINK_VISIBLE_ON_MOBILE");
+        for (const label of ["Menú", "Pedidos", "Cuenta"]) {
+          if (!(await mobileNavigation.getByRole("link", { name: label }).isVisible())) throw new Error(`MOBILE_NAV_${label.toUpperCase()}_HIDDEN`);
+          if (await page.getByRole("navigation", { name: "Secciones principales" }).getByRole("link", { name: label }).isVisible()) throw new Error(`DESKTOP_NAV_${label.toUpperCase()}_VISIBLE_ON_MOBILE`);
+        }
       }
       else {
         await page.locator(".public-navigation").waitFor();
+        if (await page.getByRole("navigation", { name: "Navegación de la app" }).isVisible()) throw new Error("MOBILE_NAV_VISIBLE_ON_DESKTOP");
         for (const label of ["Menú", "Pedidos", "Cuenta"]) {
           if (!(await page.getByRole("navigation", { name: "Secciones principales" }).getByRole("link", { name: label }).isVisible())) throw new Error(`DESKTOP_NAV_${label.toUpperCase()}_HIDDEN`);
         }
