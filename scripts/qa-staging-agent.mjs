@@ -7,7 +7,7 @@ import { AxeBuilder } from "@axe-core/playwright";
 
 const baseUrl = process.env.TACO_LOCO_STAGING_URL ?? "https://taco-loco-staging-20260913.sjo1848.workers.dev";
 const outputDir = path.resolve(process.env.TACO_LOCO_QA_OUTPUT ?? "output/playwright/issue-33");
-const viewports = (process.env.TACO_LOCO_QA_VIEWPORTS ?? "360,390,430,768,1440").split(",").map(Number).map((width) => ({ width, height: width < 500 ? 844 : width < 1000 ? 1024 : 900 }));
+const viewports = (process.env.TACO_LOCO_QA_VIEWPORTS ?? "360,390,430,768,1024,1440").split(",").map(Number).map((width) => ({ width, height: width < 500 ? 844 : width < 1000 ? 1024 : 900 }));
 const requestedBrowsers = (process.env.TACO_LOCO_QA_BROWSERS ?? "chromium,firefox,webkit").split(",").map((item) => item.trim()).filter(Boolean);
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH ?? (process.platform === "linux" ? "/opt/google/chrome/chrome" : undefined);
 const results = [];
