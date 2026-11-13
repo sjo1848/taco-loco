@@ -22,7 +22,7 @@ function candidateSha() {
 }
 
 function record(caseId, status, detail, evidence = []) {
-  results.push({ caseId, status, detail, evidence });
+  results.push({ caseId, status, detail: safeDiagnostic(detail), evidence: evidence.map((item) => safeDiagnostic(item)) });
 }
 
 function safeDiagnostic(value) {
@@ -59,9 +59,12 @@ async function runBrowser(name, launcher) {
     const evidence = [];
     const consoleErrors = [];
     const failedRequests = [];
+    let trackingFetchPassed = false;
+    page.on("response", (response) => {
+      if (response.url().includes("/api/orders/tracking/") && response.status() === 200) trackingFetchPassed = true;
+    });
     page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(safeDiagnostic(message.text())); });
     page.on("requestfailed", (request) => failedRequests.push(safeDiagnostic(`${request.method()} ${request.url()}: ${request.failure()?.errorText ?? "unknown"}`)));
-    await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
     try {
       const response = await page.goto(`${baseUrl}/menu`, { waitUntil: "domcontentloaded", timeout: 45_000 });
       await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
@@ -92,7 +95,7 @@ async function runBrowser(name, launcher) {
           await page.getByRole("textbox", { name: "Dirección", exact: true }).fill("Calle QA 123");
           await page.getByLabel("Titular de la transferencia").fill("QA Agent");
           await page.getByLabel("Referencia (opcional)").fill("Puerta QA");
-          record("chromium:checkout:delivery", "PASS", "Delivery fields, mandatory address and transfer holder rendered", [await screenshot(page, "chromium-checkout-delivery-390")]);
+          record("chromium:checkout:delivery-fields", "PASS", "Delivery UI fields rendered; real-provider DELIVERY order is validated separately", [await screenshot(page, "chromium-checkout-delivery-390")]);
           await page.getByRole("radio", { name: /Retiro/ }).check();
         }
         await page.getByRole("button", { name: "Volver al carrito" }).click();
@@ -122,6 +125,8 @@ async function runBrowser(name, launcher) {
         if (!/\/pedido\//.test(page.url())) throw new Error("TRACKING_LINK_DID_NOT_NAVIGATE");
         await page.waitForLoadState("domcontentloaded");
         if (!(await page.getByRole("heading", { name: /Pedido TL-/ }).count())) throw new Error("TRACKING_HEADING_MISSING");
+        for (let attempt = 0; attempt < 25 && !trackingFetchPassed; attempt++) await page.waitForTimeout(200);
+        if (!trackingFetchPassed) throw new Error("TRACKING_API_DID_NOT_RETURN_200");
         record("chromium:tracking:synthetic-order", "PASS", "Tracking deep-link loaded from the created order", [await screenshot(page, "chromium-tracking-390")]);
       }
     } catch (error) {
@@ -132,7 +137,7 @@ async function runBrowser(name, launcher) {
       if (expectedUnauthenticatedProbes) record(`${name}:console:${viewport.width}`, "PASS", "Only expected 401 probes for unauthenticated customer session", consoleErrors.slice(0, 10));
       const expectedAbortedCustomerBootstrap = failedRequests.filter((request) =>
         request.includes("net::ERR_ABORTED") &&
-        (request.includes("/api/customer/auth/session") || request.includes("/api/customer/preferences") || request.includes("/api/orders/tracking/"))
+        (request.includes("/api/customer/auth/session") || request.includes("/api/customer/preferences") || (trackingFetchPassed && request.includes("/api/orders/tracking/")))
       );
       const unexpectedFailedRequests = failedRequests.filter((request) =>
         !request.startsWith("GET whatsapp://") && !expectedAbortedCustomerBootstrap.includes(request)
@@ -140,8 +145,6 @@ async function runBrowser(name, launcher) {
       if (unexpectedFailedRequests.length) record(`${name}:network:${viewport.width}`, "FAIL", `${unexpectedFailedRequests.length} failed requests`, unexpectedFailedRequests.slice(0, 10));
       if (failedRequests.length > unexpectedFailedRequests.length) record(`${name}:network:${viewport.width}:handoff`, "PASS", "Expected whatsapp:// navigation was aborted by the automated browser", failedRequests.filter((request) => request.startsWith("GET whatsapp://")).slice(0, 10));
       if (expectedAbortedCustomerBootstrap.length) record(`${name}:network:${viewport.width}:navigation-abort`, "PASS", "Customer bootstrap or tracking polling requests were aborted during successful navigation cleanup", expectedAbortedCustomerBootstrap.slice(0, 10));
-      const trace = path.join(outputDir, `${name}-${viewport.width}.zip`);
-      await context.tracing.stop({ path: trace });
       await context.close();
     }
   }
