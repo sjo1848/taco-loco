@@ -7,7 +7,7 @@ import { AxeBuilder } from "@axe-core/playwright";
 
 const baseUrl = process.env.TACO_LOCO_STAGING_URL ?? "https://taco-loco-staging-20260913.sjo1848.workers.dev";
 const outputDir = path.resolve(process.env.TACO_LOCO_QA_OUTPUT ?? "output/playwright/issue-33");
-const viewports = (process.env.TACO_LOCO_QA_VIEWPORTS ?? "360,390,430,768,1440").split(",").map(Number).map((width) => ({ width, height: width < 500 ? 844 : width < 1000 ? 1024 : 900 }));
+const viewports = (process.env.TACO_LOCO_QA_VIEWPORTS ?? "360,390,430,768,1024,1440").split(",").map(Number).map((width) => ({ width, height: width < 500 ? 844 : width < 1000 ? 1024 : 900 }));
 const requestedBrowsers = (process.env.TACO_LOCO_QA_BROWSERS ?? "chromium,firefox,webkit").split(",").map((item) => item.trim()).filter(Boolean);
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH ?? (process.platform === "linux" ? "/opt/google/chrome/chrome" : undefined);
 const results = [];
@@ -87,6 +87,15 @@ async function runBrowser(name, launcher) {
       }
       const visibleNavigation = page.getByRole("navigation", { name: viewport.width < 768 ? "Navegación de la app" : "Secciones principales" });
       if ((await visibleNavigation.getByRole("link", { name: "Pedidos" }).getAttribute("href")) !== "/cuenta") throw new Error("VISITOR_ORDERS_FALLBACK_INVALID");
+      const overlappingCards = await page.locator(".product-card").evaluateAll((cards) => cards.filter((card) => {
+        const media = card.querySelector(".product-card__media")?.getBoundingClientRect();
+        if (!media) return false;
+        return [...card.querySelectorAll(".product-card__favorite, .product-card__add")].some((button) => {
+          const bounds = button.getBoundingClientRect();
+          return bounds.left < media.right && bounds.right > media.left && bounds.top < media.bottom && bounds.bottom > media.top;
+        });
+      }).length);
+      if (overlappingCards) throw new Error(`PRODUCT_ACTIONS_OVERLAP_MEDIA:${overlappingCards}`);
       const menuShot = await screenshot(page, `${name}-menu-${viewport.width}`); evidence.push(menuShot);
       record(`${name}:menu:${viewport.width}`, "PASS", "Menu, global navigation and catalog rendered on staging", evidence);
       await axe(page, `${name}-menu-${viewport.width}`, evidence);
