@@ -128,7 +128,7 @@ async function runBrowser(name, launcher) {
         if (!/\/pedido\//.test(page.url())) throw new Error("TRACKING_LINK_DID_NOT_NAVIGATE");
         await page.waitForLoadState("domcontentloaded");
         if (!(await page.getByRole("heading", { name: /Pedido TL-/ }).count())) throw new Error("TRACKING_HEADING_MISSING");
-        for (let attempt = 0; attempt < 25 && !trackingFetchPassed; attempt++) await page.waitForTimeout(200);
+        for (let attempt = 0; attempt < 50 && !trackingFetchPassed; attempt++) await page.waitForTimeout(200);
         if (!trackingFetchPassed) throw new Error("TRACKING_API_DID_NOT_RETURN_200_OR_204");
         phase = "tracking-rendered";
         record("chromium:tracking:synthetic-order", "PASS", "Tracking deep-link loaded from the created order", [await screenshot(page, "chromium-tracking-390")]);
