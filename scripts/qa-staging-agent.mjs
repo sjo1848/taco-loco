@@ -7,7 +7,7 @@ import { AxeBuilder } from "@axe-core/playwright";
 
 const baseUrl = process.env.TACO_LOCO_STAGING_URL ?? "https://taco-loco-staging-20260913.sjo1848.workers.dev";
 const outputDir = path.resolve(process.env.TACO_LOCO_QA_OUTPUT ?? "output/playwright/issue-33");
-const viewports = [360, 390, 430, 768, 1440].map((width) => ({ width, height: width < 500 ? 844 : width < 1000 ? 1024 : 900 }));
+const viewports = (process.env.TACO_LOCO_QA_VIEWPORTS ?? "360,390,430,768,1440").split(",").map(Number).map((width) => ({ width, height: width < 500 ? 844 : width < 1000 ? 1024 : 900 }));
 const requestedBrowsers = (process.env.TACO_LOCO_QA_BROWSERS ?? "chromium,firefox,webkit").split(",").map((item) => item.trim()).filter(Boolean);
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH ?? (process.platform === "linux" ? "/opt/google/chrome/chrome" : undefined);
 const results = [];
@@ -23,6 +23,10 @@ function candidateSha() {
 
 function record(caseId, status, detail, evidence = []) {
   results.push({ caseId, status, detail, evidence });
+}
+
+function safeDiagnostic(value) {
+  return value.replace(/(\/api\/orders\/tracking\/|\/pedido\/)[A-Za-z0-9_-]+/g, "$1[redacted]").replace(/\?[^\s]*/g, "?[redacted]");
 }
 
 async function screenshot(page, name) {
@@ -55,14 +59,14 @@ async function runBrowser(name, launcher) {
     const evidence = [];
     const consoleErrors = [];
     const failedRequests = [];
-    page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(message.text()); });
-    page.on("requestfailed", (request) => failedRequests.push(`${request.method()} ${request.url()}: ${request.failure()?.errorText ?? "unknown"}`));
+    page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(safeDiagnostic(message.text())); });
+    page.on("requestfailed", (request) => failedRequests.push(safeDiagnostic(`${request.method()} ${request.url()}: ${request.failure()?.errorText ?? "unknown"}`)));
     await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
     try {
       const response = await page.goto(`${baseUrl}/menu`, { waitUntil: "domcontentloaded", timeout: 45_000 });
       await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
       if (response?.status() !== 200) throw new Error(`MENU_HTTP_${response?.status()}`);
-      await page.getByRole("navigation", { name: "Navegación principal" }).waitFor();
+      await page.getByRole("navigation", { name: "Navegación de la app" }).waitFor();
       const menuShot = await screenshot(page, `${name}-menu-${viewport.width}`); evidence.push(menuShot);
       record(`${name}:menu:${viewport.width}`, "PASS", "Menu, global navigation and catalog rendered on staging", evidence);
       await axe(page, `${name}-menu-${viewport.width}`, evidence);
@@ -70,7 +74,15 @@ async function runBrowser(name, launcher) {
       if (full && viewport.width === 390) {
         const addButton = page.getByRole("button", { name: "Agregar" }).first();
         await addButton.click();
+        const productSheet = page.locator(".selection-sheet--product");
+        await productSheet.waitFor({ state: "visible" });
+        for (const requiredGroup of await productSheet.locator(".modifier-group").all()) {
+          if ((await requiredGroup.locator("legend").innerText()).includes("obligatorio")) await requiredGroup.locator(".modifier-option").first().click();
+        }
+        await productSheet.getByRole("button", { name: /Agregar al pedido/ }).click();
+        await productSheet.waitFor({ state: "hidden" });
         await page.getByRole("button", { name: /Abrir carrito/ }).click();
+        await page.getByRole("button", { name: "Continuar con tus datos" }).click();
         await page.getByLabel("Nombre para el pedido (opcional)").fill("QA Agent Synthetic");
         const checkoutShot = await screenshot(page, "chromium-checkout-pickup-390"); evidence.push(checkoutShot);
         record("chromium:checkout:pickup", "PASS", "Cart state, order name and pickup checkout rendered", evidence);
@@ -81,9 +93,12 @@ async function runBrowser(name, launcher) {
           await page.getByLabel("Titular de la transferencia").fill("QA Agent");
           await page.getByLabel("Referencia (opcional)").fill("Puerta QA");
           record("chromium:checkout:delivery", "PASS", "Delivery fields, mandatory address and transfer holder rendered", [await screenshot(page, "chromium-checkout-delivery-390")]);
+          await page.getByRole("radio", { name: /Retiro/ }).check();
         }
+        await page.getByRole("button", { name: "Volver al carrito" }).click();
         await page.getByRole("button", { name: "Seguir viendo el menú" }).click();
         await page.getByRole("button", { name: /Abrir carrito/ }).click();
+        await page.getByRole("button", { name: "Continuar con tus datos" }).click();
         let popup;
         page.on("popup", (child) => { popup = child; });
         await page.getByRole("link", { name: /Enviar pedido/ }).click();
@@ -117,14 +132,14 @@ async function runBrowser(name, launcher) {
       if (expectedUnauthenticatedProbes) record(`${name}:console:${viewport.width}`, "PASS", "Only expected 401 probes for unauthenticated customer session", consoleErrors.slice(0, 10));
       const expectedAbortedCustomerBootstrap = failedRequests.filter((request) =>
         request.includes("net::ERR_ABORTED") &&
-        (request.includes("/api/customer/auth/session") || request.includes("/api/customer/preferences"))
+        (request.includes("/api/customer/auth/session") || request.includes("/api/customer/preferences") || request.includes("/api/orders/tracking/"))
       );
       const unexpectedFailedRequests = failedRequests.filter((request) =>
         !request.startsWith("GET whatsapp://") && !expectedAbortedCustomerBootstrap.includes(request)
       );
       if (unexpectedFailedRequests.length) record(`${name}:network:${viewport.width}`, "FAIL", `${unexpectedFailedRequests.length} failed requests`, unexpectedFailedRequests.slice(0, 10));
       if (failedRequests.length > unexpectedFailedRequests.length) record(`${name}:network:${viewport.width}:handoff`, "PASS", "Expected whatsapp:// navigation was aborted by the automated browser", failedRequests.filter((request) => request.startsWith("GET whatsapp://")).slice(0, 10));
-      if (expectedAbortedCustomerBootstrap.length) record(`${name}:network:${viewport.width}:anonymous-bootstrap`, "PASS", "Anonymous customer bootstrap requests were aborted during successful navigation cleanup", expectedAbortedCustomerBootstrap.slice(0, 10));
+      if (expectedAbortedCustomerBootstrap.length) record(`${name}:network:${viewport.width}:navigation-abort`, "PASS", "Customer bootstrap or tracking polling requests were aborted during successful navigation cleanup", expectedAbortedCustomerBootstrap.slice(0, 10));
       const trace = path.join(outputDir, `${name}-${viewport.width}.zip`);
       await context.tracing.stop({ path: trace });
       await context.close();

@@ -217,10 +217,10 @@ body { background: var(--background); color: var(--cream); }
 .public-navigation__links a:hover, .public-navigation__links a:focus-visible, .public-navigation__links button:hover, .public-navigation__links button:focus-visible { background: #edf7ef !important; color: #1d762e; outline: 2px solid var(--brand-green); }
 .public-navigation__count { background: var(--brand-red); color: #fff; }
 .public-bottom-nav { position: fixed; right: 0; bottom: 0; left: 0; z-index: 30; display: grid; grid-template-columns: repeat(3, 1fr); padding: 7px 12px calc(7px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); background: rgba(255,255,255,.96); box-shadow: 0 -5px 20px rgba(57,47,35,.1); backdrop-filter: blur(14px); }
-.public-bottom-nav__item { display: grid; min-height: 48px; place-items: center; gap: 2px; border-radius: 13px; color: #7a827c; text-decoration: none; }
+.public-bottom-nav__item { display: grid; min-height: 48px; place-items: center; gap: 2px; border-radius: 13px; color: #5f665f; text-decoration: none; }
 .public-bottom-nav__item > span { display: grid; width: 27px; height: 22px; place-items: center; border-radius: 8px; font-size: 1.12rem; line-height: 1; }
 .public-bottom-nav__item small { font-size: .69rem; font-weight: 800; }
-.public-bottom-nav__item--active { color: var(--brand-green); background: #edf7ef; }
+.public-bottom-nav__item--active { color: #167a30; background: #edf7ef; }
 .public-bottom-nav__item--active > span { background: #d9f0dd; }
 .brand-pattern { background: var(--brand-green); }
 .brand-pattern--hero { border-bottom: 0; box-shadow: none; }
