@@ -302,6 +302,7 @@ for (const name of browserNames) {
       ["categories-desktop", "/admin/categories"], ["settings-desktop", "/admin/settings"], ["more-desktop", "/admin/more"],
     ];
     for (const [screen, route] of desktopRoutes) await capture(page, screen, route, 1440, 1000);
+    for (const width of viewports) await capture(page, `product-new-responsive-${width}`, "/admin/products/new", width, width < 500 ? 844 : 900);
     if (orderCode) {
       await page.goto(`${baseUrl}/admin/orders/history?q=${encodeURIComponent(orderCode)}`, { waitUntil: "domcontentloaded" });
       await page.locator(".history-row").first().waitFor({ state: "visible" });

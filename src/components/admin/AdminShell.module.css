@@ -221,7 +221,7 @@
 .shell :global(.product-image-editor h2){margin:0;font-size:17px}
 .shell :global(.product-image-editor img){border-radius:12px;object-fit:cover}
 .shell :global(.product-image-editor p){margin:0;color:var(--admin-muted);font-size:13px}
-.shell :global(.admin-checks){padding:14px;border:1px solid var(--admin-border);border-radius:14px;color:var(--admin-text)}
+.shell :global(.admin-checks){min-width:0;width:100%;padding:14px;border:1px solid var(--admin-border);border-radius:14px;color:var(--admin-text)}
 .shell :global(.admin-checks legend){padding:0 5px;font-weight:750}
 .shell :global(.admin-checks label){color:var(--admin-text)}
 .shell :global(.admin-skeleton-list){display:grid;gap:10px}
