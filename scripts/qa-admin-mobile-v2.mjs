@@ -21,7 +21,10 @@ async function capture(page, name, route, width = 390, height = 844) {
   const response = await page.goto(new URL(route, baseUrl).toString(), { waitUntil: "domcontentloaded" });
   if (!response || response.status() >= 500) throw new Error(`${name} returned HTTP ${response?.status() ?? "no response"}`);
   await page.locator("main").first().waitFor({ state: "visible", timeout: 15000 });
-  await page.waitForTimeout(250);
+  await page.locator(".admin-skeleton-list").waitFor({ state: "detached", timeout: 15000 });
+  if (route === "/admin/orders") await page.locator(".connection--live").waitFor({ state: "visible", timeout: 10000 });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(50);
   const overflow = await page.evaluate(() => ({ viewport: window.innerWidth, content: document.documentElement.scrollWidth }));
   if (overflow.content > overflow.viewport + 1) throw new Error(`${name} horizontal overflow ${overflow.content}/${overflow.viewport}`);
   results.viewportChecks.push({ browser: page.context().browser()?.browserType().name(), screen: name, width, overflow: false });
@@ -206,6 +209,7 @@ for (const name of browserNames) {
     for (const width of viewports) {
       await page.setViewportSize({ width, height: width < 500 ? 844 : 900 });
       await assertAboveMobileNavigation(page, page.getByRole("button", { name: "Continuar" }));
+      await page.evaluate(() => window.scrollTo(0, 0));
       const file = path.join(outputDir, `new-order-step-1-${width}-${name}.png`);
       await page.screenshot({ path: file, fullPage: true, animations: "disabled" });
       results.screenshots.push(path.relative(process.cwd(), file));
@@ -224,6 +228,7 @@ for (const name of browserNames) {
     for (const width of viewports) {
       await page.setViewportSize({ width, height: width < 500 ? 844 : 900 });
       await assertAboveMobileNavigation(page, page.getByRole("button", { name: "Registrar pedido" }));
+      await page.evaluate(() => window.scrollTo(0, 0));
       const file = path.join(outputDir, `new-order-step-2-${width}-${name}.png`);
       await page.screenshot({ path: file, fullPage: true, animations: "disabled" });
       results.screenshots.push(path.relative(process.cwd(), file));
