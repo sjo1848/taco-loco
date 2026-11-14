@@ -16,11 +16,21 @@ const personalDataMasks = [".order-ticket__identity strong", ".attention-ticket_
 function instrumentEventSource() {
   window.__adminSseCreated = 0;
   window.__adminSseEvents = [];
+  window.__adminSseActive = 0;
   const NativeEventSource = window.EventSource;
   window.EventSource = new Proxy(NativeEventSource, { construct(target, args) {
     window.__adminSseCreated += 1;
+    window.__adminSseActive += 1;
     const source = Reflect.construct(target, args);
     for (const event of ["open", "error"]) source.addEventListener(event, () => window.__adminSseEvents.push({ event, readyState: source.readyState, at: new Date().toISOString() }));
+    source.addEventListener("order", (event) => {
+      let order = null;
+      try { order = JSON.parse(event.data)?.order ?? null; } catch { /* Keep diagnostics non-fatal. */ }
+      window.__adminSseEvents.push({ event: "order", readyState: source.readyState, sequence: event.lastEventId, orderNumber: order?.orderNumber ?? null, status: order?.status ?? null, at: new Date().toISOString() });
+    });
+    const nativeClose = source.close.bind(source);
+    let closed = false;
+    source.close = () => { if (!closed) { closed = true; window.__adminSseActive -= 1; } nativeClose(); };
     return source;
   } });
 }
@@ -189,8 +199,10 @@ async function createAndAdvanceSyntheticPickup(page, attentionObserver = null, r
         return { status: response.status, body: await response.json().catch(() => null) };
       }, orderId);
       if (external.status !== 200) throw new Error(`Second operator could not confirm the synthetic order (${external.status}).`);
+      const previousOpenCount = await attentionObserver.evaluate(() => window.__adminSseEvents.filter((entry) => entry.event === "open").length);
       await attentionObserver.context().setOffline(false);
       await attentionObserver.locator(".connection--live").waitFor({ state: "visible", timeout: 20000 });
+      await attentionObserver.waitForFunction((count) => window.__adminSseEvents.filter((entry) => entry.event === "open").length > count && window.__adminSseActive === 1, previousOpenCount, { timeout: 15000 });
       await attentionObserver.locator(".attention-ticket").filter({ hasText: marker }).waitFor({ state: "detached", timeout: 20000 });
       if (attentionCheckpoint) {
         const previousCodesAfterReconnect = await attentionObserver.locator(".attention-bucket").nth(1).locator(".attention-ticket__head strong").allTextContents();
@@ -210,6 +222,15 @@ async function createAndAdvanceSyntheticPickup(page, attentionObserver = null, r
         return response.ok && (await response.json()).status === "CONFIRMED";
       }, orderId, { timeout: 15000 });
       results.journeys.push({ journey: "second operator updates Attention live; stale first-operator action receives and recovers 409", result: "PASS", orderCode });
+      const previousOrderEvents = await attentionObserver.evaluate(() => window.__adminSseEvents.filter((entry) => entry.event === "order").length);
+      const nextTransition = await page.evaluate(async (id) => {
+        const response = await fetch(`/api/admin/orders/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ toStatus: "IN_PREPARATION" }) });
+        return response.status;
+      }, orderId);
+      if (nextTransition !== 200) throw new Error(`Post-reconnect transition failed (${nextTransition}).`);
+      await attentionObserver.waitForFunction(({ previous, number }) => window.__adminSseEvents.some((entry, index) => index >= previous && entry.event === "order" && entry.orderNumber === number && entry.status === "IN_PREPARATION"), { previous: previousOrderEvents, number: Number(orderCode.slice(3)) }, { timeout: 15000 });
+      if (await attentionObserver.evaluate(() => window.__adminSseActive) !== 1) throw new Error("SSE reconnection left more than one active stream.");
+      results.journeys.push({ journey: "fresh SSE transport delivers a later operator transition after online recovery; exactly one stream remains active", result: "PASS", orderCode });
     } else {
       await page.getByRole("button", { name: "Confirmar pedido", exact: true }).click();
       await page.getByRole("heading", { name: "Confirmado", exact: true }).waitFor({ state: "visible", timeout: 15000 });
