@@ -15,7 +15,8 @@ const destinations = [
 ];
 
 type LiveOrder = { id: string; orderNumber: number; status: "RECEIVED"|"CONFIRMED"|"IN_PREPARATION"|"READY"|"DELIVERED"|"CANCELLED"; fulfillment: "PICKUP"|"DINE_IN"|"DELIVERY"; verificationStatus: string; paymentStatus: string; refundStatus: string; customerName: string | null; totalAmount: number; createdAt: string; lines: Array<{ quantity: number; productName: string; modifiersSnapshot: unknown; note?: string | null }>; notes?: string | null };
-type AdminLiveState = { connection: "connecting" | "live" | "reconnecting" | "offline" | "expired"; subscribe: (handler: (order: LiveOrder) => void) => () => void };
+type LiveSubscriber = { onOrder: (order: LiveOrder) => void; onSync: () => void | Promise<void> };
+type AdminLiveState = { connection: "connecting" | "live" | "reconnecting" | "offline" | "expired"; subscribe: (onOrder: (order: LiveOrder) => void, onSync: () => void | Promise<void>) => () => void };
 const AdminLiveContext = createContext<AdminLiveState>({ connection: "connecting", subscribe: () => () => {} });
 export function useAdminLiveEvents() { return useContext(AdminLiveContext); }
 
@@ -44,52 +45,79 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || "/admin";
   const searchParams=useSearchParams();
   const [connection, setConnection] = useState<AdminLiveState["connection"]>("connecting");
+  const connectionRef = useRef(connection);
   const lastSequence = useRef<bigint>(BigInt(0));
-  const subscribers = useRef(new Set<(order: LiveOrder) => void>());
+  const subscribers = useRef(new Set<LiveSubscriber>());
   const active = pathname.startsWith("/admin/orders");
-  const subscribe = useCallback((handler: (order: LiveOrder) => void) => { subscribers.current.add(handler); return () => subscribers.current.delete(handler); }, []);
+  const subscribe = useCallback((onOrder: (order: LiveOrder) => void, onSync: () => void | Promise<void>) => {
+    const subscriber = { onOrder, onSync };
+    subscribers.current.add(subscriber);
+    if (connectionRef.current === "live") void Promise.resolve(onSync()).catch(() => {});
+    return () => subscribers.current.delete(subscriber);
+  }, []);
+  const updateConnection = useCallback((next: AdminLiveState["connection"]) => {
+    connectionRef.current = next;
+    setConnection(next);
+  }, []);
+  const reconcileSubscribers = useCallback(() => {
+    for (const subscriber of subscribers.current) void Promise.resolve(subscriber.onSync()).catch(() => {});
+  }, []);
   const onOrder = useCallback((event: MessageEvent<string>) => {
     try {
       const sequence = event.lastEventId && /^\d+$/.test(event.lastEventId) ? BigInt(event.lastEventId) : null;
       if (sequence !== null && sequence <= lastSequence.current) return;
       if (sequence !== null) lastSequence.current = sequence;
       const payload = JSON.parse(event.data) as { order?: LiveOrder };
-      if (payload.order) subscribers.current.forEach((handler) => handler(payload.order!));
+      if (payload.order) subscribers.current.forEach((subscriber) => subscriber.onOrder(payload.order!));
     } catch { /* Ignore malformed events; EventSource will continue and the next event is authoritative. */ }
   }, []);
   useEffect(() => {
     if (!active) return;
     let alive = true;
     const stream = new EventSource("/api/admin/orders/events");
-    const onOffline = () => setConnection("offline");
-    const onOnline = () => setConnection("reconnecting");
+    const onOffline = () => updateConnection("offline");
+    const onOnline = () => updateConnection("reconnecting");
     stream.addEventListener("order", onOrder as EventListener);
     stream.addEventListener("session-expired", () => {
       stream.close();
-      if (alive) setConnection("expired");
+      if (alive) updateConnection("expired");
     });
-    stream.onopen = () => alive && setConnection("live");
+    stream.onopen = () => {
+      if (!alive) return;
+      updateConnection("live");
+      // The server starts a fresh stream at its current event sequence. Reconcile
+      // each mounted view after every open so a write between its initial query
+      // and this connection cannot fall into the snapshot/stream gap. On browser
+      // reconnect, EventSource replays after Last-Event-ID and this sync also
+      // repairs any gap caused by a suspended tab or a lost connection.
+      reconcileSubscribers();
+    };
     stream.onerror = () => {
       if (!alive) return;
-      if (navigator.onLine) setConnection("reconnecting");
-      else setConnection("offline");
+      if (navigator.onLine) updateConnection("reconnecting");
+      else updateConnection("offline");
       void fetch("/api/auth/session", { cache: "no-store" }).then((response) => {
         if (alive && response.status === 401) {
           stream.close();
-          setConnection("expired");
+          updateConnection("expired");
         }
       }).catch(() => {});
     };
     window.addEventListener("offline", onOffline);
     window.addEventListener("online", onOnline);
+    const onVisible = () => { if (document.visibilityState === "visible") reconcileSubscribers(); };
+    window.addEventListener("pageshow", onVisible);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       alive = false;
       stream.removeEventListener("order", onOrder as EventListener);
       stream.close();
       window.removeEventListener("offline", onOffline);
       window.removeEventListener("online", onOnline);
+      window.removeEventListener("pageshow", onVisible);
+      document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [active, onOrder]);
+  }, [active, onOrder, reconcileSubscribers, updateConnection]);
   if (pathname === "/admin/login") return children;
   const currentTitle = title(pathname);
   const back = pathname !== "/admin/orders" && pathname !== "/admin/products" && pathname !== "/admin/more" && pathname !== "/admin/orders/history";

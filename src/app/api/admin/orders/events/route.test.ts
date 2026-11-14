@@ -84,6 +84,31 @@ describe("admin order stream", () => {
     await reader.cancel();
   });
 
+  it("honors Last-Event-ID on reconnect and replays every later event in order", async () => {
+    const controller = new AbortController();
+    mocks.eventsAfter.mockResolvedValueOnce([
+      { sequence: BigInt(81), orderId: "first" },
+      { sequence: BigInt(82), orderId: "second" },
+    ]).mockResolvedValue([]);
+    mocks.findById.mockImplementation(async (id: string) => ({ id, createdAt: new Date("2026-11-14T12:00:00Z"), lines: [] }));
+    const response = await GET(new Request("https://example.test/api/admin/orders/events?after=2", {
+      headers: { "Last-Event-ID": "80" }, signal: controller.signal,
+    }));
+    const reader = response.body!.getReader();
+    let contents = "";
+    for (let index = 0; index < 3 && !contents.includes('"id":"second"'); index++) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      contents += new TextDecoder().decode(chunk.value);
+    }
+    expect(mocks.eventsAfter).toHaveBeenCalledWith(BigInt(80));
+    expect(contents).toContain("id: 81\nevent: order");
+    expect(contents).toContain("id: 82\nevent: order");
+    expect(contents.indexOf("id: 81")).toBeLessThan(contents.indexOf("id: 82"));
+    controller.abort();
+    await reader.cancel();
+  });
+
   it("does not expose a replayed order when authorization is revoked during its D1 read", async () => {
     let releaseOrder!: (order: unknown) => void;
     const orderRead = new Promise((resolve) => { releaseOrder = resolve; });
