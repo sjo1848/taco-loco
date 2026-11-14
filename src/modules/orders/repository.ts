@@ -1,5 +1,6 @@
 import { AppError } from "@/lib/errors";
 import { db } from "@/lib/db";
+import { isD1Runtime } from "@/lib/runtime";
 import type { OrderStatus } from "@/modules/orders/model";
 
 export type OrderListFilter = { status?: OrderStatus; query?: string };
@@ -17,7 +18,11 @@ function adminSearch(query?: string) {
   const normalized = query?.trim() ?? "";
   if (!normalized) return {};
   const orderNumber = parseOrderNumber(normalized);
-  return { OR: [{ customerName: { contains: normalized, mode: "insensitive" as const } }, { customerPhone: { contains: normalized } }, ...(orderNumber ? [{ orderNumber }] : [])] };
+  // Prisma's SQLite/D1 connector rejects `mode: "insensitive"` (it is a
+  // PostgreSQL-only filter). SQLite LIKE is case-insensitive for ASCII by
+  // default, so omit the mode on D1 while preserving PostgreSQL behavior.
+  const textMatch = (value: string) => ({ contains: value, ...(!isD1Runtime ? { mode: "insensitive" as const } : {}) });
+  return { OR: [{ customerName: textMatch(normalized) }, { customerPhone: textMatch(normalized) }, ...(orderNumber ? [{ orderNumber }] : [])] };
 }
 
 const operationalOrderSelect = {
@@ -85,7 +90,7 @@ export const orderRepository = {
     return db.order.findMany({
       where: {
         ...(filter.status ? { status: filter.status } : {}),
-        ...(query ? { OR: [{ customerName: { contains: query, mode: "insensitive" } }, { customerPhone: { contains: query, mode: "insensitive" } }, ...(orderNumber ? [{ orderNumber }] : [])] } : {}),
+        ...(query ? { OR: [{ customerName: { contains: query, ...(!isD1Runtime ? { mode: "insensitive" as const } : {}) } }, { customerPhone: { contains: query, ...(!isD1Runtime ? { mode: "insensitive" as const } : {}) } }, ...(orderNumber ? [{ orderNumber }] : [])] } : {}),
       },
       include: { lines: true, createdBy: { select: { email: true } } },
       orderBy: [{ createdAt: "desc" }],
