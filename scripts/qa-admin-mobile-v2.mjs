@@ -9,7 +9,7 @@ const outputDir = path.resolve(process.env.TACO_LOCO_QA_OUTPUT ?? "output/playwr
 const browserNames = (process.env.TACO_LOCO_QA_BROWSERS ?? "chromium").split(",").map((x) => x.trim()).filter(Boolean);
 const browserTypes = { chromium, firefox, webkit };
 const viewports = [360, 390, 430, 768, 1024, 1440];
-const results = { baseUrl, browsers: [], screenshots: [], viewportChecks: [], journeys: [], externalBlocked: [] };
+const results = { baseUrl, browsers: [], browserFailures: [], screenshots: [], viewportChecks: [], journeys: [], externalBlocked: [] };
 const personalDataMasks = [".order-ticket__identity strong", ".attention-ticket__customer strong", ".history-row__main strong", ".detail-grid dd"];
 
 if (!email || !password) throw new Error("Set TACO_LOCO_ADMIN_EMAIL and TACO_LOCO_ADMIN_PASSWORD in the process environment.");
@@ -37,6 +37,9 @@ async function capture(page, name, route, width = 390, height = 844) {
 
 async function login(page) {
   await page.goto(`${baseUrl}/admin/login`, { waitUntil: "domcontentloaded" });
+  // WebKit can expose the server-rendered form before React has hydrated it.
+  // Wait for the login page's short request burst to settle before clicking.
+  await page.waitForLoadState("networkidle", { timeout: 10000 });
   await page.getByLabel("Email").fill(email);
   await page.locator('input[autocomplete="current-password"]').fill(password);
   await page.getByRole("button", { name: "Ingresar" }).click();
@@ -293,7 +296,10 @@ for (const name of browserNames) {
     results.journeys.push({ journey: "admin logout and session invalidation", result: "PASS" });
     if (pageErrors.length) throw new Error(`Browser page errors: ${pageErrors.join(", ")}`);
   } catch (error) {
-    results.browsers.push({ name, result: "FAIL", reason: error instanceof Error ? error.message : "unknown" });
+    const reason = error instanceof Error ? error.message : "unknown";
+    results.browsers.push({ name, result: "FAIL", reason });
+    results.browserFailures.push({ name, reason: reason.split("\n")[0] });
+    await fs.writeFile(path.join(outputDir, "report.json"), JSON.stringify(results, null, 2));
     throw error;
   } finally {
     await context.close();
