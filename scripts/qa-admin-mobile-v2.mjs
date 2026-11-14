@@ -245,11 +245,13 @@ async function createAndAdvanceSyntheticPickup(page, attentionObserver = null, r
       await attentionObserver.waitForFunction(({ previous, number }) => window.__adminSseEvents.filter((entry) => entry.event === "order").slice(previous).some((entry) => entry.orderNumber === number && entry.status === "IN_PREPARATION"), { previous: previousOrderEvents, number: Number(orderCode.slice(3)) }, { timeout: 15000 });
       if (await attentionObserver.evaluate(() => window.__adminSseActive) !== 1) throw new Error("SSE reconnection left more than one active stream.");
       results.journeys.push({ journey: "fresh SSE transport delivers a later operator transition after online recovery; exactly one stream remains active", result: "PASS", orderCode });
+      await page.goto(`${baseUrl}/admin/orders/${orderId}`, { waitUntil: "domcontentloaded" });
+      status = "IN_PREPARATION";
     } else {
       await page.getByRole("button", { name: "Confirmar pedido", exact: true }).click();
       await page.getByRole("heading", { name: "Confirmado", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+      status = "CONFIRMED";
     }
-    status = "CONFIRMED";
   }
   if (status === "CONFIRMED") {
     await page.goto(`${baseUrl}/admin/orders?cola=iniciar`, { waitUntil: "domcontentloaded" });
