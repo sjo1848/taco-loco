@@ -45,6 +45,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || "/admin";
   const searchParams=useSearchParams();
   const [connection, setConnection] = useState<AdminLiveState["connection"]>("connecting");
+  const [streamGeneration, setStreamGeneration] = useState(0);
   const connectionRef = useRef(connection);
   const lastSequence = useRef<bigint>(BigInt(0));
   const subscribers = useRef(new Set<LiveSubscriber>());
@@ -71,22 +72,30 @@ export function AdminShell({ children }: { children: ReactNode }) {
       if (payload.order) subscribers.current.forEach((subscriber) => subscriber.onOrder(payload.order!));
     } catch { /* Ignore malformed events; EventSource will continue and the next event is authoritative. */ }
   }, []);
+  const onReady = useCallback((event: MessageEvent<string>) => {
+    const sequence = event.lastEventId && /^\d+$/.test(event.lastEventId) ? BigInt(event.lastEventId) : null;
+    if (sequence !== null && sequence > lastSequence.current) lastSequence.current = sequence;
+  }, []);
   useEffect(() => {
     if (!active) return;
     let alive = true;
-    const stream = new EventSource("/api/admin/orders/events");
+    const cursor = lastSequence.current;
+    const streamUrl = cursor > BigInt(0) ? `/api/admin/orders/events?after=${cursor}` : "/api/admin/orders/events";
+    const stream = new EventSource(streamUrl);
     const onOffline = () => updateConnection("offline");
     const onOnline = () => {
-      if (stream.readyState === EventSource.OPEN) {
-        // Some browsers keep an EventSource open across a brief offline/online
-        // transition and do not emit another `open`. Restore the truthful live
-        // state and reconcile snapshots instead of waiting for a reconnect that
-        // will never happen.
-        updateConnection("live");
-        reconcileSubscribers();
-      } else updateConnection("reconnecting");
+      if (connectionRef.current === "expired") return;
+      // Some browsers keep EventSource.readyState === OPEN after a brief
+      // offline/online transition but no longer deliver events. Replace the
+      // source instead of treating that stale state as a healthy transport.
+      // Closing this source before the effect creates its replacement keeps at
+      // most one active stream for this admin shell.
+      updateConnection("reconnecting");
+      stream.close();
+      setStreamGeneration((generation) => generation + 1);
     };
     stream.addEventListener("order", onOrder as EventListener);
+    stream.addEventListener("ready", onReady as EventListener);
     stream.addEventListener("session-expired", () => {
       stream.close();
       if (alive) updateConnection("expired");
@@ -120,13 +129,14 @@ export function AdminShell({ children }: { children: ReactNode }) {
     return () => {
       alive = false;
       stream.removeEventListener("order", onOrder as EventListener);
+      stream.removeEventListener("ready", onReady as EventListener);
       stream.close();
       window.removeEventListener("offline", onOffline);
       window.removeEventListener("online", onOnline);
       window.removeEventListener("pageshow", onVisible);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [active, onOrder, reconcileSubscribers, updateConnection]);
+  }, [active, onOrder, onReady, reconcileSubscribers, streamGeneration, updateConnection]);
   if (pathname === "/admin/login") return children;
   const currentTitle = title(pathname);
   const back = pathname !== "/admin/orders" && pathname !== "/admin/products" && pathname !== "/admin/more" && pathname !== "/admin/orders/history";

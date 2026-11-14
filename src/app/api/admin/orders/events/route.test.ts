@@ -84,6 +84,27 @@ describe("admin order stream", () => {
     await reader.cancel();
   });
 
+  it("publishes the snapshot cursor and replays an order written between cursor capture and stream replay", async () => {
+    const controller = new AbortController();
+    // The endpoint captures 80 before the pump starts. Sequence 81 is the
+    // deterministic write in the snapshot/EventSource connection window.
+    mocks.eventsAfter.mockResolvedValueOnce([{ sequence: BigInt(81), orderId: "written-in-gap" }]).mockResolvedValue([]);
+    mocks.findById.mockImplementation(async (id: string) => ({ id, orderNumber: 101, createdAt: new Date("2026-11-14T12:00:00Z"), lines: [] }));
+    const response = await GET(new Request("https://example.test/api/admin/orders/events", { signal: controller.signal }));
+    const reader = response.body!.getReader();
+    let contents = "";
+    for (let index = 0; index < 4 && !contents.includes('"id":"written-in-gap"'); index++) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      contents += new TextDecoder().decode(chunk.value);
+    }
+    expect(contents).toContain("id: 80\nevent: ready\ndata: {\"cursor\":\"80\"}");
+    expect(contents).toContain("id: 81\nevent: order");
+    expect(mocks.eventsAfter).toHaveBeenCalledWith(BigInt(80));
+    controller.abort();
+    await reader.cancel();
+  });
+
   it("honors Last-Event-ID on reconnect and replays every later event in order", async () => {
     const controller = new AbortController();
     mocks.eventsAfter.mockResolvedValueOnce([
@@ -96,12 +117,13 @@ describe("admin order stream", () => {
     }));
     const reader = response.body!.getReader();
     let contents = "";
-    for (let index = 0; index < 3 && !contents.includes('"id":"second"'); index++) {
+    for (let index = 0; index < 4 && !contents.includes('"id":"second"'); index++) {
       const chunk = await reader.read();
       if (chunk.done) break;
       contents += new TextDecoder().decode(chunk.value);
     }
     expect(mocks.eventsAfter).toHaveBeenCalledWith(BigInt(80));
+    expect(contents).toContain("id: 80\nevent: ready");
     expect(contents).toContain("id: 81\nevent: order");
     expect(contents).toContain("id: 82\nevent: order");
     expect(contents.indexOf("id: 81")).toBeLessThan(contents.indexOf("id: 82"));

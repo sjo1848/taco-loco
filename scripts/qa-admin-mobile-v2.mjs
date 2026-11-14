@@ -16,11 +16,27 @@ const personalDataMasks = [".order-ticket__identity strong", ".attention-ticket_
 function instrumentEventSource() {
   window.__adminSseCreated = 0;
   window.__adminSseEvents = [];
+  window.__adminSseActive = 0;
+  window.__adminLastEventSequence = "0";
   const NativeEventSource = window.EventSource;
   window.EventSource = new Proxy(NativeEventSource, { construct(target, args) {
     window.__adminSseCreated += 1;
+    window.__adminSseActive += 1;
     const source = Reflect.construct(target, args);
-    for (const event of ["open", "error"]) source.addEventListener(event, () => window.__adminSseEvents.push({ event, readyState: source.readyState, at: new Date().toISOString() }));
+    for (const event of ["open", "error"]) source.addEventListener(event, () => window.__adminSseEvents.push({ event, readyState: source.readyState, url: source.url, at: new Date().toISOString() }));
+    source.addEventListener("ready", (event) => {
+      if (/^\d+$/.test(event.lastEventId)) window.__adminLastEventSequence = event.lastEventId;
+      window.__adminSseEvents.push({ event: "ready", sequence: event.lastEventId, url: source.url, at: new Date().toISOString() });
+    });
+    source.addEventListener("order", (event) => {
+      let order = null;
+      try { order = JSON.parse(event.data)?.order ?? null; } catch { /* Keep diagnostics non-fatal. */ }
+      if (/^\d+$/.test(event.lastEventId)) window.__adminLastEventSequence = event.lastEventId;
+      window.__adminSseEvents.push({ event: "order", readyState: source.readyState, sequence: event.lastEventId, orderNumber: order?.orderNumber ?? null, status: order?.status ?? null, at: new Date().toISOString() });
+    });
+    const nativeClose = source.close.bind(source);
+    let closed = false;
+    source.close = () => { if (!closed) { closed = true; window.__adminSseActive -= 1; } nativeClose(); };
     return source;
   } });
 }
@@ -182,6 +198,7 @@ async function createAndAdvanceSyntheticPickup(page, attentionObserver = null, r
   if (status === "RECEIVED") {
     if (createdThisRun && attentionObserver) {
       await page.waitForFunction(() => { const button = [...document.querySelectorAll("button")].find((item) => item.textContent?.trim() === "Confirmar pedido"); return button instanceof HTMLButtonElement && !button.disabled; }, undefined, { timeout: 10000 });
+      const sequenceBeforeDisconnect = await attentionObserver.evaluate(() => window.__adminLastEventSequence);
       await attentionObserver.context().setOffline(true);
       await attentionObserver.locator(".connection--offline").waitFor({ state: "visible", timeout: 5000 });
       const external = await page.evaluate(async (id) => {
@@ -189,8 +206,17 @@ async function createAndAdvanceSyntheticPickup(page, attentionObserver = null, r
         return { status: response.status, body: await response.json().catch(() => null) };
       }, orderId);
       if (external.status !== 200) throw new Error(`Second operator could not confirm the synthetic order (${external.status}).`);
+      const previousOpenCount = await attentionObserver.evaluate(() => window.__adminSseEvents.filter((entry) => entry.event === "open").length);
       await attentionObserver.context().setOffline(false);
       await attentionObserver.locator(".connection--live").waitFor({ state: "visible", timeout: 20000 });
+      await attentionObserver.waitForFunction((count) => window.__adminSseEvents.filter((entry) => entry.event === "open").length > count && window.__adminSseActive === 1, previousOpenCount, { timeout: 15000 });
+      const replacementStream = await attentionObserver.evaluate(({ previousOpenCount, sequenceBeforeDisconnect }) => {
+        const opened = window.__adminSseEvents.filter((entry) => entry.event === "open").slice(previousOpenCount).at(-1);
+        const url = new URL(opened?.url ?? location.href);
+        return { requestedAfter: url.searchParams.get("after"), expectedAfter: sequenceBeforeDisconnect };
+      }, { previousOpenCount, sequenceBeforeDisconnect });
+      if (replacementStream.requestedAfter !== replacementStream.expectedAfter) throw new Error(`Replacement SSE did not resume from its last acknowledged cursor (${replacementStream.requestedAfter ?? "none"} vs ${replacementStream.expectedAfter}).`);
+      await attentionObserver.waitForFunction(({ number, previousOpenCount }) => window.__adminSseEvents.filter((entry) => entry.event === "order").some((entry) => entry.orderNumber === number && entry.status === "CONFIRMED" && new Date(entry.at) >= new Date(window.__adminSseEvents.filter((item) => item.event === "open").slice(previousOpenCount).at(-1)?.at ?? 0)), { number: Number(orderCode.slice(3)), previousOpenCount }, { timeout: 15000 });
       await attentionObserver.locator(".attention-ticket").filter({ hasText: marker }).waitFor({ state: "detached", timeout: 20000 });
       if (attentionCheckpoint) {
         const previousCodesAfterReconnect = await attentionObserver.locator(".attention-bucket").nth(1).locator(".attention-ticket__head strong").allTextContents();
@@ -198,7 +224,7 @@ async function createAndAdvanceSyntheticPickup(page, attentionObserver = null, r
         if (new Set(previousCodesAfterReconnect).size !== previousCodesAfterReconnect.length) throw new Error("SSE reconnection duplicated an order in loaded Attention history.");
         if (await attentionObserver.getByRole("button", { name: /Sin confirmar/ }).getAttribute("aria-pressed") !== "true") throw new Error("SSE reconnection reset the selected Attention tab.");
       }
-      results.journeys.push({ journey: "Attention reconnect reconciles a second-operator status change missed while offline without resetting the selected tab or loaded history", result: "PASS", orderCode });
+      results.journeys.push({ journey: "Attention reconnect resumes after its last SSE cursor and replays the second-operator change made while offline without resetting tab or loaded history", result: "PASS", orderCode });
       const staleAction = page.getByRole("button", { name: "Confirmar pedido", exact: true });
       await page.waitForFunction(() => { const button = [...document.querySelectorAll("button")].find((item) => item.textContent?.trim() === "Confirmar pedido"); return button instanceof HTMLButtonElement && !button.disabled; }, undefined, { timeout: 10000 });
       const conflictResponse = page.waitForResponse((response) => response.request().method() === "PATCH" && new URL(response.url()).pathname === `/api/admin/orders/${orderId}`);
@@ -210,11 +236,22 @@ async function createAndAdvanceSyntheticPickup(page, attentionObserver = null, r
         return response.ok && (await response.json()).status === "CONFIRMED";
       }, orderId, { timeout: 15000 });
       results.journeys.push({ journey: "second operator updates Attention live; stale first-operator action receives and recovers 409", result: "PASS", orderCode });
+      const previousOrderEvents = await attentionObserver.evaluate(() => window.__adminSseEvents.filter((entry) => entry.event === "order").length);
+      const nextTransition = await page.evaluate(async (id) => {
+        const response = await fetch(`/api/admin/orders/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ toStatus: "IN_PREPARATION" }) });
+        return response.status;
+      }, orderId);
+      if (nextTransition !== 200) throw new Error(`Post-reconnect transition failed (${nextTransition}).`);
+      await attentionObserver.waitForFunction(({ previous, number }) => window.__adminSseEvents.filter((entry) => entry.event === "order").slice(previous).some((entry) => entry.orderNumber === number && entry.status === "IN_PREPARATION"), { previous: previousOrderEvents, number: Number(orderCode.slice(3)) }, { timeout: 15000 });
+      if (await attentionObserver.evaluate(() => window.__adminSseActive) !== 1) throw new Error("SSE reconnection left more than one active stream.");
+      results.journeys.push({ journey: "fresh SSE transport delivers a later operator transition after online recovery; exactly one stream remains active", result: "PASS", orderCode });
+      await page.goto(`${baseUrl}/admin/orders/${orderId}`, { waitUntil: "domcontentloaded" });
+      status = "IN_PREPARATION";
     } else {
       await page.getByRole("button", { name: "Confirmar pedido", exact: true }).click();
       await page.getByRole("heading", { name: "Confirmado", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+      status = "CONFIRMED";
     }
-    status = "CONFIRMED";
   }
   if (status === "CONFIRMED") {
     await page.goto(`${baseUrl}/admin/orders?cola=iniciar`, { waitUntil: "domcontentloaded" });
@@ -275,6 +312,40 @@ for (const name of browserNames) {
     await saveScreenshot(page, { path: path.join(outputDir, `login-390-${name}.png`), fullPage: name !== "webkit", animations: "disabled" });
     await login(page);
     results.browsers.push({ name, login: "PASS" });
+
+    if (name === "chromium") {
+      const racePage = await context.newPage();
+      let operationReads = 0;
+      let releaseInitialRead;
+      let markInitialReadHeld;
+      const initialReadHeld = new Promise((resolve) => { markInitialReadHeld = resolve; });
+      const initialReadGate = new Promise((resolve) => { releaseInitialRead = resolve; });
+      await racePage.route("**/api/admin/orders/operations?**", async (route) => {
+        const url = new URL(route.request().url());
+        if (url.searchParams.has("countsOnly")) return route.continue();
+        const index = ++operationReads;
+        const response = await route.fetch();
+        if (index === 1) {
+          markInitialReadHeld();
+          await initialReadGate;
+        }
+        await route.fulfill({ response });
+      });
+      try {
+        await racePage.goto(`${baseUrl}/admin/orders?cola=iniciar`, { waitUntil: "domcontentloaded" });
+        await Promise.race([initialReadHeld, new Promise((_, reject) => setTimeout(() => reject(new Error("Initial operations response was not captured.")), 15000))]);
+        await racePage.locator(".connection--live").waitFor({ state: "visible", timeout: 15000 });
+        await racePage.locator('[aria-label="Actualizando pedidos"]').waitFor({ state: "detached", timeout: 15000 });
+        if (operationReads < 2) throw new Error("SSE reconciliation did not supersede the delayed initial orders snapshot.");
+        releaseInitialRead();
+        await racePage.waitForTimeout(300);
+        if (await racePage.locator('[aria-label="Actualizando pedidos"]').count()) throw new Error("Late initial snapshot left the kitchen board permanently loading.");
+        results.journeys.push({ journey: "delayed initial kitchen snapshot is superseded by SSE reconciliation without leaving the board loading", result: "PASS", operationsReads: operationReads });
+      } finally {
+        releaseInitialRead();
+        await racePage.close();
+      }
+    }
 
     let releaseInitialSse = null;
     if (name === "chromium") {
