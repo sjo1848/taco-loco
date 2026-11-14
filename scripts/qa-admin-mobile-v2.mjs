@@ -211,8 +211,16 @@ for (const name of browserNames) {
       results.screenshots.push(path.relative(process.cwd(), file));
     }
     await page.setViewportSize({ width: 390, height: 844 });
+    const prematureOrderPosts = [];
+    const watchPrematureOrderPost = (request) => {
+      if (request.method() === "POST" && new URL(request.url()).pathname === "/api/admin/orders") prematureOrderPosts.push(true);
+    };
+    page.on("request", watchPrematureOrderPost);
     await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Continuar" }));
     await page.locator('.order-stepper li[aria-current="step"] span').filter({ hasText: "Datos y confirmación" }).waitFor({ state: "visible" });
+    await page.waitForTimeout(200);
+    page.off("request", watchPrematureOrderPost);
+    if (prematureOrderPosts.length) throw new Error("The step 1 Continue action submitted an order before operator confirmation.");
     for (const width of viewports) {
       await page.setViewportSize({ width, height: width < 500 ? 844 : 900 });
       await assertAboveMobileNavigation(page, page.getByRole("button", { name: "Registrar pedido" }));
