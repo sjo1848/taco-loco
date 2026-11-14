@@ -8,13 +8,20 @@ const password = process.env.TACO_LOCO_ADMIN_PASSWORD;
 const outputDir = path.resolve(process.env.TACO_LOCO_QA_OUTPUT ?? "output/playwright/admin-mobile-v2");
 const browserNames = (process.env.TACO_LOCO_QA_BROWSERS ?? "chromium").split(",").map((x) => x.trim()).filter(Boolean);
 const browserTypes = { chromium, firefox, webkit };
+const screenshotsEnabled = process.env.TACO_LOCO_QA_SCREENSHOTS !== "false";
 const viewports = [360, 390, 430, 768, 1024, 1440];
-const results = { baseUrl, browsers: [], browserFailures: [], screenshots: [], viewportChecks: [], journeys: [], externalBlocked: [] };
+const results = { baseUrl, captureMode: screenshotsEnabled ? "screenshots" : "interaction-only", browsers: [], browserFailures: [], screenshots: [], viewportChecks: [], journeys: [], externalBlocked: [] };
 const personalDataMasks = [".order-ticket__identity strong", ".attention-ticket__customer strong", ".history-row__main strong", ".detail-grid dd"];
 
 if (!email || !password) throw new Error("Set TACO_LOCO_ADMIN_EMAIL and TACO_LOCO_ADMIN_PASSWORD in the process environment.");
 if (!/^https:\/\/taco-loco-staging-20260913\.sjo1848\.workers\.dev$/.test(baseUrl)) throw new Error("QA script only permits the authorized staging origin.");
 await fs.mkdir(outputDir, { recursive: true });
+
+async function saveScreenshot(page, options) {
+  if (!screenshotsEnabled) return false;
+  await page.screenshot(options);
+  return true;
+}
 
 async function capture(page, name, route, width = 390, height = 844) {
   await page.setViewportSize({ width, height });
@@ -34,8 +41,7 @@ async function capture(page, name, route, width = 390, height = 844) {
   results.viewportChecks.push({ browser: page.context().browser()?.browserType().name(), screen: name, width, overflow: false });
   const browserName = page.context().browser()?.browserType().name() ?? "unknown";
   const file = path.join(outputDir, `${name}-${width}-${browserName}.png`);
-  await page.screenshot({ path: file, fullPage: browserName !== "webkit", animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)).filter(Boolean), maskColor: "#F6F7F4" });
-  results.screenshots.push(path.relative(process.cwd(), file));
+  if (await saveScreenshot(page, { path: file, fullPage: browserName !== "webkit", animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)).filter(Boolean), maskColor: "#F6F7F4" })) results.screenshots.push(path.relative(process.cwd(), file));
   return response;
 }
 
@@ -137,8 +143,7 @@ async function createAndAdvanceSyntheticPickup(page) {
   }
 
   const beforeTransitionScreenshot = path.join(outputDir, "order-detail-before-transition-390.png");
-  await page.screenshot({ path: beforeTransitionScreenshot, fullPage: name !== "webkit", animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)), maskColor: "#F6F7F4" });
-  results.screenshots.push(path.relative(process.cwd(), beforeTransitionScreenshot));
+  if (await saveScreenshot(page, { path: beforeTransitionScreenshot, fullPage: name !== "webkit", animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)), maskColor: "#F6F7F4" })) results.screenshots.push(path.relative(process.cwd(), beforeTransitionScreenshot));
   const orderId = new URL(page.url()).pathname.split("/").at(-1);
   const readStatus = async () => page.evaluate(async (id) => {
     const response = await fetch(`/api/admin/orders/${id}`, { cache: "no-store" });
@@ -196,7 +201,7 @@ for (const name of browserNames) {
   page.on("pageerror", (error) => pageErrors.push(error.name));
   try {
     await page.goto(`${baseUrl}/admin/login`, { waitUntil: "domcontentloaded" });
-    await page.screenshot({ path: path.join(outputDir, `login-390-${name}.png`), fullPage: name !== "webkit", animations: "disabled" });
+    await saveScreenshot(page, { path: path.join(outputDir, `login-390-${name}.png`), fullPage: name !== "webkit", animations: "disabled" });
     await login(page);
     results.browsers.push({ name, login: "PASS" });
 
@@ -218,8 +223,7 @@ for (const name of browserNames) {
       await assertAboveMobileNavigation(page, page.getByRole("button", { name: "Continuar" }));
       await page.evaluate(() => window.scrollTo(0, 0));
       const file = path.join(outputDir, `new-order-step-1-${width}-${name}.png`);
-      await page.screenshot({ path: file, fullPage: name !== "webkit", animations: "disabled" });
-      results.screenshots.push(path.relative(process.cwd(), file));
+      if (await saveScreenshot(page, { path: file, fullPage: name !== "webkit", animations: "disabled" })) results.screenshots.push(path.relative(process.cwd(), file));
     }
     await page.setViewportSize({ width: 390, height: 844 });
     const prematureOrderPosts = [];
@@ -237,8 +241,7 @@ for (const name of browserNames) {
       await assertAboveMobileNavigation(page, page.getByRole("button", { name: "Registrar pedido" }));
       await page.evaluate(() => window.scrollTo(0, 0));
       const file = path.join(outputDir, `new-order-step-2-${width}-${name}.png`);
-      await page.screenshot({ path: file, fullPage: name !== "webkit", animations: "disabled" });
-      results.screenshots.push(path.relative(process.cwd(), file));
+      if (await saveScreenshot(page, { path: file, fullPage: name !== "webkit", animations: "disabled" })) results.screenshots.push(path.relative(process.cwd(), file));
     }
     await page.setViewportSize({ width: 390, height: 844 });
     await capture(page, "products", "/admin/products", 390);
@@ -246,8 +249,8 @@ for (const name of browserNames) {
     if (await firstProduct.count()) {
       await firstProduct.getByRole("link", { name: "Editar" }).click();
       await page.locator(".product-image-editor").waitFor({ state: "visible" });
-      await page.screenshot({ path: path.join(outputDir, `product-edit-390-${name}.png`), fullPage: name !== "webkit", animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)), maskColor: "#F6F7F4" });
-      results.screenshots.push(path.relative(process.cwd(), path.join(outputDir, `product-edit-390-${name}.png`)));
+      const productEditScreenshot = path.join(outputDir, `product-edit-390-${name}.png`);
+      if (await saveScreenshot(page, { path: productEditScreenshot, fullPage: name !== "webkit", animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)), maskColor: "#F6F7F4" })) results.screenshots.push(path.relative(process.cwd(), productEditScreenshot));
     }
     await capture(page, "categories", "/admin/categories", 390);
     await capture(page, "settings", "/admin/settings", 390);
@@ -265,8 +268,7 @@ for (const name of browserNames) {
       await assertQueue(index, expected);
       await page.waitForTimeout(100);
       const file = path.join(outputDir, `orders-queue-${expected}-390-${name}.png`);
-      await page.screenshot({ path: file, fullPage: name !== "webkit", animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)), maskColor: "#F6F7F4" });
-      results.screenshots.push(path.relative(process.cwd(), file));
+      if (await saveScreenshot(page, { path: file, fullPage: name !== "webkit", animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)), maskColor: "#F6F7F4" })) results.screenshots.push(path.relative(process.cwd(), file));
     }
     await page.goBack();
     await assertQueue(1, "preparando");
