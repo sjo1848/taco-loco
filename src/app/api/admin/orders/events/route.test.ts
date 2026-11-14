@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   getActiveAdminSessionHash: vi.fn(async () => "session-hash" as string | null),
   isAdminSessionHashActive: vi.fn(async () => true),
   eventsAfter: vi.fn(async (): Promise<Array<{ sequence: bigint; orderId: string }>> => []),
+  latestEventSequence: vi.fn(async () => BigInt(80)),
   findById: vi.fn(),
 }));
 
@@ -11,7 +12,7 @@ vi.mock("@/modules/auth/session", () => ({
   getActiveAdminSessionHash: mocks.getActiveAdminSessionHash,
   isAdminSessionHashActive: mocks.isAdminSessionHashActive,
 }));
-vi.mock("@/modules/orders/repository", () => ({ orderRepository: { eventsAfter: mocks.eventsAfter, findById: mocks.findById } }));
+vi.mock("@/modules/orders/repository", () => ({ orderRepository: { eventsAfter: mocks.eventsAfter, findById: mocks.findById, latestEventSequence: mocks.latestEventSequence } }));
 
 import { GET } from "./route";
 
@@ -19,6 +20,7 @@ beforeEach(() => {
   mocks.getActiveAdminSessionHash.mockResolvedValue("session-hash");
   mocks.isAdminSessionHashActive.mockResolvedValue(true);
   mocks.eventsAfter.mockResolvedValue([]);
+  mocks.latestEventSequence.mockResolvedValue(BigInt(80));
   mocks.findById.mockResolvedValue(null);
 });
 afterEach(() => { vi.useRealTimers(); vi.resetAllMocks(); });
@@ -69,6 +71,17 @@ describe("admin order stream", () => {
     mocks.getActiveAdminSessionHash.mockResolvedValue(null);
     expect((await GET(new Request("https://example.test/api/admin/orders/events"))).status).toBe(401);
     expect(mocks.eventsAfter).not.toHaveBeenCalled();
+  });
+
+  it("starts new streams from the current event sequence instead of replaying the full database history", async () => {
+    vi.useFakeTimers();
+    const controller = new AbortController();
+    const response = await GET(new Request("https://example.test/api/admin/orders/events", { signal: controller.signal }));
+    const reader = response.body!.getReader();
+    await reader.read();
+    await vi.waitFor(() => expect(mocks.eventsAfter).toHaveBeenCalledWith(BigInt(80), 100));
+    controller.abort();
+    await reader.cancel();
   });
 
   it("does not expose a replayed order when authorization is revoked during its D1 read", async () => {

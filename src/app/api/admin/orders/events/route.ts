@@ -61,7 +61,10 @@ export async function GET(request: Request) {
   if (!sessionHash) return new Response("Unauthorized", { status: 401 });
 
   const url = new URL(request.url);
-  const cursor = parseCursor(request.headers.get("last-event-id") ?? url.searchParams.get("after"));
+  const requestedCursor = request.headers.get("last-event-id") ?? url.searchParams.get("after");
+  let cursor: bigint;
+  try { cursor = requestedCursor === null ? await orderRepository.latestEventSequence() : parseCursor(requestedCursor); }
+  catch { return new Response("Internal Server Error", { status: 500 }); }
   const encoder = new TextEncoder();
   let stopStream = () => {};
   const stream = new ReadableStream<Uint8Array>({

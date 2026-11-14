@@ -7,7 +7,7 @@ import { GET } from "./route";
 
 beforeEach(() => {
   mocks.requireAdmin.mockResolvedValue({ id: "admin-test" });
-  mocks.counts.mockResolvedValue({ all: 0, verification: 0, unconfirmed: 0, incidents: 0 });
+  mocks.counts.mockResolvedValue({ all: 0, verification: 0, unconfirmed: 0, incidents: 0, buckets: { today: 0, previous: 0 } });
   mocks.list.mockResolvedValue({ orders: [], nextCursor: null });
 });
 afterEach(() => vi.resetAllMocks());
@@ -26,7 +26,16 @@ describe("GET admin attention inbox", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toContain("private");
     expect(response.headers.get("cache-control")).toContain("no-store");
-    expect(mocks.list).toHaveBeenCalledWith("all", null);
+    expect(mocks.list).toHaveBeenCalledWith("all", "today", null);
+  });
+
+  it("validates independent buckets and supports count-only synchronization", async () => {
+    expect((await GET(new Request("https://example.test/api/admin/orders/attention?bucket=unknown"))).status).toBe(400);
+    const response = await GET(new Request("https://example.test/api/admin/orders/attention?kind=verification&countsOnly=1"));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ counts: { buckets: { today: 0, previous: 0 } } });
+    expect(mocks.list).not.toHaveBeenCalled();
+    expect(mocks.counts).toHaveBeenCalledWith("verification");
   });
 
   it("returns a generic server error when the database is unavailable", async () => {
