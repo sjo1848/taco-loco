@@ -195,10 +195,11 @@ for (const name of browserNames) {
     continue;
   }
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  const page = await context.newPage();
+  let page = await context.newPage();
   await page.emulateMedia({ reducedMotion: "reduce" });
   const pageErrors = [];
-  page.on("pageerror", (error) => pageErrors.push(error.name));
+  const trackPageErrors = (target) => target.on("pageerror", (error) => pageErrors.push(error.name));
+  trackPageErrors(page);
   try {
     await page.goto(`${baseUrl}/admin/login`, { waitUntil: "domcontentloaded" });
     await saveScreenshot(page, { path: path.join(outputDir, `login-390-${name}.png`), fullPage: name !== "webkit", animations: "disabled" });
@@ -277,8 +278,17 @@ for (const name of browserNames) {
     await page.goForward();
     await assertQueue(1, "preparando");
     if (name === "webkit") {
-      results.journeys.push({ journey: "kitchen queues serialize approved URL state and survive back/forward", result: "PASS" });
-      results.externalBlocked.push({ browser: "webkit", journey: "reload after multiple back/forward queue transitions", reason: "Headless WebKit page process crashes on this combined sequence; isolated deep-link and single-tab reload smokes pass." });
+      results.journeys.push({ journey: "kitchen queue state survives browser back/forward", result: "PASS" });
+      results.externalBlocked.push({ browser: "webkit", journey: "same-page reload immediately after multiple queue history transitions", reason: "Headless WebKit renderer crashes on this sequence. Direct query navigation and reload pass independently; the harness opens a fresh page in the same authenticated context to continue QA." });
+      await page.close();
+      page = await context.newPage();
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      trackPageErrors(page);
+      await page.goto(`${baseUrl}/admin/orders?cola=preparando`, { waitUntil: "domcontentloaded" });
+      await assertQueue(1, "preparando");
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await assertQueue(1, "preparando");
+      results.journeys.push({ journey: "kitchen queue deep-link and reload in fresh page with same session", result: "PASS" });
     } else {
       await page.reload({ waitUntil: "domcontentloaded" });
       await assertQueue(1, "preparando");
