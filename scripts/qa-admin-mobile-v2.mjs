@@ -51,16 +51,22 @@ async function selectAvailableProduct(page) {
   })));
   const product = options.find((option) => option.value && !option.disabled);
   if (!product) throw new Error(`Manual order has no selectable published/available products (option count: ${options.length}).`);
-  await select.selectOption({ value: product.value });
   // A client-side navigation can expose the server-rendered form before its
-  // controlled React select hydrates. Wait for React to commit the selection
-  // before trying to add it, otherwise the CTA may still appear disabled.
-  await page.waitForFunction(() => {
-    const button = document.querySelector(".order-form__add button");
-    return button instanceof HTMLButtonElement && !button.disabled;
-  }, undefined, { timeout: 8000 }).catch(() => {
-    throw new Error("The selected product was not committed to the manual-order form.");
-  });
+  // controlled React select hydrates. Reapply only this non-mutating selection
+  // until React commits it; no order is created by this helper.
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await select.selectOption({ value: product.value });
+    try {
+      await page.waitForFunction(() => {
+        const button = document.querySelector(".order-form__add button");
+        return button instanceof HTMLButtonElement && !button.disabled;
+      }, undefined, { timeout: 1200 });
+      return;
+    } catch {
+      if (attempt === 3) throw new Error("The selected product was not committed to the manual-order form.");
+      await page.waitForTimeout(250);
+    }
+  }
 }
 
 async function assertAboveMobileNavigation(page, locator) {
@@ -175,6 +181,7 @@ for (const name of browserNames) {
   }
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
+  await page.emulateMedia({ reducedMotion: "reduce" });
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.name));
   try {
@@ -205,7 +212,7 @@ for (const name of browserNames) {
     }
     await page.setViewportSize({ width: 390, height: 844 });
     await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Continuar" }));
-    await page.getByRole("heading", { name: "Datos y confirmación" }).waitFor({ state: "visible" });
+    await page.locator('.order-stepper li[aria-current="step"] span').filter({ hasText: "Datos y confirmación" }).waitFor({ state: "visible" });
     for (const width of viewports) {
       await page.setViewportSize({ width, height: width < 500 ? 844 : 900 });
       await assertAboveMobileNavigation(page, page.getByRole("button", { name: "Registrar pedido" }));
