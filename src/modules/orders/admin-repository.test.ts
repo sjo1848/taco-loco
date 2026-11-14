@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const dbMocks=vi.hoisted(()=>({count:vi.fn(),findMany:vi.fn()}));
+const dbMocks=vi.hoisted(()=>({count:vi.fn(),findMany:vi.fn(), isD1Runtime:false}));
 vi.mock("@/lib/db",()=>({db:{order:{count:dbMocks.count,findMany:dbMocks.findMany}}}));
+vi.mock("@/lib/runtime",()=>({get isD1Runtime(){return dbMocks.isD1Runtime}}));
 import { orderRepository } from "./repository";
 
-beforeEach(()=>{vi.clearAllMocks()});
+beforeEach(()=>{vi.clearAllMocks();dbMocks.isD1Runtime=false});
 
 describe("admin operational reads",()=>{
  it("counts complete indexed queues and unique attention conditions",async()=>{
@@ -42,8 +43,22 @@ describe("admin operational reads",()=>{
   expect(args.where.status).toBe("DELIVERED");
   expect(args.where.fulfillment).toBe("DELIVERY");
   expect(args.where.createdAt.gte.toISOString()).toBe("2026-11-01T03:00:00.000Z");
-  expect(args.where.OR).toEqual([{customerName:{contains:"TL-42",mode:"insensitive"}},{customerPhone:{contains:"TL-42"}},{orderNumber:42}]);
+  expect(args.where.OR).toEqual([{customerName:{contains:"TL-42",mode:"insensitive"}},{customerPhone:{contains:"TL-42",mode:"insensitive"}},{orderNumber:42}]);
   expect(args.where.AND[0].OR).toHaveLength(2);
   expect(args.orderBy).toEqual([{createdAt:"desc"},{id:"desc"}]);
+ });
+ it("omits PostgreSQL-only insensitive mode from history search on D1/SQLite",async()=>{
+  dbMocks.isD1Runtime=true;
+  dbMocks.findMany.mockResolvedValueOnce([]);
+  await orderRepository.listHistory({cursor:null,query:"TL-92"});
+  const args=dbMocks.findMany.mock.calls[0]?.[0];
+  expect(args.where.OR).toEqual([{customerName:{contains:"TL-92"}},{customerPhone:{contains:"TL-92"}},{orderNumber:92}]);
+ });
+ it("omits PostgreSQL-only insensitive mode from legacy order search on D1/SQLite",async()=>{
+  dbMocks.isD1Runtime=true;
+  dbMocks.findMany.mockResolvedValueOnce([]);
+  await orderRepository.list({query:"TL-92"});
+  const args=dbMocks.findMany.mock.calls[0]?.[0];
+  expect(args.where.OR).toEqual([{customerName:{contains:"TL-92"}},{customerPhone:{contains:"TL-92"}},{orderNumber:92}]);
  });
 });
