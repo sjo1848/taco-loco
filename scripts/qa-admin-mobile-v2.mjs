@@ -132,9 +132,10 @@ for (const name of browserNames) {
     await capture(page, "more", "/admin/more", 390);
     await page.goto(`${baseUrl}/admin/orders`, { waitUntil: "domcontentloaded" });
     const assertQueue = async (index, expected) => {
-      await page.waitForFunction((value) => new URLSearchParams(window.location.search).get("cola") === value, expected);
-      const selected = await page.locator(".queue-tabs button").nth(index).getAttribute("aria-pressed");
-      if (selected !== "true") throw new Error(`Queue state ${expected} is not selected after navigation`);
+      await page.waitForFunction(({ value, buttonIndex }) =>
+        new URLSearchParams(window.location.search).get("cola") === value &&
+        document.querySelectorAll(".queue-tabs button")[buttonIndex]?.getAttribute("aria-pressed") === "true",
+      { value: expected, buttonIndex: index });
     };
     for (const [index, expected] of [[0, "iniciar"], [1, "preparando"], [2, "listos"]]) {
       await page.locator(".queue-tabs button").nth(index).click();
