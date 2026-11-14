@@ -33,6 +33,10 @@ try {
     await page.locator('input[autocomplete="current-password"]').fill(password);
     await page.getByRole("button", { name: "Ingresar" }).click();
     await page.waitForURL(/\/admin\/orders(?:\?|$)/);
+    // Park authenticated operators outside order routes so SSE connections do
+    // not overlap before their scenario is intentionally activated.
+    await page.goto(`${baseUrl}/admin/more`, { waitUntil: "domcontentloaded" });
+    await page.getByRole("heading", { name: "Más" }).waitFor({ state: "visible", timeout: 10_000 });
     operators.push({ context, page, sseBaseline: 0 });
   }
 
