@@ -72,10 +72,16 @@ export function AdminShell({ children }: { children: ReactNode }) {
       if (payload.order) subscribers.current.forEach((subscriber) => subscriber.onOrder(payload.order!));
     } catch { /* Ignore malformed events; EventSource will continue and the next event is authoritative. */ }
   }, []);
+  const onReady = useCallback((event: MessageEvent<string>) => {
+    const sequence = event.lastEventId && /^\d+$/.test(event.lastEventId) ? BigInt(event.lastEventId) : null;
+    if (sequence !== null && sequence > lastSequence.current) lastSequence.current = sequence;
+  }, []);
   useEffect(() => {
     if (!active) return;
     let alive = true;
-    const stream = new EventSource("/api/admin/orders/events");
+    const cursor = lastSequence.current;
+    const streamUrl = cursor > BigInt(0) ? `/api/admin/orders/events?after=${cursor}` : "/api/admin/orders/events";
+    const stream = new EventSource(streamUrl);
     const onOffline = () => updateConnection("offline");
     const onOnline = () => {
       if (connectionRef.current === "expired") return;
@@ -89,6 +95,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
       setStreamGeneration((generation) => generation + 1);
     };
     stream.addEventListener("order", onOrder as EventListener);
+    stream.addEventListener("ready", onReady as EventListener);
     stream.addEventListener("session-expired", () => {
       stream.close();
       if (alive) updateConnection("expired");
@@ -122,13 +129,14 @@ export function AdminShell({ children }: { children: ReactNode }) {
     return () => {
       alive = false;
       stream.removeEventListener("order", onOrder as EventListener);
+      stream.removeEventListener("ready", onReady as EventListener);
       stream.close();
       window.removeEventListener("offline", onOffline);
       window.removeEventListener("online", onOnline);
       window.removeEventListener("pageshow", onVisible);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [active, onOrder, reconcileSubscribers, streamGeneration, updateConnection]);
+  }, [active, onOrder, onReady, reconcileSubscribers, streamGeneration, updateConnection]);
   if (pathname === "/admin/login") return children;
   const currentTitle = title(pathname);
   const back = pathname !== "/admin/orders" && pathname !== "/admin/products" && pathname !== "/admin/more" && pathname !== "/admin/orders/history";

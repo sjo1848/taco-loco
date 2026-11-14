@@ -133,6 +133,11 @@ export async function GET(request: Request) {
         try {
           controller.enqueue(encoder.encode("retry: 3000\n\n"));
           if (!await ensureSession()) return;
+          // Publish the exact snapshot boundary chosen by this stream. If a
+          // client replaces EventSource after an online transition, it can
+          // resume after its last observed sequence instead of starting at
+          // the newest event and skipping writes made while disconnected.
+          controller.enqueue(encoder.encode(sseEvent("ready", { cursor: cursor.toString() }, cursor)));
           const replay = await orderRepository.eventsAfter(cursor);
           for (const event of replay) await sendNotification(event);
           while (!closed) {
