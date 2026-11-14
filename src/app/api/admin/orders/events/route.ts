@@ -68,7 +68,7 @@ export async function GET(request: Request) {
   const encoder = new TextEncoder();
   let stopStream = () => {};
   const stream = new ReadableStream<Uint8Array>({
-    async start(controller) {
+    start(controller) {
       let closed = false;
       let lastSent = cursor;
       let lastSessionCheck = Date.now();
@@ -88,8 +88,13 @@ export async function GET(request: Request) {
       };
       const close = (error?: unknown) => {
         if (!stop()) return;
-        if (error) controller.error(error);
-        else controller.close();
+        try {
+          if (error) controller.error(error);
+          else controller.close();
+        } catch {
+          // The client may have canceled the stream while an awaited D1 read
+          // was still in flight.
+        }
       };
       stopStream = () => { stop(); };
       request.signal.addEventListener("abort", stopStream, { once: true });
@@ -123,20 +128,30 @@ export async function GET(request: Request) {
         lastSent = sequence;
       };
 
-      try {
-        controller.enqueue(encoder.encode("retry: 3000\n\n"));
-        if (!await ensureSession()) return;
-        const replay = await orderRepository.eventsAfter(cursor);
-        for (const event of replay) await sendNotification(event);
-        while (!closed) {
-          if (Date.now() - lastSessionCheck >= SESSION_RECHECK_MS && !await ensureSession()) break;
-          const events = await orderRepository.eventsAfter(lastSent, 100);
-          for (const event of events) await sendNotification(event);
-          await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+      const pump = async () => {
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode("retry: 3000\n\n"));
+          if (!await ensureSession()) return;
+          const replay = await orderRepository.eventsAfter(cursor);
+          for (const event of replay) await sendNotification(event);
+          while (!closed) {
+            if (Date.now() - lastSessionCheck >= SESSION_RECHECK_MS && !await ensureSession()) break;
+            const events = await orderRepository.eventsAfter(lastSent, 100);
+            for (const event of events) await sendNotification(event);
+            await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+          }
+        } catch (error) {
+          close(error);
         }
-      } catch (error) {
-        close(error);
-      }
+      };
+
+      // Keep the stream's start algorithm synchronous. Awaiting this perpetual
+      // polling loop here leaves the start promise pending for the lifetime of
+      // the connection; Workers may interpret that as a request that can never
+      // produce a response and cancel it. The response body itself keeps the
+      // stream alive, while this handled task pumps events until disconnect.
+      queueMicrotask(() => { void pump(); });
     },
     cancel() { stopStream(); },
   });
