@@ -44,8 +44,17 @@ async function openOperator() {
     await page.waitForLoadState("networkidle", { timeout: 10_000 });
     await page.getByLabel("Email").fill(email);
     await page.locator('input[autocomplete="current-password"]').fill(password);
+    const loginResponsePromise = page.waitForResponse((response) =>
+      response.request().method() === "POST" && new URL(response.url()).pathname === "/api/auth/login",
+      { timeout: 20_000 },
+    );
     await page.getByRole("button", { name: "Ingresar" }).click();
-    await page.waitForURL(/\/admin\/orders(?:\?|$)/, { waitUntil: "domcontentloaded", timeout: 20_000 });
+    const loginResponse = await loginResponsePromise;
+    if (!loginResponse.ok()) throw new Error(`Admin login API returned HTTP ${loginResponse.status()}.`);
+    const session = await context.request.get(`${baseUrl}/api/auth/session`);
+    if (!session.ok()) throw new Error(`Authenticated admin session returned HTTP ${session.status()}.`);
+    const boardResponse = await page.goto(`${baseUrl}/admin/orders`, { waitUntil: "domcontentloaded", timeout: 20_000 });
+    if (!boardResponse?.ok()) throw new Error(`Admin orders page returned HTTP ${boardResponse?.status() ?? "no response"}.`);
     await page.locator(".connection--live").waitFor({ state: "visible", timeout: 20_000 });
     return { context, page };
     } catch (error) {
