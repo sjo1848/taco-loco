@@ -131,16 +131,30 @@ for (const name of browserNames) {
     await capture(page, "settings", "/admin/settings", 390);
     await capture(page, "more", "/admin/more", 390);
     await page.goto(`${baseUrl}/admin/orders`, { waitUntil: "domcontentloaded" });
-    for (const [index, expected] of [[1, "preparando"], [2, "listos"]]) {
+    const assertQueue = async (index, expected) => {
+      await page.waitForFunction((value) => new URLSearchParams(window.location.search).get("cola") === value, expected);
+      const selected = await page.locator(".queue-tabs button").nth(index).getAttribute("aria-pressed");
+      if (selected !== "true") throw new Error(`Queue state ${expected} is not selected after navigation`);
+    };
+    for (const [index, expected] of [[0, "iniciar"], [1, "preparando"], [2, "listos"]]) {
       await page.locator(".queue-tabs button").nth(index).click();
-      const queue = await page.evaluate(() => new URLSearchParams(window.location.search).get("cola"));
-      if (queue !== expected) throw new Error(`Queue navigation expected cola=${expected}, received ${queue}`);
+      await assertQueue(index, expected);
       await page.waitForTimeout(100);
       const file = path.join(outputDir, `orders-queue-${expected}-390-${name}.png`);
       await page.screenshot({ path: file, fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)) });
       results.screenshots.push(path.relative(process.cwd(), file));
     }
-    results.journeys.push({ journey: "kitchen queues serialize the approved URL state", result: "PASS" });
+    await page.goBack();
+    await assertQueue(1, "preparando");
+    await page.goBack();
+    await assertQueue(0, "iniciar");
+    await page.goForward();
+    await assertQueue(1, "preparando");
+    await page.goto(`${baseUrl}/admin/orders?cola=iniciar`, { waitUntil: "domcontentloaded" });
+    await assertQueue(0, "iniciar");
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await assertQueue(0, "iniciar");
+    results.journeys.push({ journey: "kitchen queues serialize approved URL state and survive reload/back/forward", result: "PASS" });
     await page.goto(`${baseUrl}/admin/orders`, { waitUntil: "domcontentloaded" });
     const desktopRoutes = [
       ["orders-desktop", "/admin/orders"], ["attention-desktop", "/admin/orders/attention"],
