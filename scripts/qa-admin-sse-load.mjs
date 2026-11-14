@@ -25,14 +25,27 @@ try {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     await context.addInitScript(() => {
       window.__adminSseCreated = 0;
-      window.EventSource = new Proxy(window.EventSource, { construct(target, args) { window.__adminSseCreated += 1; return Reflect.construct(target, args); } });
+      window.__adminSseActive = 0;
+      window.EventSource = new Proxy(window.EventSource, { construct(target, args) {
+        window.__adminSseCreated += 1;
+        window.__adminSseActive += 1;
+        const source = Reflect.construct(target, args);
+        const nativeClose = source.close.bind(source);
+        let closed = false;
+        source.close = () => { if (!closed) { closed = true; window.__adminSseActive -= 1; } nativeClose(); };
+        return source;
+      } });
     });
     const page = await context.newPage();
     await page.goto(`${baseUrl}/admin/login`, { waitUntil: "domcontentloaded" });
+    // Avoid filling the controlled React form before hydration. A native DOM
+    // value can be set before the onChange handler is attached, leaving React
+    // state empty and producing a misleading client-side email validation.
+    await page.waitForLoadState("networkidle", { timeout: 10_000 });
     await page.getByLabel("Email").fill(email);
     await page.locator('input[autocomplete="current-password"]').fill(password);
     await page.getByRole("button", { name: "Ingresar" }).click();
-    await page.waitForURL(/\/admin\/orders(?:\?|$)/);
+    await page.waitForURL(/\/admin\/orders(?:\?|$)/, { waitUntil: "domcontentloaded", timeout: 20_000 });
     // Park authenticated operators outside order routes so SSE connections do
     // not overlap before their scenario is intentionally activated.
     await page.goto(`${baseUrl}/admin/more`, { waitUntil: "domcontentloaded" });
@@ -50,14 +63,16 @@ try {
     const opened = Date.now();
     await new Promise((resolve) => setTimeout(resolve, durationMs));
     const ended = Date.now();
-    const connectionCounts = await Promise.all(active.map(({ page, sseBaseline }) => page.evaluate((baseline) => (window.__adminSseCreated ?? 0) - baseline, sseBaseline)));
+    const activeStreamCounts = await Promise.all(active.map(({ page }) => page.evaluate(() => window.__adminSseActive ?? 0)));
+    const streamsCreatedInScenario = await Promise.all(active.map(({ page, sseBaseline }) => page.evaluate((baseline) => (window.__adminSseCreated ?? 0) - baseline, sseBaseline)));
     const seconds = (ended - opened) / 1000;
     const eventPollQueriesPerConnection = Math.floor(seconds / 2);
     const sessionRechecksPerConnection = Math.floor(seconds / 10);
     report.scenarios.push({
       authenticatedOperatorSessions: target,
-      sseConnectionsCreatedInScenario: connectionCounts,
-      exactlyOnePerOperator: connectionCounts.every((count) => count === 1),
+      activeSseConnectionsPerOperator: activeStreamCounts,
+      streamsCreatedInScenario,
+      exactlyOnePerOperator: activeStreamCounts.every((count) => count === 1),
       openedAt: new Date(opened).toISOString(),
       measuredSeconds: Number(seconds.toFixed(2)),
       expectedD1Queries: {
@@ -71,14 +86,15 @@ try {
   }
 
   for (const operator of operators) {
-    await operator.page.goto(`${baseUrl}/admin/more`, { waitUntil: "domcontentloaded" });
-    await operator.page.getByRole("heading", { name: "Más" }).waitFor({ state: "visible", timeout: 10_000 });
-    const response = await operator.context.request.post(`${baseUrl}/api/auth/logout`);
-    if (!response.ok()) throw new Error(`Admin logout failed with HTTP ${response.status()}.`);
+    const closeResponse = await operator.context.request.post(`${baseUrl}/api/auth/logout`);
+    if (!closeResponse.ok()) throw new Error(`Admin logout failed with HTTP ${closeResponse.status()}.`);
     const session = await operator.context.request.get(`${baseUrl}/api/auth/session`);
     if (session.status() !== 401) throw new Error(`Admin session was not revoked (${session.status()}).`);
+    if (await operator.page.locator(".connection--expired").count()) {
+      await operator.page.locator(".connection--expired").waitFor({ state: "visible", timeout: 12_000 });
+    }
   }
-  report.cleanup = "PASS — all five synthetic admin sessions logged out and were verified unauthorized; all SSE pages navigated away before logout";
+  report.cleanup = "PASS — all five synthetic admin sessions logged out and were verified unauthorized; contexts are closed after revocation";
 } finally {
   for (const operator of operators) await operator.context.close();
   await browser.close();
