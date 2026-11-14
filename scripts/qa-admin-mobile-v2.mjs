@@ -103,7 +103,7 @@ async function createAndAdvanceSyntheticPickup(page, attentionObserver = null) {
     await page.waitForURL(/\/admin\/orders\/[0-9a-f-]+/i);
   } else {
     await page.goto(`${baseUrl}/admin/orders/history?q=${encodeURIComponent(marker)}`, { waitUntil: "domcontentloaded" });
-    await page.locator(".history-list").waitFor({ state: "visible", timeout: 15000 });
+    await page.locator(".history-group").first().waitFor({ state: "visible", timeout: 15000 });
     await page.locator('[aria-label="Cargando historial"]').waitFor({ state: "detached", timeout: 15000 });
     const matchingRow = page.locator(".history-row").filter({ hasText: marker }).first();
     if (await matchingRow.count()) {
