@@ -21,7 +21,11 @@ async function capture(page, name, route, width = 390, height = 844) {
   const response = await page.goto(new URL(route, baseUrl).toString(), { waitUntil: "domcontentloaded" });
   if (!response || response.status() >= 500) throw new Error(`${name} returned HTTP ${response?.status() ?? "no response"}`);
   await page.locator("main").first().waitFor({ state: "visible", timeout: 15000 });
-  await page.locator(".admin-skeleton-list").waitFor({ state: "detached", timeout: 15000 });
+  await page.waitForFunction(
+    () => ![...document.querySelectorAll(".admin-skeleton-list")].some((element) => element.getClientRects().length > 0),
+    undefined,
+    { timeout: 15000 },
+  );
   if (route === "/admin/orders") await page.locator(".connection--live").waitFor({ state: "visible", timeout: 10000 });
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.waitForTimeout(50);
