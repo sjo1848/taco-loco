@@ -95,11 +95,11 @@ async function createAndAdvanceSyntheticPickup(page) {
     orderCode = heading.trim().split(/\s+/).at(-1) ?? null;
     if (!orderCode) throw new Error("Created synthetic order did not show a human-readable code.");
     results.journeys.push({ journey: "synthetic manual pickup created through two-step form", result: "PASS", orderCode });
-    const screenshot = path.join(outputDir, "order-detail-390.png");
-    await page.screenshot({ path: screenshot, fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)) });
-    results.screenshots.push(path.relative(process.cwd(), screenshot));
   }
 
+  const beforeTransitionScreenshot = path.join(outputDir, "order-detail-before-transition-390.png");
+  await page.screenshot({ path: beforeTransitionScreenshot, fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)) });
+  results.screenshots.push(path.relative(process.cwd(), beforeTransitionScreenshot));
   const orderId = new URL(page.url()).pathname.split("/").at(-1);
   const readStatus = async () => page.evaluate(async (id) => {
     const response = await fetch(`/api/admin/orders/${id}`, { cache: "no-store" });
