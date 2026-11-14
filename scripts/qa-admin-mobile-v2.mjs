@@ -239,6 +239,7 @@ for (const name of browserNames) {
     }
     await capture(page, "categories", "/admin/categories", 390);
     await capture(page, "settings", "/admin/settings", 390);
+    for (const width of viewports) await capture(page, `settings-responsive-${width}`, "/admin/settings", width, width < 500 ? 844 : 900);
     await capture(page, "more", "/admin/more", 390);
     await page.goto(`${baseUrl}/admin/orders`, { waitUntil: "domcontentloaded" });
     const assertQueue = async (index, expected) => {
