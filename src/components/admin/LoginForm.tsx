@@ -1,14 +1,10 @@
 "use client";
-
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 
-export function LoginForm() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
-  async function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); setPending(true); setError(""); const response = await fetch("/api/auth/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, password }) }); if (!response.ok) { const body = await response.json().catch(() => null); setError(body?.message ?? "No pudimos iniciar sesión."); setPending(false); return; } router.push("/admin"); router.refresh(); }
-  return <form className="admin-form" onSubmit={submit} noValidate><label>Email<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Contraseña<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>{error && <p className="form-error" role="alert">{error}</p>}<button className="admin-button admin-button--primary" disabled={pending}>{pending ? "Ingresando…" : "Ingresar"}</button></form>;
+export function LoginForm(){
+ const router=useRouter();const[email,setEmail]=useState("");const[password,setPassword]=useState("");const[error,setError]=useState("");const[pending,setPending]=useState(false);const[showPassword,setShowPassword]=useState(false);
+ async function submit(event:FormEvent<HTMLFormElement>){event.preventDefault();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){setError("Ingresá un email válido.");return}setPending(true);setError("");try{const response=await fetch("/api/auth/login",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email,password})});if(!response.ok){const body=await response.json().catch(()=>null);setError(body?.message??(response.status>=500?"No se pudo conectar. Reintentá.":"No pudimos iniciar sesión."));setPending(false);return}const requested=new URLSearchParams(window.location.search).get("returnTo");const target=requested?.startsWith("/admin/")&&!requested.startsWith("//")?requested:"/admin/orders";router.push(target);router.refresh()}catch{setError("No se pudo conectar. Reintentá.");setPending(false)}}
+ return <form className="admin-form" onSubmit={submit}><label>Email<input type="email" autoComplete="username" value={email} onChange={e=>setEmail(e.target.value)} required/></label><label>Contraseña<span className="password-field"><input type={showPassword?"text":"password"} autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} required/><button type="button" onClick={()=>setShowPassword(v=>!v)} aria-label={showPassword?"Ocultar contraseña":"Mostrar contraseña"}><span className="sr-only">{showPassword?"Ocultar":"Mostrar"}</span>{showPassword?<EyeOff size={19}/>:<Eye size={19}/>}</button></span></label>{error&&<p className="form-error" role="alert">{error}</p>}<button className="admin-button admin-button--primary" disabled={pending}>{pending?"Ingresando…":"Ingresar"}</button></form>
 }

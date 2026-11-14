@@ -1,1 +1,1 @@
-export default function Loading() { return <main className="admin-page"><div className="admin-loading" role="status">Cargando pedidos…</div></main>; }
+export default function Loading() { return <main className="admin-page" aria-busy="true"><div className="admin-skeleton-list" role="status" aria-label="Cargando pedidos"><div className="admin-skeleton-card"/><div className="admin-skeleton-card"/><div className="admin-skeleton-card"/></div></main>; }

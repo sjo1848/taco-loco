@@ -5,6 +5,6 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const user = await getCurrentAdmin();
-  if (!user) redirect("/admin/login");
+  if (!user) redirect("/admin/login?returnTo=%2Fadmin%2Forders");
   redirect("/admin/orders");
 }
