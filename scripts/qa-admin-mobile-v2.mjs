@@ -34,7 +34,7 @@ async function capture(page, name, route, width = 390, height = 844) {
   results.viewportChecks.push({ browser: page.context().browser()?.browserType().name(), screen: name, width, overflow: false });
   const browserName = page.context().browser()?.browserType().name() ?? "unknown";
   const file = path.join(outputDir, `${name}-${width}-${browserName}.png`);
-  await page.screenshot({ path: file, fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)).filter(Boolean) });
+  await page.screenshot({ path: file, fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)).filter(Boolean), maskColor: "#F6F7F4" });
   results.screenshots.push(path.relative(process.cwd(), file));
   return response;
 }
@@ -137,7 +137,7 @@ async function createAndAdvanceSyntheticPickup(page) {
   }
 
   const beforeTransitionScreenshot = path.join(outputDir, "order-detail-before-transition-390.png");
-  await page.screenshot({ path: beforeTransitionScreenshot, fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)) });
+  await page.screenshot({ path: beforeTransitionScreenshot, fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)), maskColor: "#F6F7F4" });
   results.screenshots.push(path.relative(process.cwd(), beforeTransitionScreenshot));
   const orderId = new URL(page.url()).pathname.split("/").at(-1);
   const readStatus = async () => page.evaluate(async (id) => {
@@ -246,7 +246,7 @@ for (const name of browserNames) {
     if (await firstProduct.count()) {
       await firstProduct.getByRole("link", { name: "Editar" }).click();
       await page.locator(".product-image-editor").waitFor({ state: "visible" });
-      await page.screenshot({ path: path.join(outputDir, `product-edit-390-${name}.png`), fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)) });
+      await page.screenshot({ path: path.join(outputDir, `product-edit-390-${name}.png`), fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)), maskColor: "#F6F7F4" });
       results.screenshots.push(path.relative(process.cwd(), path.join(outputDir, `product-edit-390-${name}.png`)));
     }
     await capture(page, "categories", "/admin/categories", 390);
@@ -265,7 +265,7 @@ for (const name of browserNames) {
       await assertQueue(index, expected);
       await page.waitForTimeout(100);
       const file = path.join(outputDir, `orders-queue-${expected}-390-${name}.png`);
-      await page.screenshot({ path: file, fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)) });
+      await page.screenshot({ path: file, fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)), maskColor: "#F6F7F4" });
       results.screenshots.push(path.relative(process.cwd(), file));
     }
     await page.goBack();
