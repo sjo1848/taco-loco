@@ -42,6 +42,9 @@ importers:
       '@vinext/cloudflare':
         specifier: 1.0.0-beta.7
         version: 1.0.0-beta.7(vinext@1.0.0-beta.9(@vitejs/plugin-react@6.1.1(vite@8.3.5(@types/node@24.10.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.20.6)))(@vitejs/plugin-rsc@0.5.34(react-dom@19.2.9(react@19.2.9))(react-server-dom-webpack@19.2.9(react-dom@19.2.9(react@19.2.9))(react@19.2.9)(webpack@5.110.3(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.32)(sharp@0.35.5(@types/node@24.10.0))))(react@19.2.9)(vite@8.3.5(@types/node@24.10.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.20.6)))(next@16.4.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/node@24.10.0)(react-dom@19.2.9(react@19.2.9))(react@19.2.9))(react-dom@19.2.9(react@19.2.9))(react-server-dom-webpack@19.2.9(react-dom@19.2.9(react@19.2.9))(react@19.2.9)(webpack@5.110.3(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.32)(sharp@0.35.5(@types/node@24.10.0))))(react@19.2.9)(vite@8.3.5(@types/node@24.10.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.20.6)))
+      lucide-react:
+        specifier: ^1.72.0
+        version: 1.72.0(@types/react@19.2.18)(react@19.2.9)
       next:
         specifier: 16.4.3
         version: 16.4.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/node@24.10.0)(react-dom@19.2.9(react@19.2.9))(react@19.2.9)
@@ -2446,6 +2449,15 @@ packages:
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
+
+  lucide-react@1.72.0:
+    resolution: {integrity: sha512-fbF5i1GU8GODETa3Q7rXqrJrcx3iPYrQtxthom103zGx+Z0BGwKYAW9s+9435ohYJ7hQm0av0PoZcqI1CRwNrg==}
+    peerDependencies:
+      '@types/react': '*'
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
@@ -5668,6 +5680,12 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
+
+  lucide-react@1.72.0(@types/react@19.2.18)(react@19.2.9):
+    dependencies:
+      react: 19.2.9
+    optionalDependencies:
+      '@types/react': 19.2.18
 
   magic-string@0.30.21:
     dependencies:

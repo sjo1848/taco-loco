@@ -118,18 +118,28 @@ async function resolveCurrentProductLines(lines: Array<{ productId: string; quan
 
 export async function createManualOrder(input: unknown, actorId: string | null, clientReference: string | null = null, reason = "Pedido registrado manualmente", source: "WHATSAPP" | "PUBLIC_MENU" = "WHATSAPP", workflow: OrderWorkflow = { verificationStatus: "VERIFIED", paymentStatus: "NOT_REQUIRED", deliveryAddress: null, deliveryReference: null, deliveryFeeAmount: 0, transferHolderName: null, customerId: null }) {
   const parsed = createManualOrderInputSchema.parse(input);
+  const findReused = async () => {
+    if (!clientReference) return null;
+    const existing = await db.order.findUnique({ where: { clientReference }, include: { lines: true } });
+    if (!existing) return null;
+    const event = await db.orderEvent.findFirstOrThrow({ where: { orderId: existing.id }, orderBy: { sequence: "desc" } });
+    return { order: existing, event, reused: true };
+  };
+  const replay = await findReused();
+  if (replay) return replay;
   const { resolvedLines, subtotalAmount } = await resolveCurrentProductLines(parsed.lines.map((line) => ({ ...line, modifiers: line.modifiers })));
   const totalAmount = subtotalAmount + parsed.adjustmentAmount;
   if (totalAmount < 0) throw new AppError("INVALID_ORDER_TOTAL", "El total del pedido no puede ser negativo.", 400);
   if (isD1Runtime) {
     const { createD1Order } = await import("@/modules/orders/d1-atomic.worker");
     const id = crypto.randomUUID();
-    await createD1Order({ id, source, fulfillment: parsed.fulfillment, verificationStatus: workflow.verificationStatus, paymentStatus: workflow.paymentStatus, deliveryAddress: workflow.deliveryAddress, deliveryReference: workflow.deliveryReference, deliveryFeeAmount: workflow.deliveryFeeAmount, transferHolderName: workflow.transferHolderName, customerName: parsed.customerName ?? null, customerPhone: parsed.customerPhone ?? null, tableLabel: parsed.tableLabel ?? null, notes: parsed.notes ?? null, subtotalAmount, adjustmentAmount: parsed.adjustmentAmount, totalAmount, clientReference, publicTrackingToken: workflow.publicTrackingToken ?? null, customerId: workflow.customerId ?? null, createdById: actorId, reason, eventKind: source === "PUBLIC_MENU" ? "ORDER_CREATED" : "STATUS_TRANSITION", lines: resolvedLines.map((line) => ({ ...line, id: crypto.randomUUID() })) });
+    try { await createD1Order({ id, source, fulfillment: parsed.fulfillment, verificationStatus: workflow.verificationStatus, paymentStatus: workflow.paymentStatus, deliveryAddress: workflow.deliveryAddress, deliveryReference: workflow.deliveryReference, deliveryFeeAmount: workflow.deliveryFeeAmount, transferHolderName: workflow.transferHolderName, customerName: parsed.customerName ?? null, customerPhone: parsed.customerPhone ?? null, tableLabel: parsed.tableLabel ?? null, notes: parsed.notes ?? null, subtotalAmount, adjustmentAmount: parsed.adjustmentAmount, totalAmount, clientReference, publicTrackingToken: workflow.publicTrackingToken ?? null, customerId: workflow.customerId ?? null, createdById: actorId, reason, eventKind: source === "PUBLIC_MENU" ? "ORDER_CREATED" : "STATUS_TRANSITION", lines: resolvedLines.map((line) => ({ ...line, id: crypto.randomUUID() })) }); }
+    catch (error) { const concurrentReplay = await findReused().catch(() => null); if (concurrentReplay) return concurrentReplay; throw error; }
     const order = await db.order.findUniqueOrThrow({ where: { id }, include: { lines: true } });
     const event = await db.orderEvent.findFirstOrThrow({ where: { orderId: id }, orderBy: { sequence: "desc" } });
-    return { order, event };
+    return { order, event, reused: false };
   }
-  return db.$transaction(async (tx: { product: typeof db.product; order: typeof db.order; orderEvent: typeof db.orderEvent; $executeRaw: typeof db.$executeRaw }) => {
+  try { return await db.$transaction(async (tx: { product: typeof db.product; order: typeof db.order; orderEvent: typeof db.orderEvent; $executeRaw: typeof db.$executeRaw }) => {
     const order = await tx.order.create({
       data: {
         source,
@@ -157,8 +167,8 @@ export async function createManualOrder(input: unknown, actorId: string | null, 
     });
     const event = await tx.orderEvent.create({ data: { orderId: order.id, toStatus: "RECEIVED", actorId, reason, kind: source === "PUBLIC_MENU" ? "ORDER_CREATED" : "STATUS_TRANSITION" } });
     await publishOrderEvent(tx, event);
-    return { order, event };
-  });
+    return { order, event, reused: false };
+  }); } catch (error) { const concurrentReplay = await findReused().catch(() => null); if (concurrentReplay) return concurrentReplay; throw error; }
 }
 
 export async function createPublicOrderIntent(input: unknown, customerId: string | null = null) {

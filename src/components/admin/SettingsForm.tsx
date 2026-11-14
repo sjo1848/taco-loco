@@ -1,14 +1,20 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAdminUnsavedGuard } from "@/components/admin/useAdminUnsavedGuard";
 
 type ScheduleEntry = { day: number; enabled: boolean; open: string; close: string };
 type Settings = { businessName: string; whatsappPhone: string; whatsappMessage: string; currency: string; acceptingOrders: boolean; statusMessage: string | null; weeklySchedule: ScheduleEntry[]; deliveryEnabled: boolean; deliveryFeeAmount: number };
 const dayNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 export function SettingsForm({ initial }: { initial: Settings }) {
+  const router=useRouter();
   const [form, setForm] = useState(initial);
+  const [savedForm,setSavedForm]=useState(initial);
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
+  const dirty = JSON.stringify(form) !== JSON.stringify(savedForm);
+  useAdminUnsavedGuard(dirty);
   useEffect(() => {
     if (!message) return;
     const timer = window.setTimeout(() => setMessage(""), 4_000);
@@ -18,7 +24,8 @@ export function SettingsForm({ initial }: { initial: Settings }) {
     event.preventDefault(); setPending(true); setMessage("");
     try {
       const response = await fetch("/api/admin/settings", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(form) });
-      setMessage(response.ok ? "Configuración guardada." : "No se pudo guardar la configuración.");
+      if(response.status===401){router.push(`/admin/login?returnTo=${encodeURIComponent("/admin/settings")}&expired=1`);return}
+      if(response.ok){setSavedForm(form);setMessage("Configuración guardada.")}else setMessage("No se pudo guardar la configuración.");
     } catch { setMessage("No se pudo conectar con el servidor."); } finally { setPending(false); }
   }
   function updateSchedule(day: number, patch: Partial<ScheduleEntry>) { setForm({ ...form, weeklySchedule: form.weeklySchedule.map((entry) => entry.day === day ? { ...entry, ...patch } : entry) }); }
@@ -26,9 +33,10 @@ export function SettingsForm({ initial }: { initial: Settings }) {
     <label>Nombre del negocio<input value={form.businessName} onChange={(event) => setForm({ ...form, businessName: event.target.value })} required /></label>
     <label>WhatsApp<input value={form.whatsappPhone} onChange={(event) => setForm({ ...form, whatsappPhone: event.target.value })} required /></label>
     <label>Mensaje base<textarea rows={4} value={form.whatsappMessage} onChange={(event) => setForm({ ...form, whatsappMessage: event.target.value })} required /></label>
+    <label>Moneda<input value={form.currency} readOnly aria-describedby="settings-currency-help" /></label><p id="settings-currency-help" className="admin-help">La moneda vigente se conserva; esta pantalla no modifica reglas comerciales.</p>
     <fieldset className="admin-schedule"><legend>Estado operativo</legend><label className="admin-checkbox"><input type="checkbox" checked={form.acceptingOrders} onChange={(event) => setForm({ ...form, acceptingOrders: event.target.checked })} /> Tomar pedidos ahora</label><label>Mensaje visible al cliente<input value={form.statusMessage ?? ""} onChange={(event) => setForm({ ...form, statusMessage: event.target.value || null })} placeholder="Opcional" /></label></fieldset>
     <fieldset className="admin-schedule"><legend>Delivery</legend><label className="admin-checkbox"><input type="checkbox" checked={form.deliveryEnabled} onChange={(event) => setForm({ ...form, deliveryEnabled: event.target.checked })} /> Habilitar delivery</label><label>Tarifa fija ARS<input type="number" min="0" step="1" value={form.deliveryFeeAmount} onChange={(event) => setForm({ ...form, deliveryFeeAmount: Number(event.target.value) || 0 })} /></label><p className="admin-help">La tarifa se suma al total y se verifica manualmente antes de confirmar.</p></fieldset>
     <fieldset className="admin-schedule"><legend>Horarios semanales</legend><p className="admin-help">Si no activás ningún día, el estado se controla manualmente.</p>{form.weeklySchedule.map((entry) => <div className="admin-schedule__row" key={entry.day}><label className="admin-checkbox"><input type="checkbox" checked={entry.enabled} onChange={(event) => updateSchedule(entry.day, { enabled: event.target.checked })} /> {dayNames[entry.day]}</label><input aria-label={`Apertura ${dayNames[entry.day]}`} type="time" value={entry.open} onChange={(event) => updateSchedule(entry.day, { open: event.target.value })} disabled={!entry.enabled} /><input aria-label={`Cierre ${dayNames[entry.day]}`} type="time" value={entry.close} onChange={(event) => updateSchedule(entry.day, { close: event.target.value })} disabled={!entry.enabled} /></div>)}</fieldset>
-    {message && <p role="status" className="admin-feedback">{message}</p>}<button className="admin-button admin-button--primary" disabled={pending}>{pending ? "Guardando…" : "Guardar configuración"}</button>
+    {message && <p role="status" className="admin-feedback">{message}</p>}<button className="admin-button admin-button--primary" disabled={pending||!dirty}>{pending ? "Guardando…" : "Guardar configuración"}</button>
   </form>;
 }
