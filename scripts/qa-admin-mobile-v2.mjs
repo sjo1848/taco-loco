@@ -205,7 +205,7 @@ for (const name of browserNames) {
     }
     await page.setViewportSize({ width: 390, height: 844 });
     await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Continuar" }));
-    await page.getByRole("heading", { name: "Datos y confirmación" }).waitFor({ state: "visible" });
+    await page.locator('.order-stepper li[aria-current="step"] span').filter({ hasText: "Datos y confirmación" }).waitFor({ state: "visible" });
     for (const width of viewports) {
       await page.setViewportSize({ width, height: width < 500 ? 844 : 900 });
       await assertAboveMobileNavigation(page, page.getByRole("button", { name: "Registrar pedido" }));
