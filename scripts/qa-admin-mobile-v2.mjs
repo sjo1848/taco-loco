@@ -52,10 +52,22 @@ async function selectAvailableProduct(page) {
   const product = options.find((option) => option.value && !option.disabled);
   if (!product) throw new Error(`Manual order has no selectable published/available products (option count: ${options.length}).`);
   await select.selectOption({ value: product.value });
+  // A client-side navigation can expose the server-rendered form before its
+  // controlled React select hydrates. Wait for React to commit the selection
+  // before trying to add it, otherwise the CTA may still appear disabled.
+  await page.waitForFunction(() => {
+    const button = document.querySelector(".order-form__add button");
+    return button instanceof HTMLButtonElement && !button.disabled;
+  }, undefined, { timeout: 8000 }).catch(() => {
+    throw new Error("The selected product was not committed to the manual-order form.");
+  });
 }
 
 async function assertAboveMobileNavigation(page, locator) {
-  await locator.scrollIntoViewIfNeeded();
+  // Center the CTA in the usable viewport; scrollIntoViewIfNeeded aligns to
+  // the visual bottom edge and does not account for the fixed navigation.
+  await locator.evaluate((element) => element.scrollIntoView({ block: "center", inline: "nearest" }));
+  await page.waitForTimeout(50);
   const button = await locator.boundingBox();
   const nav = await page.locator('nav[aria-label="Navegación administrativa móvil"]').boundingBox();
   if (!button || (nav && button.y + button.height > nav.y - 4)) {

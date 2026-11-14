@@ -1,4 +1,4 @@
-.shell { --admin-bg:#F6F7F4;--admin-surface:#fff;--admin-text:#172B23;--admin-muted:#637169;--admin-border:#E1E7E1;--admin-nav:#173B2D;--admin-primary:#176B3A;--admin-brand:#2DA44A;--admin-warning-bg:#FFF4D8;--admin-warning-text:#875000;--admin-error:#B42318;--admin-success-bg:#E7F5EB;--admin-success-text:#176B3A; min-height:100svh;background:var(--admin-bg);color:var(--admin-text);font-family:Arial, sans-serif; }
+.shell { --admin-bg:#F6F7F4;--admin-surface:#fff;--admin-text:#172B23;--admin-muted:#637169;--admin-border:#E1E7E1;--admin-nav:#173B2D;--admin-primary:#176B3A;--admin-brand:#2DA44A;--admin-warning-bg:#FFF4D8;--admin-warning-text:#875000;--admin-error:#B42318;--admin-success-bg:#E7F5EB;--admin-success-text:#176B3A; --background:var(--admin-bg);--surface:var(--admin-surface);--surface-2:#F9FBF8;--cream:var(--admin-text);--muted:var(--admin-muted);--border:var(--admin-border);--green:var(--admin-primary);--yellow:var(--admin-warning-text);--red:var(--admin-error);--brand-green:var(--admin-primary);--brand-yellow:#875000;--brand-red:var(--admin-error); min-height:100svh;background:var(--admin-bg);color:var(--admin-text);font-family:Arial, sans-serif;color-scheme:light; }
 .sidebar { display:none; }
 .app { min-height:100svh; padding-bottom:calc(68px + env(safe-area-inset-bottom)); }
 .topbar { position:sticky;top:0;z-index:30;height:56px;display:flex;align-items:center;gap:12px;padding:0 16px;background:#fff;border-bottom:1px solid var(--admin-border); }
@@ -26,7 +26,7 @@
 @media(prefers-reduced-motion:reduce){.shell *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
 /* The approved light operations palette applies to existing server-rendered pages. */
-.shell :global(.admin-page) { min-height:calc(100svh - 56px);padding:20px 16px calc(96px + env(safe-area-inset-bottom));background:var(--admin-bg);color:var(--admin-text); }
+.shell :global(.admin-page) { --background:var(--admin-bg);--surface:var(--admin-surface);--surface-2:#F9FBF8;--cream:var(--admin-text);--muted:var(--admin-muted);--border:var(--admin-border);--green:var(--admin-primary);--yellow:var(--admin-warning-text);--red:var(--admin-error);--brand-green:var(--admin-primary);--brand-yellow:#875000;--brand-red:var(--admin-error); min-height:calc(100svh - 56px);padding:20px 16px calc(96px + env(safe-area-inset-bottom));background:var(--admin-bg);color:var(--admin-text);color-scheme:light; }
 .shell :global(.admin-page h1) { font-size:24px;line-height:1.2; }
 .shell :global(.admin-header > div:first-child){display:none}
 .shell :global(.admin-page h2) { color:var(--admin-text); }
