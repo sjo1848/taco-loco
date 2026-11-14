@@ -143,7 +143,7 @@ async function createAndAdvanceSyntheticPickup(page) {
   }
 
   const beforeTransitionScreenshot = path.join(outputDir, "order-detail-before-transition-390.png");
-  if (await saveScreenshot(page, { path: beforeTransitionScreenshot, fullPage: name !== "webkit", animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)), maskColor: "#F6F7F4" })) results.screenshots.push(path.relative(process.cwd(), beforeTransitionScreenshot));
+  if (await saveScreenshot(page, { path: beforeTransitionScreenshot, fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)), maskColor: "#F6F7F4" })) results.screenshots.push(path.relative(process.cwd(), beforeTransitionScreenshot));
   const orderId = new URL(page.url()).pathname.split("/").at(-1);
   const readStatus = async () => page.evaluate(async (id) => {
     const response = await fetch(`/api/admin/orders/${id}`, { cache: "no-store" });
