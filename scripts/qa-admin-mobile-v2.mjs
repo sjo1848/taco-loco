@@ -104,7 +104,17 @@ for (const name of browserNames) {
     await capture(page, "orders", "/admin/orders", 390);
     await capture(page, "attention", "/admin/orders/attention", 390);
     await capture(page, "history", "/admin/orders/history", 390);
-    await capture(page, "new-order-step-1", "/admin/orders/new", 390);
+    await page.goto(`${baseUrl}/admin/orders/new`, { waitUntil: "domcontentloaded" });
+    await page.locator(".order-form__add select").selectOption({ index: 1 });
+    await page.getByRole("button", { name: "Agregar", exact: true }).click();
+    const reviewLine = page.locator(".order-form__line").first();
+    const reviewModifierLabels = reviewLine.locator("label");
+    for (let i = 0; i < await reviewModifierLabels.count(); i++) {
+      const label = reviewModifierLabels.nth(i);
+      if ((await label.innerText()).includes("obligatorio")) await label.locator("select").selectOption({ index: 1 });
+    }
+    await page.screenshot({ path: path.join(outputDir, `new-order-step-1-390-${name}.png`), fullPage: true, animations: "disabled" });
+    results.screenshots.push(path.relative(process.cwd(), path.join(outputDir, `new-order-step-1-390-${name}.png`)));
     await page.getByRole("button", { name: "Continuar" }).click();
     await page.getByRole("heading", { name: "Datos y confirmación" }).waitFor({ state: "visible" });
     await page.screenshot({ path: path.join(outputDir, `new-order-step-2-390-${name}.png`), fullPage: true, animations: "disabled" });
