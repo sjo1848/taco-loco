@@ -76,7 +76,16 @@ export function AdminShell({ children }: { children: ReactNode }) {
     let alive = true;
     const stream = new EventSource("/api/admin/orders/events");
     const onOffline = () => updateConnection("offline");
-    const onOnline = () => updateConnection("reconnecting");
+    const onOnline = () => {
+      if (stream.readyState === EventSource.OPEN) {
+        // Some browsers keep an EventSource open across a brief offline/online
+        // transition and do not emit another `open`. Restore the truthful live
+        // state and reconcile snapshots instead of waiting for a reconnect that
+        // will never happen.
+        updateConnection("live");
+        reconcileSubscribers();
+      } else updateConnection("reconnecting");
+    };
     stream.addEventListener("order", onOrder as EventListener);
     stream.addEventListener("session-expired", () => {
       stream.close();

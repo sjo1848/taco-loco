@@ -13,6 +13,17 @@ const screenshotsEnabled = process.env.TACO_LOCO_QA_SCREENSHOTS !== "false";
 const viewports = [360, 390, 430, 768, 1024, 1440];
 const results = { baseUrl, captureMode: screenshotsEnabled ? "screenshots" : "interaction-only", browsers: [], browserFailures: [], diagnostics: [], screenshots: [], viewportChecks: [], journeys: [], externalBlocked: [] };
 const personalDataMasks = [".order-ticket__identity strong", ".attention-ticket__customer strong", ".history-row__main strong", ".detail-grid dd"];
+function instrumentEventSource() {
+  window.__adminSseCreated = 0;
+  window.__adminSseEvents = [];
+  const NativeEventSource = window.EventSource;
+  window.EventSource = new Proxy(NativeEventSource, { construct(target, args) {
+    window.__adminSseCreated += 1;
+    const source = Reflect.construct(target, args);
+    for (const event of ["open", "error"]) source.addEventListener(event, () => window.__adminSseEvents.push({ event, readyState: source.readyState, at: new Date().toISOString() }));
+    return source;
+  } });
+}
 
 if (!email || !password) throw new Error("Set TACO_LOCO_ADMIN_EMAIL and TACO_LOCO_ADMIN_PASSWORD in the process environment.");
 if (!/^https:\/\/taco-loco-staging-20260913\.sjo1848\.workers\.dev$/.test(baseUrl)) throw new Error("QA script only permits the authorized staging origin.");
@@ -62,9 +73,16 @@ async function selectAvailableProduct(page) {
   const card = page.locator('[class*="productCard"]').first();
   await card.waitFor({ state: "visible", timeout: 10000 });
   const name = (await card.locator("h2").innerText()).trim();
-  await card.getByRole("button", { name: "Agregar", exact: true }).click();
+  const add = card.getByRole("button", { name: "Agregar", exact: true });
+  await page.waitForFunction(() => [...document.querySelectorAll('[class*="productCard"] button')].some((button) => Object.keys(button).some((key) => key.startsWith("__reactProps$"))), undefined, { timeout: 10000 });
+  await add.click();
   const dialog = page.getByRole("dialog");
-  await dialog.waitFor({ state: "visible" });
+  const summary = page.getByRole("region", { name: "Resumen del pedido" });
+  const openedDialog = await dialog.waitFor({ state: "visible", timeout: 5000 }).then(() => true).catch(() => false);
+  if (!openedDialog) {
+    await summary.getByText(name, { exact: true }).waitFor({ state: "visible", timeout: 5000 });
+    return name;
+  }
   const dialogTitle = (await dialog.locator("h2").innerText()).trim();
   if (dialogTitle !== name) throw new Error("The product customizer did not match the selected product.");
   const requiredGroups = dialog.locator("fieldset").filter({ hasText: "obligatorio" });
@@ -72,7 +90,7 @@ async function selectAvailableProduct(page) {
   const plus = dialog.getByRole("button", { name: "Agregar una unidad" });
   if (await plus.isEnabled()) await plus.click();
   await dialog.getByRole("button", { name: /^Agregar ·/ }).click();
-  await page.getByRole("region", { name: "Resumen del pedido" }).getByText(name).waitFor({ state: "visible" });
+  await summary.getByText(name).waitFor({ state: "visible" });
   return name;
 }
 
@@ -237,10 +255,7 @@ for (const name of browserNames) {
     continue;
   }
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  await context.addInitScript(() => {
-    window.__adminSseCreated = 0;
-    window.EventSource = new Proxy(window.EventSource, { construct(target, args) { window.__adminSseCreated += 1; return Reflect.construct(target, args); } });
-  });
+  await context.addInitScript(instrumentEventSource);
   let attentionContext = null;
   let attentionObserver = null;
   let page = await context.newPage();
@@ -264,10 +279,7 @@ for (const name of browserNames) {
     let releaseInitialSse = null;
     if (name === "chromium") {
       attentionContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
-      await attentionContext.addInitScript(() => {
-        window.__adminSseCreated = 0;
-        window.EventSource = new Proxy(window.EventSource, { construct(target, args) { window.__adminSseCreated += 1; return Reflect.construct(target, args); } });
-      });
+      await attentionContext.addInitScript(instrumentEventSource);
       attentionObserver = await attentionContext.newPage();
       await attentionObserver.emulateMedia({ reducedMotion: "reduce" });
       trackPageErrors(attentionObserver);
@@ -456,10 +468,12 @@ for (const name of browserNames) {
       results.journeys.push({ journey: "independent administrative session revocation closes its SSE connection", result: "PASS" });
     }
     if (pageErrors.length) throw new Error(`Browser page errors: ${pageErrors.join(", ")}`);
+    diagnostics.eventSources = await Promise.all([page, attentionObserver].filter(Boolean).map(async (target) => await target.evaluate(() => ({ count: window.__adminSseCreated ?? 0, events: window.__adminSseEvents ?? [] })).catch(() => ({ count: null, events: [] }))));
     results.diagnostics.push(diagnostics);
   } catch (error) {
     const reason = error instanceof Error ? error.message : "unknown";
     results.browsers.push({ name, result: "FAIL", reason });
+    diagnostics.eventSources = await Promise.all([page, attentionObserver].filter(Boolean).map(async (target) => await target.evaluate(() => ({ count: window.__adminSseCreated ?? 0, events: window.__adminSseEvents ?? [] })).catch(() => ({ count: null, events: [] }))));
     results.diagnostics.push(diagnostics);
     results.browserFailures.push({ name, reason: reason.split("\n")[0] });
     await fs.writeFile(path.join(outputDir, "report.json"), JSON.stringify(results, null, 2));
