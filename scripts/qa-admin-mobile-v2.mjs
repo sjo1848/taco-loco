@@ -130,6 +130,25 @@ for (const name of browserNames) {
     await capture(page, "categories", "/admin/categories", 390);
     await capture(page, "settings", "/admin/settings", 390);
     await capture(page, "more", "/admin/more", 390);
+    await page.goto(`${baseUrl}/admin/orders`, { waitUntil: "domcontentloaded" });
+    for (const [index, expected] of [[1, "preparando"], [2, "listos"]]) {
+      await page.locator(".queue-tabs button").nth(index).click();
+      const queue = await page.evaluate(() => new URLSearchParams(window.location.search).get("cola"));
+      if (queue !== expected) throw new Error(`Queue navigation expected cola=${expected}, received ${queue}`);
+      await page.waitForTimeout(100);
+      const file = path.join(outputDir, `orders-queue-${expected}-390-${name}.png`);
+      await page.screenshot({ path: file, fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)) });
+      results.screenshots.push(path.relative(process.cwd(), file));
+    }
+    results.journeys.push({ journey: "kitchen queues serialize the approved URL state", result: "PASS" });
+    await page.goto(`${baseUrl}/admin/orders`, { waitUntil: "domcontentloaded" });
+    const desktopRoutes = [
+      ["orders-desktop", "/admin/orders"], ["attention-desktop", "/admin/orders/attention"],
+      ["history-desktop", "/admin/orders/history"], ["new-order-desktop", "/admin/orders/new"],
+      ["products-desktop", "/admin/products"], ["product-new-desktop", "/admin/products/new"],
+      ["categories-desktop", "/admin/categories"], ["settings-desktop", "/admin/settings"], ["more-desktop", "/admin/more"],
+    ];
+    for (const [screen, route] of desktopRoutes) await capture(page, screen, route, 1440, 1000);
     if (orderCode) {
       await page.goto(`${baseUrl}/admin/orders/history?q=${encodeURIComponent(orderCode)}`, { waitUntil: "domcontentloaded" });
       await page.locator(".history-row").first().waitFor({ state: "visible" });
