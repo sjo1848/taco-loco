@@ -313,4 +313,4 @@ for (const name of browserNames) {
 
 await fs.writeFile(path.join(outputDir, "report.json"), JSON.stringify(results, null, 2));
 console.log(JSON.stringify({ outputDir: path.relative(process.cwd(), outputDir), browsers: results.browsers, screenshots: results.screenshots.length, viewportChecks: results.viewportChecks.length, journeys: results.journeys, externalBlocked: results.externalBlocked }, null, 2));
-if (!results.browsers.some((browser) => browser.name === "chromium" && browser.login === "PASS")) process.exitCode = 1;
+if (!results.browsers.some((browser) => browser.login === "PASS") || results.browserFailures.length > 0) process.exitCode = 1;
