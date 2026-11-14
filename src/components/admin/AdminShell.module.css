@@ -26,7 +26,7 @@
 @media(prefers-reduced-motion:reduce){.shell *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
 /* The approved light operations palette applies to existing server-rendered pages. */
-.shell :global(.admin-page) { min-height:calc(100svh - 56px);padding:20px 16px 28px;background:var(--admin-bg);color:var(--admin-text); }
+.shell :global(.admin-page) { min-height:calc(100svh - 56px);padding:20px 16px calc(96px + env(safe-area-inset-bottom));background:var(--admin-bg);color:var(--admin-text); }
 .shell :global(.admin-page h1) { font-size:24px;line-height:1.2; }
 .shell :global(.admin-header > div:first-child){display:none}
 .shell :global(.admin-page h2) { color:var(--admin-text); }
@@ -145,7 +145,7 @@
 .shell :global(.more-logout p){color:var(--admin-muted);font-size:14px}
 @media(min-width:700px){.shell :global(.history-filters){grid-template-columns:repeat(2,minmax(0,1fr));align-items:end}.shell :global(.history-row){grid-template-columns:120px minmax(150px,1fr) auto 120px;align-items:center}.shell :global(.history-row > strong:last-child){grid-column:auto;grid-row:auto}.shell :global(.order-ticket){padding:18px}.shell :global(.order-ticket__actions){grid-template-columns:1fr 1fr;min-width:300px}}
 @media(min-width:768px) and (max-width:1023px){.shell .app{padding-bottom:calc(58px + env(safe-area-inset-bottom))}.shell .bottomNav{height:calc(58px + env(safe-area-inset-bottom));grid-template-columns:repeat(4,minmax(110px,150px));justify-content:center}.shell .bottomNav a{flex-direction:row;min-height:48px;font-size:13px}.shell :global(.ticket-list){grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}}
-@media(min-width:1024px){.shell :global(.admin-page--orders){padding-top:28px}.shell :global(.queue-tabs){max-width:580px}.shell :global(.ticket-list){grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}.shell :global(.order-ticket__footer){align-items:stretch;flex-direction:column}.shell :global(.order-ticket__actions){grid-template-columns:1fr;min-width:0}.shell :global(.order-ticket__identity){flex-direction:column}.shell :global(.history-filters){grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:1024px){.shell :global(.admin-page){padding-bottom:40px}.shell :global(.admin-page--orders){padding-top:28px}.shell :global(.queue-tabs){max-width:580px}.shell :global(.ticket-list){grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}.shell :global(.order-ticket__footer){align-items:stretch;flex-direction:column}.shell :global(.order-ticket__actions){grid-template-columns:1fr;min-width:0}.shell :global(.order-ticket__identity){flex-direction:column}.shell :global(.history-filters){grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:420px){.shell :global(.operation-heading__right){gap:6px}.shell :global(.operation-heading__right .admin-button){padding-inline:9px;font-size:13px}.shell :global(.queue-tabs){gap:3px;padding:4px}.shell :global(.queue-tabs button){gap:4px;font-size:12px}.shell :global(.order-ticket__footer){align-items:stretch;flex-direction:column}.shell :global(.attention-ticket__foot){align-items:stretch;flex-direction:column}.shell :global(.history-row){grid-template-columns:1fr auto}.shell :global(.history-row .order-status){grid-column:1}}
 .shell :global(.admin-order-detail){max-width:900px;margin-inline:auto}
 .shell :global(.admin-order-detail .admin-header > div:first-child){display:block}

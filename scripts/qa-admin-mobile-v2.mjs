@@ -35,15 +35,46 @@ async function capture(page, name, route, width = 390, height = 844) {
 async function login(page) {
   await page.goto(`${baseUrl}/admin/login`, { waitUntil: "domcontentloaded" });
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Contraseña").fill(password);
+  await page.locator('input[autocomplete="current-password"]').fill(password);
   await page.getByRole("button", { name: "Ingresar" }).click();
   await page.waitForURL(/\/admin\/orders(?:\?|$)/, { timeout: 20000 });
   await page.getByRole("heading", { name: "Pedidos" }).waitFor({ state: "visible" });
 }
 
+async function selectAvailableProduct(page) {
+  const select = page.locator(".order-form__add select");
+  await select.waitFor({ state: "visible" });
+  const options = await select.locator("option").evaluateAll((items) => items.map((option) => ({
+    value: option.value,
+    label: option.textContent?.trim() ?? "",
+    disabled: option.disabled,
+  })));
+  const product = options.find((option) => option.value && !option.disabled);
+  if (!product) throw new Error(`Manual order has no selectable published/available products (option count: ${options.length}).`);
+  await select.selectOption({ value: product.value });
+  await page.waitForFunction(() => {
+    const button = [...document.querySelectorAll(".order-form__add button")].find((item) => item.textContent?.trim() === "Agregar");
+    return button instanceof HTMLButtonElement && !button.disabled;
+  }, undefined, { timeout: 5000 });
+}
+
+async function assertAboveMobileNavigation(page, locator) {
+  await locator.scrollIntoViewIfNeeded();
+  const button = await locator.boundingBox();
+  const nav = await page.locator('nav[aria-label="Navegación administrativa móvil"]').boundingBox();
+  if (!button || (nav && button.y + button.height > nav.y - 4)) {
+    throw new Error("Primary form action is obscured by the fixed mobile navigation.");
+  }
+}
+
+async function clickAboveMobileNavigation(page, locator) {
+  await assertAboveMobileNavigation(page, locator);
+  await locator.click();
+}
+
 async function createAndAdvanceSyntheticPickup(page) {
   await page.goto(`${baseUrl}/admin/orders/new`, { waitUntil: "domcontentloaded" });
-  await page.locator(".order-form__add select").selectOption({ index: 1 });
+  await selectAvailableProduct(page);
   await page.getByRole("button", { name: "Agregar", exact: true }).click();
   const line = page.locator(".order-form__line").first();
   const modifierLabels = line.locator("label");
@@ -51,9 +82,9 @@ async function createAndAdvanceSyntheticPickup(page) {
     const label = modifierLabels.nth(i);
     if ((await label.innerText()).includes("obligatorio")) await label.locator("select").selectOption({ index: 1 });
   }
-  await page.getByRole("button", { name: "Continuar" }).click();
+  await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Continuar" }));
   await page.getByLabel("Nombre del cliente").fill(`S7c QA ${new Date().toISOString().slice(0, 10)}`);
-  await page.getByRole("button", { name: "Registrar pedido" }).click();
+  await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Registrar pedido" }));
   await page.waitForURL(/\/admin\/orders\/[0-9a-f-]+(?:\?|$)/i, { timeout: 20000 });
   const code = await page.locator(".admin-order-detail .eyebrow").innerText();
   const orderId = new URL(page.url()).pathname.split("/").at(-1);
@@ -105,7 +136,7 @@ for (const name of browserNames) {
     await capture(page, "attention", "/admin/orders/attention", 390);
     await capture(page, "history", "/admin/orders/history", 390);
     await page.goto(`${baseUrl}/admin/orders/new`, { waitUntil: "domcontentloaded" });
-    await page.locator(".order-form__add select").selectOption({ index: 1 });
+    await selectAvailableProduct(page);
     await page.getByRole("button", { name: "Agregar", exact: true }).click();
     const reviewLine = page.locator(".order-form__line").first();
     const reviewModifierLabels = reviewLine.locator("label");
@@ -113,12 +144,24 @@ for (const name of browserNames) {
       const label = reviewModifierLabels.nth(i);
       if ((await label.innerText()).includes("obligatorio")) await label.locator("select").selectOption({ index: 1 });
     }
-    await page.screenshot({ path: path.join(outputDir, `new-order-step-1-390-${name}.png`), fullPage: true, animations: "disabled" });
-    results.screenshots.push(path.relative(process.cwd(), path.join(outputDir, `new-order-step-1-390-${name}.png`)));
-    await page.getByRole("button", { name: "Continuar" }).click();
+    for (const width of viewports) {
+      await page.setViewportSize({ width, height: width < 500 ? 844 : 900 });
+      await assertAboveMobileNavigation(page, page.getByRole("button", { name: "Continuar" }));
+      const file = path.join(outputDir, `new-order-step-1-${width}-${name}.png`);
+      await page.screenshot({ path: file, fullPage: true, animations: "disabled" });
+      results.screenshots.push(path.relative(process.cwd(), file));
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Continuar" }));
     await page.getByRole("heading", { name: "Datos y confirmación" }).waitFor({ state: "visible" });
-    await page.screenshot({ path: path.join(outputDir, `new-order-step-2-390-${name}.png`), fullPage: true, animations: "disabled" });
-    results.screenshots.push(path.relative(process.cwd(), path.join(outputDir, `new-order-step-2-390-${name}.png`)));
+    for (const width of viewports) {
+      await page.setViewportSize({ width, height: width < 500 ? 844 : 900 });
+      await assertAboveMobileNavigation(page, page.getByRole("button", { name: "Registrar pedido" }));
+      const file = path.join(outputDir, `new-order-step-2-${width}-${name}.png`);
+      await page.screenshot({ path: file, fullPage: true, animations: "disabled" });
+      results.screenshots.push(path.relative(process.cwd(), file));
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
     await capture(page, "products", "/admin/products", 390);
     const firstProduct = page.locator(".catalog-product").first();
     if (await firstProduct.count()) {
