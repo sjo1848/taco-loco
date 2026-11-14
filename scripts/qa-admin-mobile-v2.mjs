@@ -271,7 +271,7 @@ for (const name of browserNames) {
     };
     page.on("request", watchPrematureOrderPost);
     await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Continuar" }));
-    await page.locator('.order-stepper li[aria-current="step"] span').filter({ hasText: "Datos y confirmación" }).waitFor({ state: "visible" });
+    await page.locator('ol[aria-label="Pasos del pedido"] li[aria-current="step"] span').filter({ hasText: "Datos y confirmación" }).waitFor({ state: "visible" });
     await page.waitForTimeout(200);
     page.off("request", watchPrematureOrderPost);
     if (prematureOrderPosts.length) throw new Error("The step 1 Continue action submitted an order before operator confirmation.");
