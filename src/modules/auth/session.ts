@@ -2,16 +2,22 @@ import { cookies } from "next/headers";
 import { randomBytes } from "node:crypto";
 import { db } from "@/lib/db";
 import { hashSessionToken } from "@/modules/auth/crypto";
+import type { AuthLoginDiagnostic } from "@/modules/auth/login-diagnostics";
 
 export const SESSION_COOKIE = "taco_loco_session";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-export async function createSession(userId: string) {
+export async function createSession(userId: string, diagnostic?: AuthLoginDiagnostic) {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
-  await db.session.create({ data: { tokenHash: hashSessionToken(token), userId, expiresAt } });
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", expires: expiresAt });
+  const insert = () => db.session.create({ data: { tokenHash: hashSessionToken(token), userId, expiresAt } });
+  if (diagnostic) await diagnostic.run("d1.session_create", insert);
+  else await insert();
+  const getCookieStore = () => cookies();
+  const cookieStore = diagnostic ? await diagnostic.run("runtime.cookies_context", getCookieStore) : await getCookieStore();
+  const setCookie = () => cookieStore.set(SESSION_COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", expires: expiresAt });
+  if (diagnostic) await diagnostic.run("http.session_cookie_set", setCookie);
+  else setCookie();
   return expiresAt;
 }
 
