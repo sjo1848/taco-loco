@@ -70,6 +70,7 @@ async function clickAboveMobileNavigation(page, locator) {
 
 async function createAndAdvanceSyntheticPickup(page) {
   let orderCode = process.env.TACO_LOCO_QA_EXISTING_ORDER_CODE ?? null;
+  const marker = `S7c QA ${new Date().toISOString().slice(0, 10)}`;
   if (orderCode) {
     if (!/^TL-\d{4}$/.test(orderCode)) throw new Error("Existing synthetic order code must use TL-XXXX format.");
     await page.goto(`${baseUrl}/admin/orders/history?q=${encodeURIComponent(orderCode)}`, { waitUntil: "domcontentloaded" });
@@ -78,23 +79,33 @@ async function createAndAdvanceSyntheticPickup(page) {
     await row.click();
     await page.waitForURL(/\/admin\/orders\/[0-9a-f-]+/i);
   } else {
-    await page.goto(`${baseUrl}/admin/orders/new`, { waitUntil: "domcontentloaded" });
-    await selectAvailableProduct(page);
-    await page.getByRole("button", { name: "Agregar", exact: true }).click();
-    const line = page.locator(".order-form__line").first();
-    const modifierLabels = line.locator("label");
-    for (let i = 0; i < await modifierLabels.count(); i++) {
-      const label = modifierLabels.nth(i);
-      if ((await label.innerText()).includes("obligatorio")) await label.locator("select").selectOption({ index: 1 });
+    await page.goto(`${baseUrl}/admin/orders/history?q=${encodeURIComponent(marker)}`, { waitUntil: "domcontentloaded" });
+    await page.locator(".history-list").waitFor({ state: "visible", timeout: 15000 });
+    await page.locator('[aria-label="Cargando historial"]').waitFor({ state: "detached", timeout: 15000 });
+    const matchingRow = page.locator(".history-row").filter({ hasText: marker }).first();
+    if (await matchingRow.count()) {
+      orderCode = (await matchingRow.locator(".history-row__code").innerText()).trim();
+      await matchingRow.click();
+      await page.waitForURL(/\/admin\/orders\/[0-9a-f-]+/i);
+    } else {
+      await page.goto(`${baseUrl}/admin/orders/new`, { waitUntil: "domcontentloaded" });
+      await selectAvailableProduct(page);
+      await page.getByRole("button", { name: "Agregar", exact: true }).click();
+      const line = page.locator(".order-form__line").first();
+      const modifierLabels = line.locator("label");
+      for (let i = 0; i < await modifierLabels.count(); i++) {
+        const label = modifierLabels.nth(i);
+        if ((await label.innerText()).includes("obligatorio")) await label.locator("select").selectOption({ index: 1 });
+      }
+      await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Continuar" }));
+      await page.getByLabel("Nombre del cliente").fill(marker);
+      await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Registrar pedido" }));
+      await page.waitForURL(/\/admin\/orders\/[0-9a-f-]+(?:\?|$)/i, { timeout: 20000 });
+      const heading = await page.locator(".admin-order-detail .eyebrow").innerText();
+      orderCode = heading.trim().split(/\s+/).at(-1) ?? null;
+      if (!orderCode) throw new Error("Created synthetic order did not show a human-readable code.");
+      results.journeys.push({ journey: "synthetic manual pickup created through two-step form", result: "PASS", orderCode });
     }
-    await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Continuar" }));
-    await page.getByLabel("Nombre del cliente").fill(`S7c QA ${new Date().toISOString().slice(0, 10)}`);
-    await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Registrar pedido" }));
-    await page.waitForURL(/\/admin\/orders\/[0-9a-f-]+(?:\?|$)/i, { timeout: 20000 });
-    const heading = await page.locator(".admin-order-detail .eyebrow").innerText();
-    orderCode = heading.trim().split(/\s+/).at(-1) ?? null;
-    if (!orderCode) throw new Error("Created synthetic order did not show a human-readable code.");
-    results.journeys.push({ journey: "synthetic manual pickup created through two-step form", result: "PASS", orderCode });
   }
 
   const beforeTransitionScreenshot = path.join(outputDir, "order-detail-before-transition-390.png");
