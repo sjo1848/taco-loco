@@ -58,31 +58,19 @@ async function login(page) {
 }
 
 async function selectAvailableProduct(page) {
-  const select = page.locator(".order-form__add select");
-  await select.waitFor({ state: "visible" });
-  const options = await select.locator("option").evaluateAll((items) => items.map((option) => ({
-    value: option.value,
-    label: option.textContent?.trim() ?? "",
-    disabled: option.disabled,
-  })));
-  const product = options.find((option) => option.value && !option.disabled);
-  if (!product) throw new Error(`Manual order has no selectable published/available products (option count: ${options.length}).`);
-  // A client-side navigation can expose the server-rendered form before its
-  // controlled React select hydrates. Reapply only this non-mutating selection
-  // until React commits it; no order is created by this helper.
-  for (let attempt = 0; attempt < 4; attempt++) {
-    await select.selectOption({ value: product.value });
-    try {
-      await page.waitForFunction(() => {
-        const button = document.querySelector(".order-form__add button");
-        return button instanceof HTMLButtonElement && !button.disabled;
-      }, undefined, { timeout: 1200 });
-      return;
-    } catch {
-      if (attempt === 3) throw new Error("The selected product was not committed to the manual-order form.");
-      await page.waitForTimeout(250);
-    }
-  }
+  const card = page.locator('[class*="productCard"]').first();
+  await card.waitFor({ state: "visible", timeout: 10000 });
+  const name = (await card.locator("h2").innerText()).trim();
+  await card.getByRole("button", { name: "Agregar", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name });
+  await dialog.waitFor({ state: "visible" });
+  const requiredGroups = dialog.locator("fieldset").filter({ hasText: "obligatorio" });
+  for (let index = 0; index < await requiredGroups.count(); index++) await requiredGroups.nth(index).locator('input[type="radio"]').first().check();
+  const plus = dialog.getByRole("button", { name: "Agregar una unidad" });
+  if (await plus.isEnabled()) await plus.click();
+  await dialog.getByRole("button", { name: /^Agregar ·/ }).click();
+  await page.getByRole("region", { name: "Resumen del pedido" }).getByText(name).waitFor({ state: "visible" });
+  return name;
 }
 
 async function assertAboveMobileNavigation(page, locator) {
@@ -102,9 +90,10 @@ async function clickAboveMobileNavigation(page, locator) {
   await locator.click();
 }
 
-async function createAndAdvanceSyntheticPickup(page) {
+async function createAndAdvanceSyntheticPickup(page, attentionObserver = null) {
   let orderCode = process.env.TACO_LOCO_QA_EXISTING_ORDER_CODE ?? null;
   const marker = `S7c QA ${new Date().toISOString().slice(0, 10)}`;
+  let createdThisRun = false;
   if (orderCode) {
     if (!/^TL-\d{4}$/.test(orderCode)) throw new Error("Existing synthetic order code must use TL-XXXX format.");
     await page.goto(`${baseUrl}/admin/orders/history?q=${encodeURIComponent(orderCode)}`, { waitUntil: "domcontentloaded" });
@@ -124,13 +113,6 @@ async function createAndAdvanceSyntheticPickup(page) {
     } else {
       await page.goto(`${baseUrl}/admin/orders/new`, { waitUntil: "domcontentloaded" });
       await selectAvailableProduct(page);
-      await page.getByRole("button", { name: "Agregar", exact: true }).click();
-      const line = page.locator(".order-form__line").first();
-      const modifierLabels = line.locator("label");
-      for (let i = 0; i < await modifierLabels.count(); i++) {
-        const label = modifierLabels.nth(i);
-        if ((await label.innerText()).includes("obligatorio")) await label.locator("select").selectOption({ index: 1 });
-      }
       await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Continuar" }));
       await page.getByLabel("Nombre del cliente").fill(marker);
       await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Registrar pedido" }));
@@ -138,6 +120,7 @@ async function createAndAdvanceSyntheticPickup(page) {
       const heading = await page.locator(".admin-order-detail .eyebrow").innerText();
       orderCode = heading.trim().split(/\s+/).at(-1) ?? null;
       if (!orderCode) throw new Error("Created synthetic order did not show a human-readable code.");
+      createdThisRun = true;
       results.journeys.push({ journey: "synthetic manual pickup created through two-step form", result: "PASS", orderCode });
     }
   }
@@ -145,6 +128,13 @@ async function createAndAdvanceSyntheticPickup(page) {
   const beforeTransitionScreenshot = path.join(outputDir, "order-detail-before-transition-390.png");
   if (await saveScreenshot(page, { path: beforeTransitionScreenshot, fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)), maskColor: "#F6F7F4" })) results.screenshots.push(path.relative(process.cwd(), beforeTransitionScreenshot));
   const orderId = new URL(page.url()).pathname.split("/").at(-1);
+  if (createdThisRun && attentionObserver) {
+    const liveTicket = attentionObserver.locator(".attention-ticket").filter({ hasText: marker });
+    await liveTicket.waitFor({ state: "visible", timeout: 20000 });
+    const liveShot = path.join(outputDir, "attention-new-order-live-390.png");
+    if (await saveScreenshot(attentionObserver, { path: liveShot, fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => attentionObserver.locator(selector)), maskColor: "#F6F7F4" })) results.screenshots.push(path.relative(process.cwd(), liveShot));
+    results.journeys.push({ journey: "Attention remains open and receives a new synthetic order through shared SSE", result: "PASS", orderCode });
+  }
   const readStatus = async () => page.evaluate(async (id) => {
     const response = await fetch(`/api/admin/orders/${id}`, { cache: "no-store" });
     if (!response.ok) throw new Error(`Could not read synthetic order status (${response.status}).`);
@@ -152,8 +142,28 @@ async function createAndAdvanceSyntheticPickup(page) {
   }, orderId);
   let status = await readStatus();
   if (status === "RECEIVED") {
-    await page.getByRole("button", { name: "Confirmar pedido", exact: true }).click();
-    await page.getByRole("heading", { name: "Confirmado", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    if (createdThisRun && attentionObserver) {
+      const external = await attentionObserver.evaluate(async (id) => {
+        const response = await fetch(`/api/admin/orders/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ toStatus: "CONFIRMED" }) });
+        return { status: response.status, body: await response.json().catch(() => null) };
+      }, orderId);
+      if (external.status !== 200) throw new Error(`Second operator could not confirm the synthetic order (${external.status}).`);
+      const staleAction = page.getByRole("button", { name: "Confirmar pedido", exact: true });
+      await page.waitForFunction(() => { const button = [...document.querySelectorAll("button")].find((item) => item.textContent?.trim() === "Confirmar pedido"); return button instanceof HTMLButtonElement && !button.disabled; }, undefined, { timeout: 10000 });
+      const conflictResponse = page.waitForResponse((response) => response.request().method() === "PATCH" && new URL(response.url()).pathname === `/api/admin/orders/${orderId}`);
+      await staleAction.click();
+      const conflict = await conflictResponse;
+      if (conflict.status() !== 409) throw new Error(`Expected stale operator transition to recover a 409 conflict, got ${conflict.status()}.`);
+      await page.waitForFunction(async (id) => {
+        const response = await fetch(`/api/admin/orders/${id}`, { cache: "no-store" });
+        return response.ok && (await response.json()).status === "CONFIRMED";
+      }, orderId, { timeout: 15000 });
+      await attentionObserver.locator(".attention-ticket").filter({ hasText: marker }).waitFor({ state: "detached", timeout: 15000 });
+      results.journeys.push({ journey: "second operator updates Attention live; stale first-operator action receives and recovers 409", result: "PASS", orderCode });
+    } else {
+      await page.getByRole("button", { name: "Confirmar pedido", exact: true }).click();
+      await page.getByRole("heading", { name: "Confirmado", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    }
     status = "CONFIRMED";
   }
   if (status === "CONFIRMED") {
@@ -195,6 +205,10 @@ for (const name of browserNames) {
     continue;
   }
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  if (name === "chromium") await context.addInitScript(() => {
+    window.__adminSseCreated = 0;
+    window.EventSource = new Proxy(window.EventSource, { construct(target, args) { window.__adminSseCreated += 1; return Reflect.construct(target, args); } });
+  });
   let page = await context.newPage();
   await page.emulateMedia({ reducedMotion: "reduce" });
   const pageErrors = [];
@@ -206,19 +220,43 @@ for (const name of browserNames) {
     await login(page);
     results.browsers.push({ name, login: "PASS" });
 
-    const orderCode = name === "chromium" ? await createAndAdvanceSyntheticPickup(page) : null;
+    let attentionObserver = null;
+    if (name === "chromium") {
+      attentionObserver = await context.newPage();
+      await attentionObserver.setViewportSize({ width: 390, height: 844 });
+      await attentionObserver.emulateMedia({ reducedMotion: "reduce" });
+      trackPageErrors(attentionObserver);
+      await attentionObserver.goto(`${baseUrl}/admin/orders/attention`, { waitUntil: "domcontentloaded" });
+      await attentionObserver.locator(".connection--live").waitFor({ state: "visible", timeout: 15000 });
+      if (await attentionObserver.evaluate(() => window.__adminSseCreated) !== 1) throw new Error("Attention did not establish exactly one shared administrative SSE connection.");
+      await attentionObserver.getByRole("link", { name: /Pedidos/ }).first().click();
+      await attentionObserver.waitForURL(/\/admin\/orders(?:\?|$)/);
+      await attentionObserver.getByRole("link", { name: /Necesitan atención/ }).click();
+      await attentionObserver.waitForURL(/\/admin\/orders\/attention/);
+      if (await attentionObserver.evaluate(() => window.__adminSseCreated) !== 1) throw new Error("Navigating between Pedidos and Atención opened a duplicate SSE connection.");
+      results.journeys.push({ journey: "one EventSource is retained across Pedidos ↔ Atención client navigation", result: "PASS" });
+    }
+    const orderCode = name === "chromium" ? await createAndAdvanceSyntheticPickup(page, attentionObserver) : null;
     await capture(page, "orders", "/admin/orders", 390);
     await capture(page, "attention", "/admin/orders/attention", 390);
     await capture(page, "history", "/admin/orders/history", 390);
     await page.goto(`${baseUrl}/admin/orders/new`, { waitUntil: "domcontentloaded" });
     await selectAvailableProduct(page);
-    await page.getByRole("button", { name: "Agregar", exact: true }).click();
-    const reviewLine = page.locator(".order-form__line").first();
-    const reviewModifierLabels = reviewLine.locator("label");
-    for (let i = 0; i < await reviewModifierLabels.count(); i++) {
-      const label = reviewModifierLabels.nth(i);
-      if ((await label.innerText()).includes("obligatorio")) await label.locator("select").selectOption({ index: 1 });
-    }
+    const summary = page.getByRole("region", { name: "Resumen del pedido" });
+    const summaryText = await summary.innerText();
+    if (!/2 productos? ·/.test(summaryText)) throw new Error("The accessible product selector did not preserve selected quantity and summary.");
+    const dialogTrigger = page.locator('[class*="productCard"]').first().getByRole("button", { name: "Agregar", exact: true });
+    await dialogTrigger.click();
+    const productDialog = page.getByRole("dialog");
+    await productDialog.waitFor({ state: "visible" });
+    await page.keyboard.press("Escape");
+    await productDialog.waitFor({ state: "detached" });
+    if (!(await dialogTrigger.evaluate((element) => element === document.activeElement))) throw new Error("Closing product selector did not restore keyboard focus to its trigger.");
+    const cancel = page.getByRole("link", { name: "Cancelar" });
+    page.once("dialog", async (dialog) => { if (dialog.type() !== "confirm") throw new Error(`Expected unsaved-changes confirmation, received ${dialog.type()}`); await dialog.dismiss(); });
+    await cancel.click();
+    await page.waitForURL(/\/admin\/orders\/new$/);
+    if (!(await summary.isVisible())) throw new Error("Dismissing the leave-page warning did not preserve the in-progress order.");
     for (const width of viewports) {
       await page.setViewportSize({ width, height: width < 500 ? 844 : 900 });
       await assertAboveMobileNavigation(page, page.getByRole("button", { name: "Continuar" }));
@@ -314,6 +352,11 @@ for (const name of browserNames) {
     const session = await page.request.get(`${baseUrl}/api/auth/session`);
     if (session.status() !== 401) throw new Error(`Admin logout did not invalidate session (${session.status()})`);
     results.journeys.push({ journey: "admin logout and session invalidation", result: "PASS" });
+    if (attentionObserver) {
+      await attentionObserver.locator(".connection--expired").waitFor({ state: "visible", timeout: 15000 });
+      results.journeys.push({ journey: "live SSE connection closes after administrative session revocation", result: "PASS" });
+      await attentionObserver.close();
+    }
     if (pageErrors.length) throw new Error(`Browser page errors: ${pageErrors.join(", ")}`);
   } catch (error) {
     const reason = error instanceof Error ? error.message : "unknown";

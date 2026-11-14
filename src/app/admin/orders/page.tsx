@@ -12,8 +12,7 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Prom
   if (!user) redirect("/admin/login?returnTo=%2Fadmin%2Forders");
   const requested = (await searchParams)?.cola;
   const queue = requested === "preparando" ? "preparing" : requested === "listos" ? "ready" : "start";
-  const initialEventCursor = await orderRepository.latestEventSequence();
   const [page, counts] = await Promise.all([orderRepository.listOperational(queue, null), orderRepository.operationalCounts()]);
   const serializable = (page.orders as unknown as OrderListItem[]).map((order: OrderListItem) => ({ ...order, createdAt: order.createdAt.toISOString() }));
-  return <OrdersBoard initialOrders={serializable} initialCursor={encodeAdminCursor(page.nextCursor)} initialCounts={counts} initialQueue={queue} initialEventCursor={initialEventCursor.toString()} />;
+  return <OrdersBoard initialOrders={serializable} initialCursor={encodeAdminCursor(page.nextCursor)} initialCounts={counts} initialQueue={queue} />;
 }

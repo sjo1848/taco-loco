@@ -25,15 +25,33 @@ describe("admin operational reads",()=>{
   expect(result.hasMore).toBe(true);
   expect(result.nextCursor).toEqual({createdAt:new Date(createdAt.getTime()+2).toISOString(),id:"id-2"});
  });
- it("paginates old attention cases in ascending order rather than truncating at the newest hundred",async()=>{
+ it("prioritizes the current Buenos Aires business day and pages newest-first",async()=>{
   dbMocks.findMany.mockResolvedValueOnce(Array.from({length:31},(_,i)=>({id:`old-${i}`,createdAt:new Date(2000,0,i+1),orderNumber:i,lines:[]})));
-  const page=await orderRepository.listAttention("all",null,30);
+  const page=await orderRepository.listAttention("all","today",null,30,new Date("2026-11-14T16:00:00Z"));
   const args=dbMocks.findMany.mock.calls[0]?.[0];
   expect(args.take).toBe(31);
-  expect(args.orderBy).toEqual([{createdAt:"asc"},{id:"asc"}]);
+  expect(args.orderBy).toEqual([{createdAt:"desc"},{id:"desc"}]);
   expect(args.where.OR).toHaveLength(4);
+  expect(args.where.createdAt.gte.toISOString()).toBe("2026-11-14T03:00:00.000Z");
+  expect(args.where.createdAt.lt.toISOString()).toBe("2026-11-15T03:00:00.000Z");
   expect(page.orders).toHaveLength(30);
   expect(page.hasMore).toBe(true);
+ });
+ it("pages historical pending cases independently of current-day new orders",async()=>{
+  dbMocks.findMany.mockResolvedValueOnce(Array.from({length:31},(_,i)=>({id:`historic-${i}`,createdAt:new Date(Date.UTC(2026,10,13-i,10)),orderNumber:i,lines:[]})));
+  const page=await orderRepository.listAttention("all","previous",null,30,new Date("2026-11-14T16:00:00Z"));
+  const args=dbMocks.findMany.mock.calls[0]?.[0];
+  expect(args.where.createdAt).toEqual({lt:new Date("2026-11-14T03:00:00.000Z")});
+  expect(page.orders).toHaveLength(30);
+  expect(page.hasMore).toBe(true);
+  expect(page.nextCursor?.createdAt).toBe(page.orders.at(-1)?.createdAt.toISOString());
+ });
+ it("returns global category counts and independent day-bucket counts",async()=>{
+  dbMocks.count.mockResolvedValueOnce(105).mockResolvedValueOnce(96).mockResolvedValueOnce(32).mockResolvedValueOnce(7).mockResolvedValueOnce(9).mockResolvedValueOnce(98);
+  const counts=await orderRepository.attentionCounts("verification",new Date("2026-11-14T16:00:00Z"));
+  expect(counts).toEqual({all:105,verification:96,unconfirmed:32,incidents:7,buckets:{today:9,previous:98}});
+  expect(dbMocks.count.mock.calls.at(-2)?.[0].where).toEqual({verificationStatus:"PENDING",createdAt:{gte:new Date("2026-11-14T03:00:00.000Z"),lt:new Date("2026-11-15T03:00:00.000Z")}});
+  expect(dbMocks.count.mock.calls.at(-1)?.[0].where).toEqual({verificationStatus:"PENDING",createdAt:{lt:new Date("2026-11-14T03:00:00.000Z")}});
  });
  it("keeps search and date/status/fulfillment filters conjunctive with cursor paging",async()=>{
   dbMocks.findMany.mockResolvedValueOnce([]);

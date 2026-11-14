@@ -25,6 +25,7 @@
     "qa:staging": "node scripts/qa-staging-agent.mjs",
     "qa:staging:auth-fixtures": "node scripts/qa-authenticated-fixtures.mjs",
     "qa:admin-mobile-v2": "node scripts/qa-admin-mobile-v2.mjs",
+    "test:admin-attention:d1": "node scripts/test-admin-attention-d1-local.mjs",
     "start:vinext": "wrangler dev --config dist/server/wrangler.json",
     "deploy:vinext": "vinext-cloudflare deploy --config dist/server/wrangler.json"
   },

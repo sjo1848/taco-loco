@@ -7,6 +7,8 @@ export type OrderListFilter = { status?: OrderStatus; query?: string };
 export type CustomerOrderCursor = { createdAt: string; id: string };
 export type AdminOrderCursor = { createdAt: Date; id: string };
 type AdminQueue = "start" | "preparing" | "ready";
+type AttentionKind = "all" | "verification" | "unconfirmed" | "incidents";
+type AttentionBucket = "today" | "previous";
 
 function cursorWhere(cursor: AdminOrderCursor | null, direction: "asc" | "desc") {
   if (!cursor) return {};
@@ -23,6 +25,20 @@ function adminSearch(query?: string) {
   // default, so omit the mode on D1 while preserving PostgreSQL behavior.
   const textMatch = (value: string) => ({ contains: value, ...(!isD1Runtime ? { mode: "insensitive" as const } : {}) });
   return { OR: [{ customerName: textMatch(normalized) }, { customerPhone: textMatch(normalized) }, ...(orderNumber ? [{ orderNumber }] : [])] };
+}
+
+function attentionWhere(kind: AttentionKind) {
+  return kind === "verification" ? { verificationStatus: "PENDING" as const }
+    : kind === "unconfirmed" ? { status: "RECEIVED" as const }
+    : kind === "incidents" ? { OR: [{ refundStatus: "REQUIRED" as const }, { paymentStatus: "REJECTED" as const }] }
+    : { OR: [{ verificationStatus: "PENDING" as const }, { status: "RECEIVED" as const }, { refundStatus: "REQUIRED" as const }, { paymentStatus: "REJECTED" as const }] };
+}
+
+function businessDayStart(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(now);
+  const part = (type: string) => parts.find((item) => item.type === type)?.value;
+  const date = `${part("year")}-${part("month")}-${part("day")}`;
+  return new Date(`${date}T00:00:00-03:00`);
 }
 
 const operationalOrderSelect = {
@@ -117,25 +133,31 @@ export const orderRepository = {
     const last = orders.at(-1);
     return { orders, hasMore, nextCursor: hasMore && last ? { createdAt: last.createdAt.toISOString(), id: last.id } : null };
   },
-  async listAttention(kind: "all" | "verification" | "unconfirmed" | "incidents", cursor: AdminOrderCursor | null, take = 30) {
-    const condition = kind === "verification" ? { verificationStatus: "PENDING" as const }
-      : kind === "unconfirmed" ? { status: "RECEIVED" as const }
-      : kind === "incidents" ? { OR: [{ refundStatus: "REQUIRED" as const }, { paymentStatus: "REJECTED" as const }] }
-      : { OR: [{ verificationStatus: "PENDING" as const }, { status: "RECEIVED" as const }, { refundStatus: "REQUIRED" as const }, { paymentStatus: "REJECTED" as const }] };
-    const rows = await db.order.findMany({ where: { ...condition, ...cursorWhere(cursor, "asc") }, select: attentionOrderSelect, orderBy: [{ createdAt: "asc" }, { id: "asc" }], take: take + 1 });
+  async listAttention(kind: AttentionKind, bucket: AttentionBucket, cursor: AdminOrderCursor | null, take = 30, now = new Date()) {
+    const start = businessDayStart(now);
+    const nextStart = new Date(start.getTime() + 86_400_000);
+    const bucketWhere = bucket === "today" ? { createdAt: { gte: start, lt: nextStart } } : { createdAt: { lt: start } };
+    const rows = await db.order.findMany({ where: { ...attentionWhere(kind), ...bucketWhere, ...cursorWhere(cursor, "desc") }, select: attentionOrderSelect, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: take + 1 });
     const hasMore = rows.length > take;
     const orders = hasMore ? rows.slice(0, take) : rows;
     const last = orders.at(-1);
     return { orders, hasMore, nextCursor: hasMore && last ? { createdAt: last.createdAt.toISOString(), id: last.id } : null };
   },
-  async attentionCounts() {
+  async attentionCounts(kind: AttentionKind = "all", now = new Date()) {
+    const start = businessDayStart(now);
+    const nextStart = new Date(start.getTime() + 86_400_000);
     const [all, verification, unconfirmed, incidents] = await Promise.all([
       db.order.count({ where: { OR: [{ verificationStatus: "PENDING" }, { status: "RECEIVED" }, { refundStatus: "REQUIRED" }, { paymentStatus: "REJECTED" }] } }),
       db.order.count({ where: { verificationStatus: "PENDING" } }),
       db.order.count({ where: { status: "RECEIVED" } }),
       db.order.count({ where: { OR: [{ refundStatus: "REQUIRED" }, { paymentStatus: "REJECTED" }] } }),
     ]);
-    return { all, verification, unconfirmed, incidents };
+    const condition = attentionWhere(kind);
+    const [today, previous] = await Promise.all([
+      db.order.count({ where: { ...condition, createdAt: { gte: start, lt: nextStart } } }),
+      db.order.count({ where: { ...condition, createdAt: { lt: start } } }),
+    ]);
+    return { all, verification, unconfirmed, incidents, buckets: { today, previous } };
   },
   async listHistory(input: { cursor: AdminOrderCursor | null; take?: number; from?: Date; to?: Date; status?: OrderStatus; fulfillment?: "PICKUP" | "DINE_IN" | "DELIVERY"; query?: string }) {
     const rows = await db.order.findMany({
