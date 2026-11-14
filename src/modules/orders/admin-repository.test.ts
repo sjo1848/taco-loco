@@ -37,6 +37,13 @@ describe("admin operational reads",()=>{
   expect(page.orders).toHaveLength(30);
   expect(page.hasMore).toBe(true);
  });
+ it("reclassifies the business-day boundary at Argentina midnight",async()=>{
+  dbMocks.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+  await orderRepository.listAttention("all","today",null,30,new Date("2026-11-14T02:59:59.999Z"));
+  await orderRepository.listAttention("all","today",null,30,new Date("2026-11-14T03:00:00.001Z"));
+  expect(dbMocks.findMany.mock.calls[0]?.[0].where.createdAt).toEqual({gte:new Date("2026-11-13T03:00:00.000Z"),lt:new Date("2026-11-14T03:00:00.000Z")});
+  expect(dbMocks.findMany.mock.calls[1]?.[0].where.createdAt).toEqual({gte:new Date("2026-11-14T03:00:00.000Z"),lt:new Date("2026-11-15T03:00:00.000Z")});
+ });
  it("pages historical pending cases independently of current-day new orders",async()=>{
   dbMocks.findMany.mockResolvedValueOnce(Array.from({length:31},(_,i)=>({id:`historic-${i}`,createdAt:new Date(Date.UTC(2026,10,13-i,10)),orderNumber:i,lines:[]})));
   const page=await orderRepository.listAttention("all","previous",null,30,new Date("2026-11-14T16:00:00Z"));

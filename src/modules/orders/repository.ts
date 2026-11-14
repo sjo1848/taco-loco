@@ -1,6 +1,7 @@
 import { AppError } from "@/lib/errors";
 import { db } from "@/lib/db";
 import { isD1Runtime } from "@/lib/runtime";
+import { businessDayStart } from "@/modules/orders/business-day";
 import type { OrderStatus } from "@/modules/orders/model";
 
 export type OrderListFilter = { status?: OrderStatus; query?: string };
@@ -32,13 +33,6 @@ function attentionWhere(kind: AttentionKind) {
     : kind === "unconfirmed" ? { status: "RECEIVED" as const }
     : kind === "incidents" ? { OR: [{ refundStatus: "REQUIRED" as const }, { paymentStatus: "REJECTED" as const }] }
     : { OR: [{ verificationStatus: "PENDING" as const }, { status: "RECEIVED" as const }, { refundStatus: "REQUIRED" as const }, { paymentStatus: "REJECTED" as const }] };
-}
-
-function businessDayStart(now = new Date()) {
-  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(now);
-  const part = (type: string) => parts.find((item) => item.type === type)?.value;
-  const date = `${part("year")}-${part("month")}-${part("day")}`;
-  return new Date(`${date}T00:00:00-03:00`);
 }
 
 const operationalOrderSelect = {
