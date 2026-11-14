@@ -186,6 +186,8 @@
 .shell :global(.catalog-toolbar){display:grid;gap:10px;margin-bottom:14px}
 .shell :global(.catalog-toolbar label){display:grid;gap:5px;color:var(--admin-text);font-size:13px;font-weight:650}
 .shell :global(.catalog-toolbar input),.shell :global(.catalog-toolbar select){width:100%;min-height:48px;padding:0 12px;border:1px solid var(--admin-border);border-radius:12px;background:white;color:var(--admin-text);font:inherit}
+.shell :global(.admin-panel--form),.shell :global(.admin-form--wide),.shell :global(.admin-schedule),.shell :global(.admin-schedule__row > *){min-width:0}
+@media(max-width:500px){.shell :global(.admin-schedule__row){grid-template-columns:minmax(112px,1.1fr) minmax(0,1fr) minmax(0,1fr);gap:4px}.shell :global(.admin-schedule__row input[type="time"]){width:100%;min-width:0;padding-inline:2px;font-size:14px}.shell :global(.admin-schedule__row .admin-checkbox){gap:4px!important;font-size:13px!important}}
 .shell :global(.catalog-feedback){padding:10px 12px;border-radius:10px;background:var(--admin-success-bg);color:var(--admin-success-text)}
 .shell :global(.catalog-product){display:grid;grid-template-columns:88px minmax(0,1fr);align-items:center;gap:12px;padding:13px 0}
 .shell :global(.catalog-product__image){width:88px;height:88px;display:grid;place-items:center;overflow:hidden;border-radius:12px;background:#edf2ed;color:var(--admin-primary);font-weight:900}
