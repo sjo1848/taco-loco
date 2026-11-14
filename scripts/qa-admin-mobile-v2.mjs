@@ -52,10 +52,6 @@ async function selectAvailableProduct(page) {
   const product = options.find((option) => option.value && !option.disabled);
   if (!product) throw new Error(`Manual order has no selectable published/available products (option count: ${options.length}).`);
   await select.selectOption({ value: product.value });
-  await page.waitForFunction(() => {
-    const button = [...document.querySelectorAll(".order-form__add button")].find((item) => item.textContent?.trim() === "Agregar");
-    return button instanceof HTMLButtonElement && !button.disabled;
-  }, undefined, { timeout: 5000 });
 }
 
 async function assertAboveMobileNavigation(page, locator) {
@@ -73,37 +69,81 @@ async function clickAboveMobileNavigation(page, locator) {
 }
 
 async function createAndAdvanceSyntheticPickup(page) {
-  await page.goto(`${baseUrl}/admin/orders/new`, { waitUntil: "domcontentloaded" });
-  await selectAvailableProduct(page);
-  await page.getByRole("button", { name: "Agregar", exact: true }).click();
-  const line = page.locator(".order-form__line").first();
-  const modifierLabels = line.locator("label");
-  for (let i = 0; i < await modifierLabels.count(); i++) {
-    const label = modifierLabels.nth(i);
-    if ((await label.innerText()).includes("obligatorio")) await label.locator("select").selectOption({ index: 1 });
+  let orderCode = process.env.TACO_LOCO_QA_EXISTING_ORDER_CODE ?? null;
+  const marker = `S7c QA ${new Date().toISOString().slice(0, 10)}`;
+  if (orderCode) {
+    if (!/^TL-\d{4}$/.test(orderCode)) throw new Error("Existing synthetic order code must use TL-XXXX format.");
+    await page.goto(`${baseUrl}/admin/orders/history?q=${encodeURIComponent(orderCode)}`, { waitUntil: "domcontentloaded" });
+    const row = page.locator(".history-row").filter({ hasText: orderCode });
+    await row.waitFor({ state: "visible", timeout: 15000 });
+    await row.click();
+    await page.waitForURL(/\/admin\/orders\/[0-9a-f-]+/i);
+  } else {
+    await page.goto(`${baseUrl}/admin/orders/history?q=${encodeURIComponent(marker)}`, { waitUntil: "domcontentloaded" });
+    await page.locator(".history-list").waitFor({ state: "visible", timeout: 15000 });
+    await page.locator('[aria-label="Cargando historial"]').waitFor({ state: "detached", timeout: 15000 });
+    const matchingRow = page.locator(".history-row").filter({ hasText: marker }).first();
+    if (await matchingRow.count()) {
+      orderCode = (await matchingRow.locator(".history-row__code").innerText()).trim();
+      await matchingRow.click();
+      await page.waitForURL(/\/admin\/orders\/[0-9a-f-]+/i);
+    } else {
+      await page.goto(`${baseUrl}/admin/orders/new`, { waitUntil: "domcontentloaded" });
+      await selectAvailableProduct(page);
+      await page.getByRole("button", { name: "Agregar", exact: true }).click();
+      const line = page.locator(".order-form__line").first();
+      const modifierLabels = line.locator("label");
+      for (let i = 0; i < await modifierLabels.count(); i++) {
+        const label = modifierLabels.nth(i);
+        if ((await label.innerText()).includes("obligatorio")) await label.locator("select").selectOption({ index: 1 });
+      }
+      await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Continuar" }));
+      await page.getByLabel("Nombre del cliente").fill(marker);
+      await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Registrar pedido" }));
+      await page.waitForURL(/\/admin\/orders\/[0-9a-f-]+(?:\?|$)/i, { timeout: 20000 });
+      const heading = await page.locator(".admin-order-detail .eyebrow").innerText();
+      orderCode = heading.trim().split(/\s+/).at(-1) ?? null;
+      if (!orderCode) throw new Error("Created synthetic order did not show a human-readable code.");
+      results.journeys.push({ journey: "synthetic manual pickup created through two-step form", result: "PASS", orderCode });
+    }
   }
-  await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Continuar" }));
-  await page.getByLabel("Nombre del cliente").fill(`S7c QA ${new Date().toISOString().slice(0, 10)}`);
-  await clickAboveMobileNavigation(page, page.getByRole("button", { name: "Registrar pedido" }));
-  await page.waitForURL(/\/admin\/orders\/[0-9a-f-]+(?:\?|$)/i, { timeout: 20000 });
-  const code = await page.locator(".admin-order-detail .eyebrow").innerText();
+
+  const beforeTransitionScreenshot = path.join(outputDir, "order-detail-before-transition-390.png");
+  await page.screenshot({ path: beforeTransitionScreenshot, fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)) });
+  results.screenshots.push(path.relative(process.cwd(), beforeTransitionScreenshot));
   const orderId = new URL(page.url()).pathname.split("/").at(-1);
-  results.journeys.push({ journey: "synthetic manual pickup created through two-step form", result: "PASS", orderCode: code.trim().split(/\s+/).at(-1) });
-  await page.screenshot({ path: path.join(outputDir, "order-detail-390.png"), fullPage: true, animations: "disabled", mask: personalDataMasks.map((selector) => page.locator(selector)) });
-  results.screenshots.push(path.relative(process.cwd(), path.join(outputDir, "order-detail-390.png")));
-  await page.getByRole("button", { name: "Confirmar pedido", exact: true }).click();
-  await page.getByRole("heading", { name: "Confirmado", exact: true }).waitFor({ state: "visible", timeout: 15000 });
-  await page.goto(`${baseUrl}/admin/orders?cola=iniciar`, { waitUntil: "domcontentloaded" });
-  const ticket = page.locator(".order-ticket").filter({ hasText: code.trim().split(/\s+/).at(-1) });
-  await ticket.getByRole("button", { name: "Iniciar preparación", exact: true }).click();
-  await ticket.waitFor({ state: "detached", timeout: 15000 });
-  await page.goto(`${baseUrl}/admin/orders/${orderId}`, { waitUntil: "domcontentloaded" });
-  for (const [action, expected] of [["Marcar listo", "Listo"], ["Marcar entregado", "Entregado"]]) {
-    await page.getByRole("button", { name: action, exact: true }).click();
-    await page.getByRole("heading", { name: expected, exact: true }).waitFor({ state: "visible", timeout: 15000 });
+  const readStatus = async () => page.evaluate(async (id) => {
+    const response = await fetch(`/api/admin/orders/${id}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Could not read synthetic order status (${response.status}).`);
+    return (await response.json()).status;
+  }, orderId);
+  let status = await readStatus();
+  if (status === "RECEIVED") {
+    await page.getByRole("button", { name: "Confirmar pedido", exact: true }).click();
+    await page.getByRole("heading", { name: "Confirmado", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    status = "CONFIRMED";
   }
+  if (status === "CONFIRMED") {
+    await page.goto(`${baseUrl}/admin/orders?cola=iniciar`, { waitUntil: "domcontentloaded" });
+    const ticket = page.locator(".order-ticket").filter({ hasText: orderCode });
+    await ticket.getByRole("button", { name: "Iniciar preparación", exact: true }).click();
+    await ticket.waitFor({ state: "detached", timeout: 15000 });
+    await page.goto(`${baseUrl}/admin/orders/${orderId}`, { waitUntil: "domcontentloaded" });
+    status = "IN_PREPARATION";
+  }
+  if (status === "IN_PREPARATION") {
+    await page.getByRole("button", { name: "Marcar listo", exact: true }).click();
+    await page.getByRole("heading", { name: "Listo", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    status = "READY";
+  }
+  if (status === "READY") {
+    await page.getByRole("button", { name: "Marcar entregado", exact: true }).click();
+    await page.getByRole("heading", { name: "Entregado", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    status = "DELIVERED";
+  }
+  if (status !== "DELIVERED" || await readStatus() !== "DELIVERED") throw new Error(`Synthetic pickup lifecycle stopped at ${status}.`);
   results.journeys.push({ journey: "pickup confirm → preparation → ready → delivered through authorized transitions", result: "PASS" });
-  return code.trim().split(/\s+/).at(-1);
+  return orderCode;
 }
 
 for (const name of browserNames) {
