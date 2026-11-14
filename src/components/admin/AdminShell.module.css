@@ -223,6 +223,7 @@
 .shell :global(.product-image-editor p){margin:0;color:var(--admin-muted);font-size:13px}
 .shell :global(.admin-checks){min-width:0;width:100%;padding:14px;border:1px solid var(--admin-border);border-radius:14px;color:var(--admin-text)}
 .shell :global(.admin-checks legend){padding:0 5px;font-weight:750}
+.shell :global(.admin-checks input){width:18px;min-width:18px;min-height:18px;flex:0 0 18px;margin:0}
 .shell :global(.admin-checks label){color:var(--admin-text)}
 .shell :global(.admin-skeleton-list){display:grid;gap:10px}
 .shell :global(.admin-skeleton-card){height:128px;border:1px solid var(--admin-border);border-radius:16px;background:linear-gradient(100deg,#edf1ed 20%,#f8faf8 38%,#edf1ed 56%);background-size:220% 100%;animation:admin-skeleton-shimmer 1.15s ease-in-out infinite}
