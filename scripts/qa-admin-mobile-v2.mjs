@@ -228,7 +228,7 @@ async function createAndAdvanceSyntheticPickup(page, attentionObserver = null, r
         return response.status;
       }, orderId);
       if (nextTransition !== 200) throw new Error(`Post-reconnect transition failed (${nextTransition}).`);
-      await attentionObserver.waitForFunction(({ previous, number }) => window.__adminSseEvents.some((entry, index) => index >= previous && entry.event === "order" && entry.orderNumber === number && entry.status === "IN_PREPARATION"), { previous: previousOrderEvents, number: Number(orderCode.slice(3)) }, { timeout: 15000 });
+      await attentionObserver.waitForFunction(({ previous, number }) => window.__adminSseEvents.filter((entry) => entry.event === "order").slice(previous).some((entry) => entry.orderNumber === number && entry.status === "IN_PREPARATION"), { previous: previousOrderEvents, number: Number(orderCode.slice(3)) }, { timeout: 15000 });
       if (await attentionObserver.evaluate(() => window.__adminSseActive) !== 1) throw new Error("SSE reconnection left more than one active stream.");
       results.journeys.push({ journey: "fresh SSE transport delivers a later operator transition after online recovery; exactly one stream remains active", result: "PASS", orderCode });
     } else {
