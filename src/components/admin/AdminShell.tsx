@@ -40,11 +40,11 @@ function title(path: string) {
   return "Más";
 }
 
-export function AdminShell({ children, initialEventCursor }: { children: ReactNode; initialEventCursor: string }) {
+export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || "/admin";
   const searchParams=useSearchParams();
   const [connection, setConnection] = useState<AdminLiveState["connection"]>("connecting");
-  const lastSequence = useRef<bigint>(BigInt(initialEventCursor));
+  const lastSequence = useRef<bigint>(BigInt(0));
   const subscribers = useRef(new Set<(order: LiveOrder) => void>());
   const active = pathname.startsWith("/admin/orders");
   const subscribe = useCallback((handler: (order: LiveOrder) => void) => { subscribers.current.add(handler); return () => subscribers.current.delete(handler); }, []);
@@ -60,7 +60,7 @@ export function AdminShell({ children, initialEventCursor }: { children: ReactNo
   useEffect(() => {
     if (!active) return;
     let alive = true;
-    const stream = new EventSource(`/api/admin/orders/events?after=${encodeURIComponent(lastSequence.current.toString())}`);
+    const stream = new EventSource("/api/admin/orders/events");
     const onOffline = () => setConnection("offline");
     const onOnline = () => setConnection("reconnecting");
     stream.addEventListener("order", onOrder as EventListener);
@@ -89,7 +89,7 @@ export function AdminShell({ children, initialEventCursor }: { children: ReactNo
       window.removeEventListener("offline", onOffline);
       window.removeEventListener("online", onOnline);
     };
-  }, [active, initialEventCursor, onOrder]);
+  }, [active, onOrder]);
   if (pathname === "/admin/login") return children;
   const currentTitle = title(pathname);
   const back = pathname !== "/admin/orders" && pathname !== "/admin/products" && pathname !== "/admin/more" && pathname !== "/admin/orders/history";

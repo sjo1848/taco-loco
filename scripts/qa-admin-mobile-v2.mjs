@@ -92,7 +92,7 @@ async function clickAboveMobileNavigation(page, locator) {
 
 async function createAndAdvanceSyntheticPickup(page, attentionObserver = null) {
   let orderCode = process.env.TACO_LOCO_QA_EXISTING_ORDER_CODE ?? null;
-  const marker = `S7c QA ${new Date().toISOString().slice(0, 10)}`;
+  const marker = process.env.TACO_LOCO_QA_ORDER_MARKER?.trim() || `S7c QA ${new Date().toISOString().slice(0, 10)}`;
   let createdThisRun = false;
   if (orderCode) {
     if (!/^TL-\d{4}$/.test(orderCode)) throw new Error("Existing synthetic order code must use TL-XXXX format.");
@@ -103,7 +103,7 @@ async function createAndAdvanceSyntheticPickup(page, attentionObserver = null) {
     await page.waitForURL(/\/admin\/orders\/[0-9a-f-]+/i);
   } else {
     await page.goto(`${baseUrl}/admin/orders/history?q=${encodeURIComponent(marker)}`, { waitUntil: "domcontentloaded" });
-    await page.locator(".history-list").waitFor({ state: "visible", timeout: 15000 });
+    await page.locator(".history-group").first().waitFor({ state: "visible", timeout: 15000 });
     await page.locator('[aria-label="Cargando historial"]').waitFor({ state: "detached", timeout: 15000 });
     const matchingRow = page.locator(".history-row").filter({ hasText: marker }).first();
     if (await matchingRow.count()) {
