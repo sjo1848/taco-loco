@@ -62,8 +62,10 @@ async function selectAvailableProduct(page) {
   await card.waitFor({ state: "visible", timeout: 10000 });
   const name = (await card.locator("h2").innerText()).trim();
   await card.getByRole("button", { name: "Agregar", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name });
+  const dialog = page.getByRole("dialog");
   await dialog.waitFor({ state: "visible" });
+  const dialogTitle = (await dialog.locator("h2").innerText()).trim();
+  if (dialogTitle !== name) throw new Error("The product customizer did not match the selected product.");
   const requiredGroups = dialog.locator("fieldset").filter({ hasText: "obligatorio" });
   for (let index = 0; index < await requiredGroups.count(); index++) await requiredGroups.nth(index).locator('input[type="radio"]').first().check();
   const plus = dialog.getByRole("button", { name: "Agregar una unidad" });
