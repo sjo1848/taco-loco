@@ -58,7 +58,11 @@ function parseOrderNumber(query: string) {
 type AggregateCount = number | bigint | null;
 type OperationalCountRow = { start: AggregateCount; preparing: AggregateCount; ready: AggregateCount; verification: AggregateCount; unconfirmed: AggregateCount; incidents: AggregateCount; attention: AggregateCount };
 type AttentionCountRow = { all: AggregateCount; verification: AggregateCount; unconfirmed: AggregateCount; incidents: AggregateCount; today: AggregateCount; previous: AggregateCount };
-const asCount = (value: AggregateCount) => Number(value ?? 0);
+function asCount(value: AggregateCount) {
+  const count = Number(value ?? 0);
+  if (!Number.isSafeInteger(count)) throw new AppError("COUNT_OVERFLOW", "El conteo excede el rango seguro.", 500);
+  return count;
+}
 
 function operationalCountsD1() {
   return queryD1Raw<OperationalCountRow[]>`
@@ -254,7 +258,7 @@ export const orderRepository = {
         customerPhone: true,
         totalAmount: true,
         createdAt: true,
-        lines: { select: { quantity: true, productName: true, modifiersSnapshot: true, note: true } },
+        lines: true,
       },
     });
     if (!order) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);

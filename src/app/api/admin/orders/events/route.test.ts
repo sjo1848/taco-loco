@@ -91,7 +91,7 @@ describe("admin order stream", () => {
     // The endpoint captures 80 before the pump starts. Sequence 81 is the
     // deterministic write in the snapshot/EventSource connection window.
     mocks.eventsAfter.mockResolvedValueOnce([{ sequence: BigInt(81), orderId: "written-in-gap" }]).mockResolvedValue([]);
-    mocks.findForLiveEvent.mockImplementation(async (id: string) => ({ id, orderNumber: 101, status:"RECEIVED", fulfillment:"PICKUP", verificationStatus:"VERIFIED", paymentStatus:"NOT_REQUIRED", refundStatus:"NOT_REQUIRED", source:"PUBLIC_MENU", customerName:null, customerPhone:null, totalAmount:1000, createdAt: new Date("2026-11-14T12:00:00Z"), lines: [] }));
+    mocks.findForLiveEvent.mockImplementation(async (id: string) => ({ id, orderNumber: 101, status:"RECEIVED", fulfillment:"PICKUP", verificationStatus:"VERIFIED", paymentStatus:"NOT_REQUIRED", refundStatus:"NOT_REQUIRED", source:"PUBLIC_MENU", customerName:null, customerPhone:null, totalAmount:1000, createdAt: new Date("2026-11-14T12:00:00Z"), lines: [{ id: "line-1", orderId: id, productId: null, productName: "Taco", unitPriceAmount: 1000, quantity: 1, modifiersSnapshot: null, note: null, createdAt: new Date("2026-11-14T12:00:00Z") }] }));
     const response = await GET(new Request("https://example.test/api/admin/orders/events", { signal: controller.signal }));
     const reader = response.body!.getReader();
     let contents = "";
@@ -102,6 +102,7 @@ describe("admin order stream", () => {
     }
     expect(contents).toContain("id: 80\nevent: ready\ndata: {\"cursor\":\"80\"}");
     expect(contents).toContain("id: 81\nevent: order");
+    expect(contents).toContain('"unitPriceAmount":1000');
     expect(mocks.findForLiveEvent).toHaveBeenCalledWith("written-in-gap");
     expect(mocks.findById).not.toHaveBeenCalled();
     expect(mocks.eventsAfter).toHaveBeenCalledWith(BigInt(80));

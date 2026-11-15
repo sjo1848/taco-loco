@@ -1,0 +1,72 @@
+{
+  "target": "http://127.0.0.1:8787",
+  "runtime": "local Wrangler Worker + D1",
+  "report": [
+    {
+      "route": "operations-counts",
+      "samples": 10,
+      "status": {
+        "200": 11
+      },
+      "p50_wall_ms": 63.27,
+      "p95_wall_ms": 99,
+      "max_wall_ms": 99,
+      "response_bytes": 121
+    },
+    {
+      "route": "operations-page",
+      "samples": 10,
+      "status": {
+        "200": 11
+      },
+      "p50_wall_ms": 61.36,
+      "p95_wall_ms": 82.04,
+      "max_wall_ms": 82.04,
+      "response_bytes": 11797
+    },
+    {
+      "route": "attention-counts",
+      "samples": 10,
+      "status": {
+        "200": 11
+      },
+      "p50_wall_ms": 48.98,
+      "p95_wall_ms": 63.02,
+      "max_wall_ms": 63.02,
+      "response_bytes": 115
+    },
+    {
+      "route": "attention-today",
+      "samples": 10,
+      "status": {
+        "200": 11
+      },
+      "p50_wall_ms": 55.9,
+      "p95_wall_ms": 79.62,
+      "max_wall_ms": 79.62,
+      "response_bytes": 8481
+    },
+    {
+      "route": "attention-previous",
+      "samples": 10,
+      "status": {
+        "200": 11
+      },
+      "p50_wall_ms": 26.33,
+      "p95_wall_ms": 34.39,
+      "max_wall_ms": 34.39,
+      "response_bytes": 8372
+    },
+    {
+      "route": "history-page",
+      "samples": 10,
+      "status": {
+        "200": 11
+      },
+      "p50_wall_ms": 31.47,
+      "p95_wall_ms": 34.7,
+      "max_wall_ms": 34.7,
+      "response_bytes": 6523
+    }
+  ]
+}

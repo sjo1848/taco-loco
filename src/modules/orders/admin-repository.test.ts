@@ -118,7 +118,7 @@ describe("admin operational reads",()=>{
   expect(dbMocks.findUnique).toHaveBeenCalledWith({where:{id:"order-1"},select:{
    id:true,orderNumber:true,status:true,fulfillment:true,verificationStatus:true,paymentStatus:true,refundStatus:true,
    source:true,customerName:true,customerPhone:true,totalAmount:true,createdAt:true,
-   lines:{select:{quantity:true,productName:true,modifiersSnapshot:true,note:true}},
+   lines:true,
   }});
  });
 });
