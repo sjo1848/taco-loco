@@ -1,5 +1,5 @@
 import { AppError } from "@/lib/errors";
-import { db } from "@/lib/db";
+import { db, queryD1Raw } from "@/lib/db";
 import { isD1Runtime } from "@/lib/runtime";
 import { businessDayStart } from "@/modules/orders/business-day";
 import type { OrderStatus } from "@/modules/orders/model";
@@ -55,6 +55,52 @@ function parseOrderNumber(query: string) {
   return Number.isSafeInteger(number) && number > 0 ? number : null;
 }
 
+type AggregateCount = number | bigint | null;
+type OperationalCountRow = { start: AggregateCount; preparing: AggregateCount; ready: AggregateCount; verification: AggregateCount; unconfirmed: AggregateCount; incidents: AggregateCount; attention: AggregateCount };
+type AttentionCountRow = { all: AggregateCount; verification: AggregateCount; unconfirmed: AggregateCount; incidents: AggregateCount; today: AggregateCount; previous: AggregateCount };
+const asCount = (value: AggregateCount) => Number(value ?? 0);
+
+function operationalCountsD1() {
+  return queryD1Raw<OperationalCountRow[]>`
+    SELECT
+      COALESCE(SUM(CASE WHEN "status" = 'CONFIRMED' AND "verificationStatus" = 'VERIFIED' AND "paymentStatus" IN ('NOT_REQUIRED', 'CONFIRMED') THEN 1 ELSE 0 END), 0) AS "start",
+      COALESCE(SUM(CASE WHEN "status" = 'IN_PREPARATION' AND "verificationStatus" = 'VERIFIED' AND "paymentStatus" IN ('NOT_REQUIRED', 'CONFIRMED') THEN 1 ELSE 0 END), 0) AS "preparing",
+      COALESCE(SUM(CASE WHEN "status" = 'READY' AND "verificationStatus" = 'VERIFIED' AND "paymentStatus" IN ('NOT_REQUIRED', 'CONFIRMED') THEN 1 ELSE 0 END), 0) AS "ready",
+      COALESCE(SUM(CASE WHEN "verificationStatus" = 'PENDING' THEN 1 ELSE 0 END), 0) AS "verification",
+      COALESCE(SUM(CASE WHEN "status" = 'RECEIVED' THEN 1 ELSE 0 END), 0) AS "unconfirmed",
+      COALESCE(SUM(CASE WHEN "refundStatus" = 'REQUIRED' OR "paymentStatus" = 'REJECTED' THEN 1 ELSE 0 END), 0) AS "incidents",
+      COALESCE(SUM(CASE WHEN "verificationStatus" = 'PENDING' OR "status" = 'RECEIVED' OR "refundStatus" = 'REQUIRED' OR "paymentStatus" = 'REJECTED' THEN 1 ELSE 0 END), 0) AS "attention"
+    FROM "Order"
+  `;
+}
+
+function attentionCountsD1(kind: AttentionKind, start: Date, nextStart: Date) {
+  // kind is a validated enum value and is bound as data by Prisma. The CASE
+  // preserves the existing union semantics without interpolating SQL text.
+  return queryD1Raw<AttentionCountRow[]>`
+    SELECT
+      COALESCE(SUM(CASE WHEN "verificationStatus" = 'PENDING' OR "status" = 'RECEIVED' OR "refundStatus" = 'REQUIRED' OR "paymentStatus" = 'REJECTED' THEN 1 ELSE 0 END), 0) AS "all",
+      COALESCE(SUM(CASE WHEN "verificationStatus" = 'PENDING' THEN 1 ELSE 0 END), 0) AS "verification",
+      COALESCE(SUM(CASE WHEN "status" = 'RECEIVED' THEN 1 ELSE 0 END), 0) AS "unconfirmed",
+      COALESCE(SUM(CASE WHEN "refundStatus" = 'REQUIRED' OR "paymentStatus" = 'REJECTED' THEN 1 ELSE 0 END), 0) AS "incidents",
+      COALESCE(SUM(CASE WHEN "createdAt" >= ${start} AND "createdAt" < ${nextStart} AND
+        CASE ${kind}
+          WHEN 'verification' THEN "verificationStatus" = 'PENDING'
+          WHEN 'unconfirmed' THEN "status" = 'RECEIVED'
+          WHEN 'incidents' THEN "refundStatus" = 'REQUIRED' OR "paymentStatus" = 'REJECTED'
+          ELSE "verificationStatus" = 'PENDING' OR "status" = 'RECEIVED' OR "refundStatus" = 'REQUIRED' OR "paymentStatus" = 'REJECTED'
+        END THEN 1 ELSE 0 END), 0) AS "today",
+      COALESCE(SUM(CASE WHEN "createdAt" < ${start} AND
+        CASE ${kind}
+          WHEN 'verification' THEN "verificationStatus" = 'PENDING'
+          WHEN 'unconfirmed' THEN "status" = 'RECEIVED'
+          WHEN 'incidents' THEN "refundStatus" = 'REQUIRED' OR "paymentStatus" = 'REJECTED'
+          ELSE "verificationStatus" = 'PENDING' OR "status" = 'RECEIVED' OR "refundStatus" = 'REQUIRED' OR "paymentStatus" = 'REJECTED'
+        END THEN 1 ELSE 0 END), 0) AS "previous"
+    FROM "Order"
+  `;
+}
+
 export const orderRepository = {
   async listForCustomer(customerId: string, cursor: CustomerOrderCursor | null, take = 10) {
     const rows = await db.order.findMany({
@@ -108,6 +154,14 @@ export const orderRepository = {
     });
   },
   async operationalCounts() {
+    if (isD1Runtime) {
+      const [row] = await operationalCountsD1();
+      return {
+        start: asCount(row?.start ?? 0), preparing: asCount(row?.preparing ?? 0), ready: asCount(row?.ready ?? 0),
+        verification: asCount(row?.verification ?? 0), unconfirmed: asCount(row?.unconfirmed ?? 0),
+        incidents: asCount(row?.incidents ?? 0), attention: asCount(row?.attention ?? 0),
+      };
+    }
     const [start, preparing, ready, verification, unconfirmed, incidents] = await Promise.all([
       db.order.count({ where: { status: "CONFIRMED", verificationStatus: "VERIFIED", paymentStatus: { in: ["NOT_REQUIRED", "CONFIRMED"] } } }),
       db.order.count({ where: { status: "IN_PREPARATION", verificationStatus: "VERIFIED", paymentStatus: { in: ["NOT_REQUIRED", "CONFIRMED"] } } }),
@@ -140,6 +194,14 @@ export const orderRepository = {
   async attentionCounts(kind: AttentionKind = "all", now = new Date()) {
     const start = businessDayStart(now);
     const nextStart = new Date(start.getTime() + 86_400_000);
+    if (isD1Runtime) {
+      const [row] = await attentionCountsD1(kind, start, nextStart);
+      return {
+        all: asCount(row?.all ?? 0), verification: asCount(row?.verification ?? 0),
+        unconfirmed: asCount(row?.unconfirmed ?? 0), incidents: asCount(row?.incidents ?? 0),
+        buckets: { today: asCount(row?.today ?? 0), previous: asCount(row?.previous ?? 0) },
+      };
+    }
     const [all, verification, unconfirmed, incidents] = await Promise.all([
       db.order.count({ where: { OR: [{ verificationStatus: "PENDING" }, { status: "RECEIVED" }, { refundStatus: "REQUIRED" }, { paymentStatus: "REJECTED" }] } }),
       db.order.count({ where: { verificationStatus: "PENDING" } }),
