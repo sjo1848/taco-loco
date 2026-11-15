@@ -20,4 +20,13 @@ function lazyWorkerDb() {
 
 export const db = "WebSocketPair" in globalThis ? lazyWorkerDb() : nodeDb;
 
+/** Invoke Prisma's D1 raw-query tag with the real client as `this`.
+ * The general lazy proxy delegates model calls lazily; tagged raw methods
+ * require their Prisma client receiver and cannot be invoked through it.
+ */
+export async function queryD1Raw<T>(strings: TemplateStringsArray, ...values: unknown[]): Promise<T> {
+  const { db: workerDb } = await import("./db.worker");
+  return workerDb.$queryRaw<T>(strings, ...values as never[]);
+}
+
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
