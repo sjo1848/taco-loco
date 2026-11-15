@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const dbMocks=vi.hoisted(()=>({count:vi.fn(),findMany:vi.fn(), isD1Runtime:false}));
-vi.mock("@/lib/db",()=>({db:{order:{count:dbMocks.count,findMany:dbMocks.findMany}}}));
+const dbMocks=vi.hoisted(()=>({count:vi.fn(),findMany:vi.fn(),queryRaw:vi.fn(), isD1Runtime:false}));
+vi.mock("@/lib/db",()=>({db:{order:{count:dbMocks.count,findMany:dbMocks.findMany}},queryD1Raw:dbMocks.queryRaw}));
 vi.mock("@/lib/runtime",()=>({get isD1Runtime(){return dbMocks.isD1Runtime}}));
 import { orderRepository } from "./repository";
 
@@ -15,6 +15,16 @@ describe("admin operational reads",()=>{
   expect(dbMocks.count).toHaveBeenCalledTimes(7);
   expect(dbMocks.count.mock.calls.at(-1)?.[0].where.OR).toHaveLength(4);
   expect(dbMocks.count.mock.calls[0]?.[0].where.status).toBe("CONFIRMED");
+ });
+ it("uses one conditional aggregate for D1 operational counts without changing count meanings",async()=>{
+  dbMocks.isD1Runtime=true;
+  dbMocks.queryRaw.mockResolvedValueOnce([{start:BigInt(11),preparing:BigInt(12),ready:BigInt(13),verification:BigInt(14),unconfirmed:BigInt(15),incidents:BigInt(16),attention:BigInt(17)}]);
+  const result=await orderRepository.operationalCounts();
+  expect(result).toEqual({start:11,preparing:12,ready:13,verification:14,unconfirmed:15,incidents:16,attention:17});
+  expect(dbMocks.queryRaw).toHaveBeenCalledTimes(1);
+  expect(dbMocks.queryRaw.mock.calls[0]?.[0].join(" ")).toContain('FROM "Order"');
+  expect(dbMocks.queryRaw.mock.calls[0]?.[0].join(" ")).toContain('"refundStatus" = \'REQUIRED\' OR "paymentStatus" = \'REJECTED\'');
+  expect(dbMocks.count).not.toHaveBeenCalled();
  });
  it("queries only eligible tickets in oldest-first keyset order and exposes load-more cursor",async()=>{
   const createdAt=new Date("2026-11-14T10:00:00Z");
@@ -59,6 +69,21 @@ describe("admin operational reads",()=>{
   expect(counts).toEqual({all:105,verification:96,unconfirmed:32,incidents:7,buckets:{today:9,previous:98}});
   expect(dbMocks.count.mock.calls.at(-2)?.[0].where).toEqual({verificationStatus:"PENDING",createdAt:{gte:new Date("2026-11-14T03:00:00.000Z"),lt:new Date("2026-11-15T03:00:00.000Z")}});
   expect(dbMocks.count.mock.calls.at(-1)?.[0].where).toEqual({verificationStatus:"PENDING",createdAt:{lt:new Date("2026-11-14T03:00:00.000Z")}});
+ });
+ it("uses one D1 aggregation for attention and binds Buenos Aires day boundaries",async()=>{
+  dbMocks.isD1Runtime=true;
+  dbMocks.queryRaw.mockResolvedValueOnce([{all:BigInt(10),verification:BigInt(6),unconfirmed:BigInt(7),incidents:BigInt(2),today:BigInt(3),previous:BigInt(4)}]);
+  const now=new Date("2026-11-14T16:00:00Z");
+  const counts=await orderRepository.attentionCounts("verification",now);
+  expect(counts).toEqual({all:10,verification:6,unconfirmed:7,incidents:2,buckets:{today:3,previous:4}});
+  expect(dbMocks.queryRaw).toHaveBeenCalledTimes(1);
+  expect(dbMocks.queryRaw.mock.calls[0]?.slice(1)).toEqual([
+   new Date("2026-11-14T03:00:00.000Z"), new Date("2026-11-15T03:00:00.000Z"), "verification",
+   new Date("2026-11-14T03:00:00.000Z"), "verification",
+  ]);
+  expect(dbMocks.queryRaw.mock.calls[0]?.[0].join(" ")).toContain('"status" = \'RECEIVED\'');
+  expect(dbMocks.queryRaw.mock.calls[0]?.[0].join(" ")).toContain('"verificationStatus" = \'PENDING\'');
+  expect(dbMocks.count).not.toHaveBeenCalled();
  });
  it("keeps search and date/status/fulfillment filters conjunctive with cursor paging",async()=>{
   dbMocks.findMany.mockResolvedValueOnce([]);
