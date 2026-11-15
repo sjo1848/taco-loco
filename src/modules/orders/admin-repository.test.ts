@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const dbMocks=vi.hoisted(()=>({count:vi.fn(),findMany:vi.fn(), isD1Runtime:false}));
-vi.mock("@/lib/db",()=>({db:{order:{count:dbMocks.count,findMany:dbMocks.findMany}}}));
+const dbMocks=vi.hoisted(()=>({count:vi.fn(),findMany:vi.fn(),findUnique:vi.fn(), isD1Runtime:false}));
+vi.mock("@/lib/db",()=>({db:{order:{count:dbMocks.count,findMany:dbMocks.findMany,findUnique:dbMocks.findUnique}}}));
 vi.mock("@/lib/runtime",()=>({get isD1Runtime(){return dbMocks.isD1Runtime}}));
 import { orderRepository } from "./repository";
 
@@ -85,5 +85,15 @@ describe("admin operational reads",()=>{
   await orderRepository.list({query:"TL-92"});
   const args=dbMocks.findMany.mock.calls[0]?.[0];
   expect(args.where.OR).toEqual([{customerName:{contains:"TL-92"}},{customerPhone:{contains:"TL-92"}},{orderNumber:92}]);
+ });
+ it("loads only the fields required by an administrative live event",async()=>{
+  const snapshot={id:"order-1",orderNumber:21,status:"READY",fulfillment:"PICKUP",verificationStatus:"VERIFIED",paymentStatus:"NOT_REQUIRED",refundStatus:"NOT_REQUIRED",source:"PUBLIC_MENU",customerName:"Synthetic",customerPhone:null,totalAmount:1200,createdAt:new Date("2026-11-15T12:00:00Z"),lines:[{quantity:2,productName:"Taco",modifiersSnapshot:null,note:null}]};
+  dbMocks.findUnique.mockResolvedValueOnce(snapshot);
+  await expect(orderRepository.findForLiveEvent("order-1")).resolves.toBe(snapshot);
+  expect(dbMocks.findUnique).toHaveBeenCalledWith({where:{id:"order-1"},select:{
+   id:true,orderNumber:true,status:true,fulfillment:true,verificationStatus:true,paymentStatus:true,refundStatus:true,
+   source:true,customerName:true,customerPhone:true,totalAmount:true,createdAt:true,
+   lines:{select:{quantity:true,productName:true,modifiersSnapshot:true,note:true}},
+  }});
  });
 });

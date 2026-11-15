@@ -176,4 +176,26 @@ export const orderRepository = {
     if (!order) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
     return order;
   },
+  async findForLiveEvent(id: string) {
+    const order = await db.order.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        orderNumber: true,
+        status: true,
+        fulfillment: true,
+        verificationStatus: true,
+        paymentStatus: true,
+        refundStatus: true,
+        source: true,
+        customerName: true,
+        customerPhone: true,
+        totalAmount: true,
+        createdAt: true,
+        lines: { select: { quantity: true, productName: true, modifiersSnapshot: true, note: true } },
+      },
+    });
+    if (!order) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
+    return order;
+  },
 };
