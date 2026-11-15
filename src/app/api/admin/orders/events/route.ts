@@ -28,7 +28,7 @@ function parseCursor(value: string | null) {
   try { return BigInt(value); } catch { return BigInt(0); }
 }
 
-function serializeOrder(order: Awaited<ReturnType<typeof orderRepository.findById>>): OrderSnapshot {
+function serializeOrder(order: Awaited<ReturnType<typeof orderRepository.findForLiveEvent>>): OrderSnapshot {
   return {
     id: order.id,
     orderNumber: order.orderNumber,
@@ -119,7 +119,7 @@ export async function GET(request: Request) {
         const sequence = notification.sequence;
         if (sequence <= lastSent) return;
         try {
-          const order = await orderRepository.findById(notification.orderId);
+          const order = await orderRepository.findForLiveEvent(notification.orderId);
           if (!await ensureSession()) return;
           if (!closed) controller.enqueue(encoder.encode(sseEvent("order", { order: serializeOrder(order) }, sequence)));
         } catch (error) {
