@@ -7,7 +7,8 @@ import { FavoriteButton } from "@/components/public/FavoriteButton";
 
 type Product = { id: string; name: string; description: string | null; priceAmount: number; available: boolean; featured: boolean; imageKey: string | null; imageAlt: string | null; modifiers: Array<{ name: string; required: boolean; minSelections: number | null; maxSelections: number | null; options: string[] }> };
 
-function formatPrice(amount: number) { return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(amount); }
+const priceFormatter = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+function formatPrice(amount: number) { return priceFormatter.format(amount); }
 
 export function ProductCard({ product, featured = false, onAdd, added = false }: { product: Product; featured?: boolean; onAdd?: (product: Product) => void; added?: boolean }) {
   const imageUrl = resolveStaticProductAsset(product.imageKey);
