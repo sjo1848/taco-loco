@@ -1,4 +1,5 @@
 import { AppError } from "@/lib/errors";
+import type { AdminQueryDiagnostic } from "@/modules/orders/admin-query-diagnostics";
 import { db, queryD1Raw } from "@/lib/db";
 import { isD1Runtime } from "@/lib/runtime";
 import { businessDayStart } from "@/modules/orders/business-day";
@@ -157,14 +158,15 @@ export const orderRepository = {
       take: 100,
     });
   },
-  async operationalCounts() {
+  async operationalCounts(diagnostic?: AdminQueryDiagnostic) {
     if (isD1Runtime) {
-      const [row] = await operationalCountsD1();
-      return {
+      const [row] = await (diagnostic ? diagnostic.run("d1.operational_count_query", operationalCountsD1) : operationalCountsD1());
+      const transform = () => ({
         start: asCount(row?.start ?? 0), preparing: asCount(row?.preparing ?? 0), ready: asCount(row?.ready ?? 0),
         verification: asCount(row?.verification ?? 0), unconfirmed: asCount(row?.unconfirmed ?? 0),
         incidents: asCount(row?.incidents ?? 0), attention: asCount(row?.attention ?? 0),
-      };
+      });
+      return diagnostic ? diagnostic.run("result.operational_count_transform", transform) : transform();
     }
     const [start, preparing, ready, verification, unconfirmed, incidents] = await Promise.all([
       db.order.count({ where: { status: "CONFIRMED", verificationStatus: "VERIFIED", paymentStatus: { in: ["NOT_REQUIRED", "CONFIRMED"] } } }),
@@ -176,35 +178,38 @@ export const orderRepository = {
     ]);
     return { start, preparing, ready, verification, unconfirmed, incidents, attention: await db.order.count({ where: { OR: [{ verificationStatus: "PENDING" }, { status: "RECEIVED" }, { refundStatus: "REQUIRED" }, { paymentStatus: "REJECTED" }] } }) };
   },
-  async listOperational(queue: AdminQueue, cursor: AdminOrderCursor | null, take = 30) {
+  async listOperational(queue: AdminQueue, cursor: AdminOrderCursor | null, take = 30, diagnostic?: AdminQueryDiagnostic) {
     const state = queue === "start" ? { status: "CONFIRMED" as const } : queue === "preparing" ? { status: "IN_PREPARATION" as const } : { status: "READY" as const };
     const where = { ...state, verificationStatus: "VERIFIED" as const, paymentStatus: { in: ["NOT_REQUIRED", "CONFIRMED"] as const }, ...cursorWhere(cursor, "asc") };
-    const rows = await db.order.findMany({ where, select: operationalOrderSelect, orderBy: [{ createdAt: "asc" }, { id: "asc" }], take: take + 1 });
+    const query = () => db.order.findMany({ where, select: operationalOrderSelect, orderBy: [{ createdAt: "asc" }, { id: "asc" }], take: take + 1 });
+    const rows = await (diagnostic ? diagnostic.run("d1.operational_page_query", query) : query());
     const hasMore = rows.length > take;
     const orders = hasMore ? rows.slice(0, take) : rows;
     const last = orders.at(-1);
     return { orders, hasMore, nextCursor: hasMore && last ? { createdAt: last.createdAt.toISOString(), id: last.id } : null };
   },
-  async listAttention(kind: AttentionKind, bucket: AttentionBucket, cursor: AdminOrderCursor | null, take = 30, now = new Date()) {
+  async listAttention(kind: AttentionKind, bucket: AttentionBucket, cursor: AdminOrderCursor | null, take = 30, now = new Date(), diagnostic?: AdminQueryDiagnostic) {
     const start = businessDayStart(now);
     const nextStart = new Date(start.getTime() + 86_400_000);
     const bucketWhere = bucket === "today" ? { createdAt: { gte: start, lt: nextStart } } : { createdAt: { lt: start } };
-    const rows = await db.order.findMany({ where: { ...attentionWhere(kind), ...bucketWhere, ...cursorWhere(cursor, "desc") }, select: attentionOrderSelect, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: take + 1 });
+    const query = () => db.order.findMany({ where: { ...attentionWhere(kind), ...bucketWhere, ...cursorWhere(cursor, "desc") }, select: attentionOrderSelect, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: take + 1 });
+    const rows = await (diagnostic ? diagnostic.run("d1.attention_page_query", query) : query());
     const hasMore = rows.length > take;
     const orders = hasMore ? rows.slice(0, take) : rows;
     const last = orders.at(-1);
     return { orders, hasMore, nextCursor: hasMore && last ? { createdAt: last.createdAt.toISOString(), id: last.id } : null };
   },
-  async attentionCounts(kind: AttentionKind = "all", now = new Date()) {
+  async attentionCounts(kind: AttentionKind = "all", now = new Date(), diagnostic?: AdminQueryDiagnostic) {
     const start = businessDayStart(now);
     const nextStart = new Date(start.getTime() + 86_400_000);
     if (isD1Runtime) {
-      const [row] = await attentionCountsD1(kind, start, nextStart);
-      return {
+      const [row] = await (diagnostic ? diagnostic.run("d1.attention_count_query", () => attentionCountsD1(kind, start, nextStart)) : attentionCountsD1(kind, start, nextStart));
+      const transform = () => ({
         all: asCount(row?.all ?? 0), verification: asCount(row?.verification ?? 0),
         unconfirmed: asCount(row?.unconfirmed ?? 0), incidents: asCount(row?.incidents ?? 0),
         buckets: { today: asCount(row?.today ?? 0), previous: asCount(row?.previous ?? 0) },
-      };
+      });
+      return diagnostic ? diagnostic.run("result.attention_count_transform", transform) : transform();
     }
     const [all, verification, unconfirmed, incidents] = await Promise.all([
       db.order.count({ where: { OR: [{ verificationStatus: "PENDING" }, { status: "RECEIVED" }, { refundStatus: "REQUIRED" }, { paymentStatus: "REJECTED" }] } }),
