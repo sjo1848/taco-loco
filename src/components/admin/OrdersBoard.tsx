@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronRight, ShieldAlert } from "lucide-react";
 import { useAdminLiveEvents } from "@/components/admin/AdminShell";
+import { adminCountPresentation } from "./admin-count-presentation";
 
 type OrderStatus = "RECEIVED" | "CONFIRMED" | "IN_PREPARATION" | "READY" | "DELIVERED" | "CANCELLED";
 type Queue = "start" | "preparing" | "ready";
@@ -37,13 +38,13 @@ export function OrdersBoard({ initialOrders, initialCursor, initialCounts, initi
  useEffect(()=>{if(initialOrders.length===0)void load(queueRef.current)},[initialOrders.length,load]);
  useEffect(()=>{const timer=window.setInterval(()=>setClock(Date.now()),30_000);return()=>window.clearInterval(timer)},[]);
  const activeQueue=queues.find(item=>item.id===queue)!;
- const countsAvailable=countsLoaded&&!error&&!sessionExpired;
+ const {available:countsAvailable,attentionLabel,attentionCount:attentionCountText}=adminCountPresentation(countsLoaded,Boolean(error),sessionExpired,counts.attention);
  const attentionCount=counts.attention;
  const label=connection==="live"?"En vivo":connection==="reconnecting"?"Reconectando":connection==="offline"?"Sin conexión":connection==="expired"?"Sesión vencida":"Conectando";
  const attentionHref="/admin/orders/attention";
  return <main className="admin-page admin-page--orders">
   <section className="operation-heading" aria-label="Estado de pedidos"><h1 className="visually-hidden">Pedidos</h1><div className="operation-heading__right"><span className={`connection connection--${connection}`} role="status"><i aria-hidden="true"/>{label}</span><Link href="/admin/orders/new" className="admin-button admin-button--primary">+ Nuevo pedido</Link></div></section>
-  <Link href={attentionHref} className={`attention-card${countsAvailable&&attentionCount===0?" attention-card--clear":""}`}><span className="attention-card__icon"><ShieldAlert size={22}/></span><span className="attention-card__copy"><strong>{countsAvailable?(attentionCount===0?"Todo al día":"Necesitan atención"):(error?"No pudimos comprobar los pedidos":"Consultando pedidos")}</strong><small>Verificaciones y confirmaciones</small></span><b>{countsAvailable?attentionCount:"—"}</b><ChevronRight size={21}/></Link>
+  <Link href={attentionHref} className={`attention-card${countsAvailable&&attentionCount===0?" attention-card--clear":""}`}><span className="attention-card__icon"><ShieldAlert size={22}/></span><span className="attention-card__copy"><strong>{attentionLabel}</strong><small>Verificaciones y confirmaciones</small></span><b>{attentionCountText}</b><ChevronRight size={21}/></Link>
   <section className="kitchen-section" aria-label="Colas de cocina"><div className="section-title"><div><p className="eyebrow">Producción</p><h2>Cocina</h2></div></div><div className="queue-tabs" role="group" aria-label="Colas de cocina">{queues.map(item=><button type="button" aria-pressed={queue===item.id} key={item.id} onClick={()=>selectQueue(item.id)} className={queue===item.id?"is-active":""}><span>{item.label}</span><b>{countsAvailable?counts[item.count]:"—"}</b></button>)}</div>
    <div className="queue-title"><h3>{activeQueue.label}</h3><span>{countsAvailable?`${counts[activeQueue.count]} pedido${counts[activeQueue.count]===1?"":"s"}`:"Sin conteo actualizado"}</span></div>
    {connection==="expired"&&<div className="admin-notice admin-notice--warning" role="alert">La sesión venció. <Link href="/admin/login?returnTo=%2Fadmin%2Forders">Volver a ingresar</Link></div>}
