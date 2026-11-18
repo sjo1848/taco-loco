@@ -21,6 +21,18 @@ export function createAdminQueryDiagnostic(request: Request, route: "operations"
   request.signal.addEventListener("abort", () => emit("request.signal", "aborted", performance.now() - startedAt), { once: true });
   return {
     id,
+    runSync<T>(stage: string, operation: () => T): T {
+      const start = performance.now();
+      emit(stage, "started");
+      try {
+        const value = operation();
+        emit(stage, "completed", performance.now() - start);
+        return value;
+      } catch (error) {
+        emit(stage, "failed", performance.now() - start);
+        throw error;
+      }
+    },
     async run<T>(stage: string, operation: () => T | Promise<T>): Promise<T> {
       const start = performance.now();
       emit(stage, "started");

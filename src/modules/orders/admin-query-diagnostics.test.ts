@@ -46,4 +46,17 @@ describe("admin query diagnostics", () => {
     const error = new Error("UNAUTHORIZED");
     await expect(diagnostic.run("auth.require_admin", () => { throw error; })).rejects.toBe(error);
   });
+
+  it("does not execute a lazy PrismaPromise during construction", async () => {
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    const diagnostic = createAdminQueryDiagnostic(new Request("https://taco-loco-staging-20260913.sjo1848.workers.dev/api/auth/session"), "session", true)!;
+    let executions = 0;
+    const lazyQuery = { then(resolve: (value: string) => void) { executions++; resolve("synthetic-result"); } } as unknown as Promise<string>;
+    const query = diagnostic.runSync("d1.session_find_unique_construct", () => lazyQuery);
+    expect(executions).toBe(0);
+    expect(await diagnostic.run("d1.prisma_promise_await", () => query)).toBe("synthetic-result");
+    expect(executions).toBe(1);
+    const output = log.mock.calls.map(([entry]) => String(entry)).join("\n");
+    expect(output.indexOf('"stage":"d1.session_find_unique_construct","result":"completed"')).toBeLessThan(output.indexOf('"stage":"d1.prisma_promise_await","result":"started"'));
+  });
 });
