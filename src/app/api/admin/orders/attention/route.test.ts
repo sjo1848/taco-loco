@@ -44,4 +44,23 @@ describe("GET admin attention inbox", () => {
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ code: "INTERNAL_ERROR" });
   });
+
+  it("correlates a failed staging count stage without exposing repository errors", async () => {
+    vi.stubEnv("ADMIN_QUERY_DIAGNOSTICS", "true");
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    mocks.counts.mockRejectedValueOnce(new Error("private query detail"));
+    try {
+      const response = await GET(new Request("https://taco-loco-staging-20260913.sjo1848.workers.dev/api/admin/orders/attention?countsOnly=1"));
+      expect(response.status).toBe(500);
+      expect(response.headers.get("x-tl-admin-query-id")).toBeTruthy();
+      expect(await response.json()).toEqual({ code: "INTERNAL_ERROR" });
+      const output = log.mock.calls.map(([line]) => String(line)).join("\n");
+      expect(output).toContain("repository.attention_counts");
+      expect(output).toContain("failed");
+      expect(output).not.toContain("private query detail");
+    } finally {
+      vi.unstubAllEnvs();
+      log.mockRestore();
+    }
+  });
 });

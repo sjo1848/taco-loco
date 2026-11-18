@@ -1,11 +1,15 @@
 import { cookies } from "next/headers";
 import { randomBytes } from "node:crypto";
-import { db } from "@/lib/db";
+import { db, loadWorkerDbForDiagnostic } from "@/lib/db";
 import { hashSessionToken } from "@/modules/auth/crypto";
 import type { AuthLoginDiagnostic } from "@/modules/auth/login-diagnostics";
 
 export const SESSION_COOKIE = "taco_loco_session";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+type StageDiagnostic = {
+  run<T>(stage: string, operation: () => T | Promise<T>): Promise<T>;
+  runSync<T>(stage: string, operation: () => T): T;
+};
 
 export async function createSession(userId: string, diagnostic?: AuthLoginDiagnostic) {
   const token = randomBytes(32).toString("base64url");
@@ -21,12 +25,28 @@ export async function createSession(userId: string, diagnostic?: AuthLoginDiagno
   return expiresAt;
 }
 
-export async function getCurrentAdmin() {
-  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+export async function getCurrentAdmin(diagnostic?: StageDiagnostic) {
+  const cookieStore = diagnostic ? await diagnostic.run("auth.cookies_context", cookies) : await cookies();
+  const readCookie = () => cookieStore.get(SESSION_COOKIE)?.value;
+  const token = diagnostic ? await diagnostic.run("auth.cookie_read", readCookie) : readCookie();
   if (!token) return null;
-  const session = await db.session.findUnique({ where: { tokenHash: hashSessionToken(token) }, include: { user: true } });
-  if (!session || session.expiresAt <= new Date() || !session.user.active) return null;
-  return session.user;
+  const args = { where: { tokenHash: hashSessionToken(token) }, include: { user: true } } as const;
+  let session;
+  if (diagnostic && "WebSocketPair" in globalThis) {
+    // PrismaPromise construction is lazy; execution begins when it is awaited.
+    // The adapter/Prisma constructors run during the dynamic module import.
+    const workerDb = await loadWorkerDbForDiagnostic(diagnostic);
+    diagnostic.runSync("d1.worker_client_available", () => Boolean(workerDb.session));
+    const query = diagnostic.runSync("d1.session_find_unique_construct", () => workerDb.session.findUnique(args));
+    session = await diagnostic.run("d1.prisma_promise_await", () => query);
+  } else {
+    const lookup = () => db.session.findUnique(args);
+    session = diagnostic ? await diagnostic.run("d1.admin_session_lookup", lookup) : await lookup();
+  }
+  const validate = () => Boolean(session && session.expiresAt > new Date() && session.user.active);
+  const valid = diagnostic ? await diagnostic.run("auth.session_validation", validate) : validate();
+  if (!valid) return null;
+  return session!.user;
 }
 
 /** A hash is retained by SSE so a revoked session can be checked without keeping its cookie token. */
@@ -45,8 +65,8 @@ export async function isAdminSessionHashActive(tokenHash: string) {
   return Boolean(session && session.expiresAt > new Date() && session.user.active);
 }
 
-export async function requireAdmin() {
-  const user = await getCurrentAdmin();
+export async function requireAdmin(diagnostic?: StageDiagnostic) {
+  const user = await getCurrentAdmin(diagnostic);
   if (!user) throw new Error("UNAUTHORIZED");
   return user;
 }

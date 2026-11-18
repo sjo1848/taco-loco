@@ -3,9 +3,17 @@ import { PrismaClient } from "@prisma/client";
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 const nodeDb = globalForPrisma.prisma ?? new PrismaClient();
+type WorkerDb = typeof import("./db.worker")["db"];
+let workerClientPromise: Promise<WorkerDb> | undefined;
+let workerClientState: "pending" | "resolved" | "failed" | "not_started" = "not_started";
 
 function lazyWorkerDb() {
-  const clientPromise = import("./db.worker").then(({ db: workerDb }) => workerDb);
+  workerClientState = "pending";
+  const clientPromise = import("./db.worker").then(
+    ({ db: workerDb }) => { workerClientState = "resolved"; return workerDb; },
+    (error) => { workerClientState = "failed"; throw error; },
+  );
+  workerClientPromise = clientPromise;
   const proxy = (path: string[]): unknown => new Proxy(() => undefined, {
     get(_target, property: string | symbol) {
       if (property === "then") return undefined;
@@ -16,6 +24,13 @@ function lazyWorkerDb() {
     },
   });
   return proxy([]) as PrismaClient;
+}
+
+/** Observe the exact import promise used by the existing lazy worker proxy.
+ * It starts when db.ts is evaluated; module evaluation constructs the adapter/client.
+ */
+export async function loadWorkerDbForDiagnostic(diagnostic: { run<T>(stage: string, operation: () => T | Promise<T>): Promise<T> }) {
+  return diagnostic.run(`d1.worker_module_import_wait.${workerClientState}`, () => workerClientPromise ?? import("./db.worker").then(({ db: workerDb }) => workerDb));
 }
 
 export const db = "WebSocketPair" in globalThis ? lazyWorkerDb() : nodeDb;
