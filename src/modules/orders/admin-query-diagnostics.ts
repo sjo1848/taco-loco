@@ -6,11 +6,13 @@ export function createAdminQueryDiagnostic(request: Request, route: "operations"
   const id = crypto.randomUUID();
   const incomingRay = request.headers.get("cf-ray");
   const ray = incomingRay && /^[0-9a-f]{16,32}(?:-[A-Z]{3})?$/i.test(incomingRay) ? incomingRay : "unavailable";
+  const configuredVersion = process.env.TL_APP_VERSION;
+  const version = configuredVersion && /^[0-9a-f]{7,40}$/i.test(configuredVersion) ? configuredVersion : "unknown";
   const startedAt = performance.now();
   const emit = (stage: string, result: string, durationMs?: number, status?: number) => {
     console.info(JSON.stringify({
       event: "admin_query_diagnostic", id, ray, route, stage, result,
-      version: process.env.TL_APP_VERSION ?? "unknown",
+      version,
       ...(durationMs === undefined ? {} : { durationMs: Number(durationMs.toFixed(2)) }),
       ...(status === undefined ? {} : { status }),
     }));

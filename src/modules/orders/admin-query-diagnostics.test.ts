@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createAdminQueryDiagnostic } from "./admin-query-diagnostics";
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
 describe("admin query diagnostics", () => {
   it("is disabled outside the exact staging origin or without the flag", () => {
@@ -30,6 +30,14 @@ describe("admin query diagnostics", () => {
     createAdminQueryDiagnostic(new Request("https://taco-loco-staging-20260913.sjo1848.workers.dev/api/admin/orders/attention", { headers: { "cf-ray": "email=private@example.test" } }), "attention", true);
     expect(String(log.mock.calls[0]?.[0])).toContain('"ray":"unavailable"');
     expect(String(log.mock.calls[0]?.[0])).not.toContain("private@example.test");
+  });
+
+  it("does not log an untrusted version variable", () => {
+    vi.stubEnv("TL_APP_VERSION", "private-value");
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    createAdminQueryDiagnostic(new Request("https://taco-loco-staging-20260913.sjo1848.workers.dev/api/auth/session"), "session", true);
+    expect(String(log.mock.calls[0]?.[0])).toContain('"version":"unknown"');
+    expect(String(log.mock.calls[0]?.[0])).not.toContain("private-value");
   });
 
   it("preserves the original error for authorization and query error mapping", async () => {
