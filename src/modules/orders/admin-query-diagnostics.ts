@@ -1,7 +1,7 @@
 /** Temporary staging-only, non-sensitive diagnostics for admin read failures. */
 const STAGING_ORIGIN = "https://taco-loco-staging-20260913.sjo1848.workers.dev";
 
-export function createAdminQueryDiagnostic(request: Request, route: "operations" | "attention", enabled: boolean) {
+export function createAdminQueryDiagnostic(request: Request, route: "operations" | "attention" | "session", enabled: boolean) {
   if (!enabled || new URL(request.url).origin !== STAGING_ORIGIN) return undefined;
   const id = crypto.randomUUID();
   const incomingRay = request.headers.get("cf-ray");

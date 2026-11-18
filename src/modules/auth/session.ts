@@ -24,12 +24,15 @@ export async function createSession(userId: string, diagnostic?: AuthLoginDiagno
 
 export async function getCurrentAdmin(diagnostic?: StageDiagnostic) {
   const cookieStore = diagnostic ? await diagnostic.run("auth.cookies_context", cookies) : await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  const readCookie = () => cookieStore.get(SESSION_COOKIE)?.value;
+  const token = diagnostic ? await diagnostic.run("auth.cookie_read", readCookie) : readCookie();
   if (!token) return null;
   const lookup = () => db.session.findUnique({ where: { tokenHash: hashSessionToken(token) }, include: { user: true } });
   const session = diagnostic ? await diagnostic.run("d1.admin_session_lookup", lookup) : await lookup();
-  if (!session || session.expiresAt <= new Date() || !session.user.active) return null;
-  return session.user;
+  const validate = () => Boolean(session && session.expiresAt > new Date() && session.user.active);
+  const valid = diagnostic ? await diagnostic.run("auth.session_validation", validate) : validate();
+  if (!valid) return null;
+  return session!.user;
 }
 
 /** A hash is retained by SSE so a revoked session can be checked without keeping its cookie token. */
