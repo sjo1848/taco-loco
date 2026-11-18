@@ -3,6 +3,7 @@ import { PrismaD1 } from "@prisma/adapter-d1";
 import { PrismaClient } from "@/generated/d1/wasm";
 import compilerRuntime from "@/generated/d1/query_compiler_bg.js";
 import compilerModule from "@/generated/d1/query_compiler_bg.wasm?module";
+import { instrumentD1Adapter } from "./db-diagnostic-driver";
 
 const logInit = (stage: string) => {
   if (process.env.ADMIN_QUERY_DIAGNOSTICS === "true") {
@@ -13,6 +14,7 @@ const logInit = (stage: string) => {
 logInit("d1.adapter_construct.started");
 const adapter = new PrismaD1(env.DB);
 logInit("d1.adapter_construct.completed");
+if (process.env.ADMIN_QUERY_DIAGNOSTICS === "true") instrumentD1Adapter(adapter, logInit);
 
 logInit("d1.prisma_client_construct.started");
 export const db = new PrismaClient({
