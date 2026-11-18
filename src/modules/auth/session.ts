@@ -6,6 +6,7 @@ import type { AuthLoginDiagnostic } from "@/modules/auth/login-diagnostics";
 
 export const SESSION_COOKIE = "taco_loco_session";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+type StageDiagnostic = { run<T>(stage: string, operation: () => T | Promise<T>): Promise<T> };
 
 export async function createSession(userId: string, diagnostic?: AuthLoginDiagnostic) {
   const token = randomBytes(32).toString("base64url");
@@ -21,10 +22,12 @@ export async function createSession(userId: string, diagnostic?: AuthLoginDiagno
   return expiresAt;
 }
 
-export async function getCurrentAdmin() {
-  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+export async function getCurrentAdmin(diagnostic?: StageDiagnostic) {
+  const cookieStore = diagnostic ? await diagnostic.run("auth.cookies_context", cookies) : await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const session = await db.session.findUnique({ where: { tokenHash: hashSessionToken(token) }, include: { user: true } });
+  const lookup = () => db.session.findUnique({ where: { tokenHash: hashSessionToken(token) }, include: { user: true } });
+  const session = diagnostic ? await diagnostic.run("d1.admin_session_lookup", lookup) : await lookup();
   if (!session || session.expiresAt <= new Date() || !session.user.active) return null;
   return session.user;
 }
@@ -45,8 +48,8 @@ export async function isAdminSessionHashActive(tokenHash: string) {
   return Boolean(session && session.expiresAt > new Date() && session.user.active);
 }
 
-export async function requireAdmin() {
-  const user = await getCurrentAdmin();
+export async function requireAdmin(diagnostic?: StageDiagnostic) {
+  const user = await getCurrentAdmin(diagnostic);
   if (!user) throw new Error("UNAUTHORIZED");
   return user;
 }

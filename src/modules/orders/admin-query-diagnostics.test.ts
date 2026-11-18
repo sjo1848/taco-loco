@@ -13,16 +13,23 @@ describe("admin query diagnostics", () => {
 
   it("records stage boundaries and response status without logging query values", async () => {
     const log = vi.spyOn(console, "info").mockImplementation(() => {});
-    const diagnostic = createAdminQueryDiagnostic(new Request("https://taco-loco-staging-20260913.sjo1848.workers.dev/api/admin/orders/attention", { headers: { "cf-ray": "synthetic-ray" } }), "attention", true)!;
+    const diagnostic = createAdminQueryDiagnostic(new Request("https://taco-loco-staging-20260913.sjo1848.workers.dev/api/admin/orders/attention", { headers: { "cf-ray": "1234567890abcdef-EZE" } }), "attention", true)!;
     const privateValue = { email: "private@example.test", token: "private-token" };
     expect(await diagnostic.run("d1.attention_page_query", async () => privateValue)).toBe(privateValue);
     diagnostic.finish(200);
     const output = log.mock.calls.map(([entry]) => String(entry)).join("\n");
-    expect(output).toContain("synthetic-ray");
+    expect(output).toContain("1234567890abcdef-EZE");
     expect(output).toContain("d1.attention_page_query");
     expect(output).toContain('"status":200');
     expect(output).not.toContain(privateValue.email);
     expect(output).not.toContain(privateValue.token);
+  });
+
+  it("drops an untrusted ray header that could contain private data", () => {
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    createAdminQueryDiagnostic(new Request("https://taco-loco-staging-20260913.sjo1848.workers.dev/api/admin/orders/attention", { headers: { "cf-ray": "email=private@example.test" } }), "attention", true);
+    expect(String(log.mock.calls[0]?.[0])).toContain('"ray":"unavailable"');
+    expect(String(log.mock.calls[0]?.[0])).not.toContain("private@example.test");
   });
 
   it("preserves the original error for authorization and query error mapping", async () => {

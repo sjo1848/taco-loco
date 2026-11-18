@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   const run = <T>(stage: string, operation: () => T | Promise<T>) => diagnostic ? diagnostic.run(stage, operation) : operation();
   const respond = (response: NextResponse) => { if (diagnostic) { response.headers.set("x-tl-admin-query-id", diagnostic.id); diagnostic.finish(response.status); } return response; };
   try {
-    await run("auth.require_admin", requireAdmin);
+    await run("auth.require_admin", () => diagnostic ? requireAdmin(diagnostic) : requireAdmin());
     const params = await run("request.params", () => new URL(request.url).searchParams);
     const kind = params.get("kind") ?? "all";
     if (!(["all", "verification", "unconfirmed", "incidents"] as const).includes(kind as "all" | "verification" | "unconfirmed" | "incidents")) return respond(NextResponse.json({ code: "INVALID_FILTER" }, { status: 400 }));
