@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adminCountPresentation } from "./admin-count-presentation";
+import { adminCountPresentation, createCountRequestGate } from "./admin-count-presentation";
 
 describe("admin counts presentation", () => {
   it("never treats an unknown or failed count as zero, then recovers after retry", () => {
@@ -20,5 +20,17 @@ describe("admin counts presentation", () => {
   it("hides a stale count after a later failure or expired session", () => {
     expect(adminCountPresentation(true, true, false, 52).attentionCount).toBe("—");
     expect(adminCountPresentation(true, false, true, 52).attentionCount).toBe("—");
+    expect(adminCountPresentation(true, false, true, 52).attentionLabel).toBe("Sesión vencida");
+  });
+
+  it("ignores a late count response or failure after a newer request starts", () => {
+    const gate = createCountRequestGate();
+    const oldRequest = gate.next();
+    const retry = gate.next();
+    expect(gate.isCurrent(oldRequest)).toBe(false);
+    expect(gate.isCurrent(retry)).toBe(true);
+    const reconcile = gate.next();
+    expect(gate.isCurrent(retry)).toBe(false);
+    expect(gate.isCurrent(reconcile)).toBe(true);
   });
 });
