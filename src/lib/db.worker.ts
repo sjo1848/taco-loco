@@ -18,3 +18,7 @@ export const db = new PrismaClient({
     }),
   } as never,
 });
+
+export async function queryD1Raw<T>(strings: TemplateStringsArray, ...values: unknown[]): Promise<T> {
+  return db.$queryRaw<T>(strings, ...values as never[]);
+}
