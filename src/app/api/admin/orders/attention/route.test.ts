@@ -44,4 +44,13 @@ describe("GET admin attention inbox", () => {
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ code: "INTERNAL_ERROR" });
   });
+
+  it("returns current attention counts after a failed read", async () => {
+    mocks.counts.mockRejectedValueOnce(new Error("database unavailable")).mockResolvedValueOnce({ all: 4, verification: 4, unconfirmed: 0, incidents: 0, buckets: { today: 1, previous: 3 } });
+    const url = "https://example.test/api/admin/orders/attention?countsOnly=1";
+    expect((await GET(new Request(url))).status).toBe(500);
+    const response = await GET(new Request(url));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ counts: { all: 4, buckets: { today: 1, previous: 3 } } });
+  });
 });
