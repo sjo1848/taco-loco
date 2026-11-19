@@ -24,7 +24,10 @@ export async function createSession(userId: string, diagnostic?: AuthLoginDiagno
 export async function getCurrentAdmin() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const session = await db.session.findUnique({ where: { tokenHash: hashSessionToken(token) }, include: { user: true } });
+  const tokenHash = hashSessionToken(token);
+  const session = "WebSocketPair" in globalThis
+    ? await import("./admin-session-d1.worker").then(({ findAdminSessionWorker }) => findAdminSessionWorker(tokenHash))
+    : await db.session.findUnique({ where: { tokenHash }, include: { user: true } });
   if (!session || session.expiresAt <= new Date() || !session.user.active) return null;
   return session.user;
 }
@@ -38,6 +41,10 @@ export async function getActiveAdminSessionHash() {
 }
 
 export async function isAdminSessionHashActive(tokenHash: string) {
+  if ("WebSocketPair" in globalThis) {
+    const { isAdminSessionHashActiveWorker } = await import("./admin-session-d1.worker");
+    return isAdminSessionHashActiveWorker(tokenHash);
+  }
   const session = await db.session.findUnique({
     where: { tokenHash },
     select: { expiresAt: true, user: { select: { active: true } } },
