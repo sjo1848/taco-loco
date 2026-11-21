@@ -1,0 +1,182 @@
+{
+  "synthetic_orders": 1000,
+  "iterations": 500,
+  "individual_queries_per_invocation": 7,
+  "aggregate_queries_per_invocation": 1,
+  "exact_result_parity": true,
+  "individual": {
+    "wall": {
+      "p50_ms": 1.1335,
+      "p95_ms": 1.8894,
+      "mean_ms": 1.2408
+    },
+    "process_cpu": {
+      "p50_ms": 1.1358,
+      "p95_ms": 1.8936,
+      "mean_ms": 1.2417
+    }
+  },
+  "aggregate": {
+    "wall": {
+      "p50_ms": 0.7934,
+      "p95_ms": 1.2733,
+      "mean_ms": 0.87
+    },
+    "process_cpu": {
+      "p50_ms": 0.7958,
+      "p95_ms": 1.2765,
+      "mean_ms": 0.8712
+    }
+  },
+  "query_plans": {
+    "start": [
+      [
+        2,
+        0,
+        0,
+        "CO-ROUTINE sub"
+      ],
+      [
+        11,
+        2,
+        0,
+        "SEARCH main.Order USING INDEX Order_verificationStatus_createdAt_idx (verificationStatus=?)"
+      ],
+      [
+        30,
+        0,
+        0,
+        "SCAN sub"
+      ]
+    ],
+    "preparing": [
+      [
+        2,
+        0,
+        0,
+        "CO-ROUTINE sub"
+      ],
+      [
+        11,
+        2,
+        0,
+        "SEARCH main.Order USING INDEX Order_verificationStatus_createdAt_idx (verificationStatus=?)"
+      ],
+      [
+        30,
+        0,
+        0,
+        "SCAN sub"
+      ]
+    ],
+    "ready": [
+      [
+        2,
+        0,
+        0,
+        "CO-ROUTINE sub"
+      ],
+      [
+        11,
+        2,
+        0,
+        "SEARCH main.Order USING INDEX Order_verificationStatus_createdAt_idx (verificationStatus=?)"
+      ],
+      [
+        30,
+        0,
+        0,
+        "SCAN sub"
+      ]
+    ],
+    "verification": [
+      [
+        2,
+        0,
+        0,
+        "CO-ROUTINE sub"
+      ],
+      [
+        11,
+        2,
+        0,
+        "SEARCH main.Order USING INDEX Order_verificationStatus_createdAt_idx (verificationStatus=?)"
+      ],
+      [
+        25,
+        0,
+        0,
+        "SCAN sub"
+      ]
+    ],
+    "unconfirmed": [
+      [
+        2,
+        0,
+        0,
+        "CO-ROUTINE sub"
+      ],
+      [
+        11,
+        2,
+        0,
+        "SEARCH main.Order USING INDEX Order_status_createdAt_idx (status=?)"
+      ],
+      [
+        25,
+        0,
+        0,
+        "SCAN sub"
+      ]
+    ],
+    "incidents": [
+      [
+        2,
+        0,
+        0,
+        "CO-ROUTINE sub"
+      ],
+      [
+        10,
+        2,
+        0,
+        "SCAN main.Order"
+      ],
+      [
+        23,
+        0,
+        0,
+        "SCAN sub"
+      ]
+    ],
+    "attention": [
+      [
+        2,
+        0,
+        0,
+        "CO-ROUTINE sub"
+      ],
+      [
+        10,
+        2,
+        0,
+        "SCAN main.Order"
+      ],
+      [
+        27,
+        0,
+        0,
+        "SCAN sub"
+      ]
+    ]
+  },
+  "aggregate_plan": [
+    [
+      3,
+      0,
+      0,
+      "SCAN Order"
+    ]
+  ],
+  "metric_scope": "SQLite/Miniflare local process; not Cloudflare Worker CPU or D1 Analytics rows_read"
+}

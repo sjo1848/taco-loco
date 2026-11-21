@@ -6,13 +6,14 @@ const mocks = vi.hoisted(() => ({
   eventsAfter: vi.fn(async (): Promise<Array<{ sequence: bigint; orderId: string }>> => []),
   latestEventSequence: vi.fn(async () => BigInt(80)),
   findById: vi.fn(),
+  findForLiveEvent: vi.fn(),
 }));
 
 vi.mock("@/modules/auth/session", () => ({
   getActiveAdminSessionHash: mocks.getActiveAdminSessionHash,
   isAdminSessionHashActive: mocks.isAdminSessionHashActive,
 }));
-vi.mock("@/modules/orders/repository", () => ({ orderRepository: { eventsAfter: mocks.eventsAfter, findById: mocks.findById, latestEventSequence: mocks.latestEventSequence } }));
+vi.mock("@/modules/orders/repository", () => ({ orderRepository: { eventsAfter: mocks.eventsAfter, findById: mocks.findById, findForLiveEvent: mocks.findForLiveEvent, latestEventSequence: mocks.latestEventSequence } }));
 
 import { GET } from "./route";
 
@@ -22,6 +23,7 @@ beforeEach(() => {
   mocks.eventsAfter.mockResolvedValue([]);
   mocks.latestEventSequence.mockResolvedValue(BigInt(80));
   mocks.findById.mockResolvedValue(null);
+  mocks.findForLiveEvent.mockResolvedValue(null);
 });
 afterEach(() => { vi.useRealTimers(); vi.resetAllMocks(); });
 
@@ -89,7 +91,7 @@ describe("admin order stream", () => {
     // The endpoint captures 80 before the pump starts. Sequence 81 is the
     // deterministic write in the snapshot/EventSource connection window.
     mocks.eventsAfter.mockResolvedValueOnce([{ sequence: BigInt(81), orderId: "written-in-gap" }]).mockResolvedValue([]);
-    mocks.findById.mockImplementation(async (id: string) => ({ id, orderNumber: 101, createdAt: new Date("2026-11-14T12:00:00Z"), lines: [] }));
+    mocks.findForLiveEvent.mockImplementation(async (id: string) => ({ id, orderNumber: 101, status:"RECEIVED", fulfillment:"PICKUP", verificationStatus:"VERIFIED", paymentStatus:"NOT_REQUIRED", refundStatus:"NOT_REQUIRED", source:"PUBLIC_MENU", customerName:null, customerPhone:null, totalAmount:1000, createdAt: new Date("2026-11-14T12:00:00Z"), lines: [{ id: "line-1", orderId: id, productId: null, productName: "Taco", unitPriceAmount: 1000, quantity: 1, modifiersSnapshot: null, note: null, createdAt: new Date("2026-11-14T12:00:00Z") }] }));
     const response = await GET(new Request("https://example.test/api/admin/orders/events", { signal: controller.signal }));
     const reader = response.body!.getReader();
     let contents = "";
@@ -100,6 +102,9 @@ describe("admin order stream", () => {
     }
     expect(contents).toContain("id: 80\nevent: ready\ndata: {\"cursor\":\"80\"}");
     expect(contents).toContain("id: 81\nevent: order");
+    expect(contents).toContain('"unitPriceAmount":1000');
+    expect(mocks.findForLiveEvent).toHaveBeenCalledWith("written-in-gap");
+    expect(mocks.findById).not.toHaveBeenCalled();
     expect(mocks.eventsAfter).toHaveBeenCalledWith(BigInt(80));
     controller.abort();
     await reader.cancel();
@@ -111,7 +116,7 @@ describe("admin order stream", () => {
       { sequence: BigInt(81), orderId: "first" },
       { sequence: BigInt(82), orderId: "second" },
     ]).mockResolvedValue([]);
-    mocks.findById.mockImplementation(async (id: string) => ({ id, createdAt: new Date("2026-11-14T12:00:00Z"), lines: [] }));
+    mocks.findForLiveEvent.mockImplementation(async (id: string) => ({ id, orderNumber: 101, status:"RECEIVED", fulfillment:"PICKUP", verificationStatus:"VERIFIED", paymentStatus:"NOT_REQUIRED", refundStatus:"NOT_REQUIRED", source:"PUBLIC_MENU", customerName:null, customerPhone:null, totalAmount:1000, createdAt: new Date("2026-11-14T12:00:00Z"), lines: [] }));
     const response = await GET(new Request("https://example.test/api/admin/orders/events?after=2", {
       headers: { "Last-Event-ID": "80" }, signal: controller.signal,
     }));
@@ -135,11 +140,11 @@ describe("admin order stream", () => {
     let releaseOrder!: (order: unknown) => void;
     const orderRead = new Promise((resolve) => { releaseOrder = resolve; });
     mocks.eventsAfter.mockResolvedValueOnce([{ sequence: BigInt(1), orderId: "synthetic-order" }]).mockResolvedValue([]);
-    mocks.findById.mockReturnValue(orderRead);
+    mocks.findForLiveEvent.mockReturnValue(orderRead);
     const response = await GET(new Request("https://example.test/api/admin/orders/events?after=0"));
     const reader = response.body!.getReader();
     await reader.read();
-    await vi.waitFor(() => expect(mocks.findById).toHaveBeenCalledWith("synthetic-order"));
+    await vi.waitFor(() => expect(mocks.findForLiveEvent).toHaveBeenCalledWith("synthetic-order"));
     mocks.isAdminSessionHashActive.mockResolvedValue(false);
     releaseOrder({ id: "synthetic-order", createdAt: new Date(), lines: [] });
     const chunks: string[] = [];

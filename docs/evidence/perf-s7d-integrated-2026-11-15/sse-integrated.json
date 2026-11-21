@@ -1,0 +1,32 @@
+[
+  {
+    "status": 200,
+    "receivedEvents": 40,
+    "idsCorrect": true,
+    "firstEventMs": 311.42,
+    "totalMs": 978.76,
+    "responseBytes": 24022,
+    "d1Spans": 162,
+    "d1SpanMs": 341
+  },
+  {
+    "status": 200,
+    "receivedEvents": 40,
+    "idsCorrect": true,
+    "firstEventMs": 115.19,
+    "totalMs": 688.77,
+    "responseBytes": 24022,
+    "d1Spans": 162,
+    "d1SpanMs": 315
+  },
+  {
+    "status": 200,
+    "receivedEvents": 40,
+    "idsCorrect": true,
+    "firstEventMs": 118.32,
+    "totalMs": 690.51,
+    "responseBytes": 24022,
+    "d1Spans": 162,
+    "d1SpanMs": 350
+  }
+]
