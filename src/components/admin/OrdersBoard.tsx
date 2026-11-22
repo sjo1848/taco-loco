@@ -56,7 +56,7 @@ export function OrdersBoard({ initialOrders, initialCursor, initialCounts, initi
     const transition=queues.find(item=>item.id===queue);
     const valid=order.status=== (queue==="start"?"CONFIRMED":queue==="preparing"?"IN_PREPARATION":"READY") && order.verificationStatus==="VERIFIED" && ["NOT_REQUIRED","CONFIRMED"].includes(order.paymentStatus);
     const mode=order.fulfillment==="PICKUP"?"Retiro":order.fulfillment==="DELIVERY"?"Delivery":"Consumo local";
-    return <article className="order-ticket" key={order.id}><header className="order-ticket__top"><strong>{code(order.orderNumber)}</strong><time dateTime={order.createdAt}>Espera {waitTime(order.createdAt,clock)}</time></header><div className="order-ticket__identity"><div><strong>{order.customerName||"Sin nombre"}</strong><span>{mode}</span></div><span className={`order-status order-status--${order.status.toLowerCase()}`}>{labels[order.status]}</span></div><div className="order-ticket__lines">{order.lines.map((line,index)=><div key={`${line.productName}-${index}`}><strong>{line.quantity} × {line.productName}</strong>{lineModifiers(line.modifiersSnapshot)&&<small>{lineModifiers(line.modifiersSnapshot)}</small>}{line.note&&<small>Nota: {line.note}</small>}</div>)}{order.notes&&<p><b>Observaciones:</b> {order.notes}</p>}</div><footer className="order-ticket__footer"><strong>Total <span>{money(order.totalAmount)}</span></strong><div className="order-ticket__actions">{valid&&transition&&<QuickAction order={order} label={transition.action} toStatus={transition.toStatus} onSuccess={updateTicket} onConflict={updateTicket} onExpired={()=>setSessionExpired(true)}/>}<Link className="admin-button admin-button--secondary" href={`/admin/orders/${order.id}`}>Ver detalle</Link></div></footer></article>
+    return <article className="order-ticket" key={order.id}><header className="order-ticket__top"><strong>{code(order.orderNumber)}</strong><time dateTime={order.createdAt}>Espera {waitTime(order.createdAt,clock)}</time></header><div className="order-ticket__identity"><div><strong>{order.customerName||"Sin nombre"}</strong><span>{mode}</span></div><span className={`order-status order-status--${order.status.toLowerCase()}`}>{labels[order.status]}</span></div><div className="order-ticket__lines">{order.lines.map((line,index)=><div key={`${line.productName}-${index}`}><strong>{line.quantity} × {line.productName}</strong>{lineModifiers(line.modifiersSnapshot)&&<small>{lineModifiers(line.modifiersSnapshot)}</small>}{line.note&&<small>Nota: {line.note}</small>}</div>)}{order.notes&&<p><b>Observaciones:</b> {order.notes}</p>}</div><footer className="order-ticket__footer"><strong>Total <span>{money(order.totalAmount)}</span></strong><div className="order-ticket__actions">{valid&&transition&&<QuickAction order={order} label={transition.action} toStatus={transition.toStatus} latest={() => liveOverrides.current.get(order.id)} onSuccess={updateTicket} onConflict={updateTicket} onExpired={()=>setSessionExpired(true)}/>}<Link className="admin-button admin-button--secondary" href={`/admin/orders/${order.id}`}>Ver detalle</Link></div></footer></article>
    })}</div>
    {orders.length===0&&!loading&&<div className="empty-state"><strong>{error?"No se pudo cargar esta cola":"No hay pedidos por acá"}</strong><p>{error?"Revisá la conexión e intentá nuevamente.":"Los nuevos pedidos aparecerán en esta lista."}</p>{error&&<button className="admin-button admin-button--secondary" onClick={()=>void load(queue)}>Reintentar</button>}</div>}
    {loading&&!orders.length&&<div className="admin-skeleton-list" role="status" aria-label="Actualizando pedidos"><div className="admin-skeleton-card"/><div className="admin-skeleton-card"/><div className="admin-skeleton-card"/></div>}
@@ -66,7 +66,7 @@ export function OrdersBoard({ initialOrders, initialCursor, initialCounts, initi
  </main>
 }
 
-function QuickAction({order,label,toStatus,onSuccess,onConflict,onExpired}:{order:Order;label:string;toStatus:OrderStatus;onSuccess:(order:Order)=>void;onConflict:(order:Order)=>void;onExpired:()=>void}){
+function QuickAction({order,label,toStatus,latest,onSuccess,onConflict,onExpired}:{order:Order;label:string;toStatus:OrderStatus;latest:()=>Order|undefined;onSuccess:(order:Order)=>void;onConflict:(order:Order)=>void;onExpired:()=>void}){
  const [pending,setPending]=useState(false),[message,setMessage]=useState("");
  useEffect(()=>{if(!message)return;const timer=setTimeout(()=>setMessage(""),4000);return()=>clearTimeout(timer)},[message]);
  const [needsRead, setNeedsRead] = useState(false);
@@ -75,6 +75,7 @@ function QuickAction({order,label,toStatus,onSuccess,onConflict,onExpired}:{orde
   if(pending)return;
   setPending(true);
   setMessage("");
+  const previous = latest();
   try {
    const result = needsRead ? await readPersistedOrder(path) : await sendOrderMutation(path,{toStatus});
    if(result.kind==="expired"||(result.kind==="response"&&result.response.status===401)){onExpired();return}
@@ -83,8 +84,21 @@ function QuickAction({order,label,toStatus,onSuccess,onConflict,onExpired}:{orde
     setMessage("No se pudo verificar el estado. Consultalo antes de volver a intentar.");
     return;
    }
-   setNeedsRead(false);
+   if(result.kind==="persisted"||result.kind==="success"){
+    const live = latest();
+    if(live && live!==previous){
+     setNeedsRead(live.status===order.status);
+     setMessage("El tablero recibió una actualización durante la consulta.");
+     return;
+    }
+   }
    if(result.kind==="persisted"){
+    if(result.order.status===order.status){
+     setNeedsRead(true);
+     setMessage("El cambio todavía no se confirmó. Consultá el estado.");
+     return;
+    }
+    setNeedsRead(false);
     onConflict(result.order as Order);
     setMessage(result.order.status===toStatus?"Estado confirmado en el servidor.":"Estado actualizado desde el servidor.");
     return;
