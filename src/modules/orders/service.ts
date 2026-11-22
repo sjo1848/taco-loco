@@ -84,6 +84,16 @@ export function transitionOrderData(toStatus: OrderStatus, reason: string | null
   };
 }
 
+/** Reuse the already-loaded order events to avoid a second Prisma read after a D1 commit. */
+export function latestEventFromOrder<T extends { sequence: bigint }>(events: readonly T[]): T {
+  let latest: T | undefined;
+  for (const event of events) {
+    if (!latest || event.sequence > latest.sequence) latest = event;
+  }
+  if (!latest) throw new AppError("ORDER_EVENT_MISSING", "No se pudo recuperar el evento del pedido.", 500);
+  return latest;
+}
+
 type ManualProduct = { id: string; name: string; priceAmount: number; modifierGroups: Array<{ required: boolean; minSelections: number | null; maxSelections: number | null; modifierGroup: { name: string; options: Array<{ name: string; active: boolean }> } }> };
 
 function resolveModifiers(product: ManualProduct, modifiers: CreateManualOrderInput["lines"][number]["modifiers"]) {
@@ -274,7 +284,7 @@ export async function transitionOrder(input: unknown, actorId: string) {
       throw error;
     }
     const order = await db.order.findUniqueOrThrow({ where: { id: parsed.orderId }, include: { lines: true, events: { orderBy: { createdAt: "asc" } } } });
-    const event = await db.orderEvent.findFirstOrThrow({ where: { orderId: parsed.orderId }, orderBy: { sequence: "desc" } });
+    const event = latestEventFromOrder(order.events);
     return { order, event };
   }
   return db.$transaction(async (tx: { order: typeof db.order; orderEvent: typeof db.orderEvent; $executeRaw: typeof db.$executeRaw }) => {
