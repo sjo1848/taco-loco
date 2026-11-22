@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { readPersistedOrder, sendOrderMutation } from "./order-mutation";
+import { checkBeforeManualRetry, hasUnresolvedMutation, readPersistedOrder, sendOrderMutation } from "./order-mutation";
 
 let id = 0;
 const nextPath = () => "/api/admin/orders/test-" + ++id;
@@ -57,4 +57,20 @@ it("keeps a delayed commit read-only even when the caller remounts", async () =>
   await expect(sendOrderMutation(path, payload, request)).resolves.toMatchObject({ order: { status: "READY" } });
   await expect(sendOrderMutation(path, payload, request)).resolves.toMatchObject({ order: { status: "DELIVERED" } });
   expect(request.mock.calls.map(([, init]) => init.method ?? "GET")).toEqual(["PATCH", "GET", "GET"]);
+});
+
+
+it("allows an explicit retry only after another successful read, without writing during recovery", async () => {
+  const path = nextPath();
+  const request = vi.fn().mockResolvedValueOnce(new Response(null, { status: 503 }))
+    .mockResolvedValueOnce(Response.json(snapshot("READY")))
+    .mockResolvedValueOnce(new Response(null, { status: 503 }))
+    .mockResolvedValueOnce(Response.json(snapshot("READY")));
+  await sendOrderMutation(path, payload, request);
+  expect(hasUnresolvedMutation(path)).toBe(true);
+  await checkBeforeManualRetry(path, request);
+  expect(hasUnresolvedMutation(path)).toBe(true);
+  await checkBeforeManualRetry(path, request);
+  expect(hasUnresolvedMutation(path)).toBe(false);
+  expect(request.mock.calls.map(([, init]) => init.method ?? "GET")).toEqual(["PATCH", "GET", "GET", "GET"]);
 });

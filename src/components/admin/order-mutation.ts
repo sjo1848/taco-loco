@@ -77,7 +77,7 @@ function isReflected(payload: Record<string, unknown>, order: {
 }) {
   const action = payload.action;
   switch (action) {
-    case "CONFIRM_PAYMENT_AND_ORDER": return order.paymentStatus === "CONFIRMED";
+    case "CONFIRM_PAYMENT_AND_ORDER": return order.status !== "RECEIVED" || order.verificationStatus !== "PENDING" || !["PENDING", "REPORTED"].includes(order.paymentStatus);
     case "EXPIRE_PENDING": return order.verificationStatus === "EXPIRED";
     case "MARK_NO_SHOW": return Boolean(order.noShowAt);
     case "REPORT_PAYMENT": return ["REPORTED", "CONFIRMED", "REJECTED"].includes(order.paymentStatus);
@@ -92,6 +92,14 @@ export async function reconcileOrderMutation(path: string, request = fetch) {
   const pending = getUnresolved(path);
   const result = await readPersistedOrder(path, request);
   if (pending && result.kind === "persisted" && (isReflected(pending, result.order) || (typeof pending.toStatus === "string" && ["CANCELLED", "DELIVERED"].includes(result.order.status)))) clearMutation(path, pending);
+  return result;
+}
+
+// The operator can unlock after a fresh authoritative read. This does not write.
+export async function checkBeforeManualRetry(path: string, request = fetch) {
+  const marker = getUnresolved(path);
+  const result = await readPersistedOrder(path, request);
+  if (marker && result.kind === "persisted") clearMutation(path, marker);
   return result;
 }
 

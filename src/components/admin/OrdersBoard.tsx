@@ -1,6 +1,6 @@
 "use client";
 
-import { hasUnresolvedMutation, precedesOrderStatus, reconcileOrderMutation, sendOrderMutation } from "./order-mutation";
+import { checkBeforeManualRetry, hasUnresolvedMutation, precedesOrderStatus, reconcileOrderMutation, sendOrderMutation } from "./order-mutation";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronRight, ShieldAlert } from "lucide-react";
@@ -70,6 +70,7 @@ function QuickAction({order,label,toStatus,latest,onSuccess,onConflict,onExpired
  const [pending,setPending]=useState(false),[message,setMessage]=useState("");
  useEffect(()=>{if(!message)return;const timer=setTimeout(()=>setMessage(""),4000);return()=>clearTimeout(timer)},[message]);
  const [needsRead, setNeedsRead] = useState(false);
+ const [retryAvailable, setRetryAvailable] = useState(false);
  const path = `/api/admin/orders/${order.id}`;
  async function run(){
   if(pending)return;
@@ -77,7 +78,8 @@ function QuickAction({order,label,toStatus,latest,onSuccess,onConflict,onExpired
   setMessage("");
   const previous = latest();
   try {
-   const result = needsRead ? await reconcileOrderMutation(path) : await sendOrderMutation(path,{toStatus});
+   const result = retryAvailable ? await checkBeforeManualRetry(path) : needsRead ? await reconcileOrderMutation(path) : await sendOrderMutation(path,{toStatus});
+   setRetryAvailable(false);
    if(result.kind==="expired"||(result.kind==="response"&&result.response.status===401)){onExpired();return}
    if(result.kind==="unknown"){
     setNeedsRead(true);
@@ -95,7 +97,8 @@ function QuickAction({order,label,toStatus,latest,onSuccess,onConflict,onExpired
    if(result.kind==="persisted"){
     if(hasUnresolvedMutation(path)){
      setNeedsRead(true);
-     setMessage("El cambio todavía no se confirmó. Consultá el estado.");
+     setRetryAvailable(true);
+     setMessage("El servidor todavía muestra el estado anterior. Podés verificarlo nuevamente antes de habilitar un reintento.");
      return;
     }
     setNeedsRead(false);
@@ -111,6 +114,6 @@ function QuickAction({order,label,toStatus,latest,onSuccess,onConflict,onExpired
    setMessage("El servidor rechazó el cambio.");
   } finally {setPending(false)}
  }
- return <><button type="button" className="admin-button admin-button--primary" onClick={()=>void run()} disabled={pending}>{pending?"Actualizando…":(needsRead||hasUnresolvedMutation(path))?"Consultar estado":label}</button>{message&&<span role="status" className="quick-result">{message}</span>}</>
+ return <><button type="button" className="admin-button admin-button--primary" onClick={()=>void run()} disabled={pending}>{pending?"Actualizando…":retryAvailable?"Verificar para reintentar":(needsRead||hasUnresolvedMutation(path))?"Consultar estado":label}</button>{message&&<span role="status" className="quick-result">{message}</span>}</>
 
 }
