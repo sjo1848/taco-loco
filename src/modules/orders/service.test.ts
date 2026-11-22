@@ -39,9 +39,9 @@ describe("public order intent checkout", () => {
 describe("D1 transition readback", () => {
   it("returns the highest sequence from the order events already loaded", () => {
     const events = [
-      { id: "earlier", sequence: 8n },
-      { id: "latest", sequence: 10n },
-      { id: "middle", sequence: 9n },
+      { id: "earlier", sequence: BigInt(8) },
+      { id: "latest", sequence: BigInt(10) },
+      { id: "middle", sequence: BigInt(9) },
     ];
     expect(latestEventFromOrder(events)).toBe(events[1]);
   });

@@ -1,5 +1,6 @@
 "use client";
 
+import { readPersistedOrder, sendOrderMutation } from "./order-mutation";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronRight, ShieldAlert } from "lucide-react";
@@ -68,6 +69,34 @@ export function OrdersBoard({ initialOrders, initialCursor, initialCounts, initi
 function QuickAction({order,label,toStatus,onSuccess,onConflict,onExpired}:{order:Order;label:string;toStatus:OrderStatus;onSuccess:(order:Order)=>void;onConflict:(order:Order)=>void;onExpired:()=>void}){
  const [pending,setPending]=useState(false),[message,setMessage]=useState("");
  useEffect(()=>{if(!message)return;const timer=setTimeout(()=>setMessage(""),4000);return()=>clearTimeout(timer)},[message]);
- async function run(){if(pending)return;setPending(true);setMessage("");try{const response=await fetch(`/api/admin/orders/${order.id}`,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({toStatus})});if(response.status===401){setMessage("Sesión vencida");onExpired();return}if(response.status===409){setMessage("El pedido cambió. Sincronizando el estado actual…");const current=await fetch(`/api/admin/orders/${order.id}`,{cache:"no-store"});if(current.status===401){onExpired();return}if(!current.ok)throw new Error();onConflict(await current.json() as Order);return}if(!response.ok)throw new Error();const body=await response.json() as {order?:Order}|Order;onSuccess(("order" in body&&body.order?body.order:body) as Order);setMessage(`${code(order.orderNumber)} actualizado`)}catch{setMessage("No se pudo actualizar. Reintentá.")}finally{setPending(false)}}
- return <><button type="button" className="admin-button admin-button--primary" onClick={()=>void run()} disabled={pending}>{pending?"Actualizando…":label}</button>{message&&<span role="status" className="quick-result">{message}</span>}</>
+ const [needsRead, setNeedsRead] = useState(false);
+ const path = `/api/admin/orders/${order.id}`;
+ async function run(){
+  if(pending)return;
+  setPending(true);
+  setMessage("");
+  try {
+   const result = needsRead ? await readPersistedOrder(path) : await sendOrderMutation(path,{toStatus});
+   if(result.kind==="expired"||(result.kind==="response"&&result.response.status===401)){onExpired();return}
+   if(result.kind==="unknown"){
+    setNeedsRead(true);
+    setMessage("No se pudo verificar el estado. Consultalo antes de volver a intentar.");
+    return;
+   }
+   setNeedsRead(false);
+   if(result.kind==="persisted"){
+    onConflict(result.order as Order);
+    setMessage(result.order.status===toStatus?"Estado confirmado en el servidor.":"Estado actualizado desde el servidor.");
+    return;
+   }
+   if(result.kind==="success"){
+    onSuccess(result.order as Order);
+    setMessage(`${code(order.orderNumber)} actualizado`);
+    return;
+   }
+   setMessage("El servidor rechazó el cambio.");
+  } finally {setPending(false)}
+ }
+ return <><button type="button" className="admin-button admin-button--primary" onClick={()=>void run()} disabled={pending}>{pending?"Actualizando…":needsRead?"Consultar estado":label}</button>{message&&<span role="status" className="quick-result">{message}</span>}</>
+
 }

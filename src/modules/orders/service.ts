@@ -254,7 +254,8 @@ export async function reportCustomerPayment(token: string) {
   return { reused };
 }
 
-export async function transitionOrder(input: unknown, actorId: string) {
+export async function transitionOrder(input: unknown, actorId: string, onStage?: (stage: "before-batch" | "batch" | "after-commit") => void) {
+  onStage?.("before-batch");
   const parsed = transitionOrderInputSchema.parse(input);
   const current = await db.order.findUnique({ where: { id: parsed.orderId } });
     if (!current) throw new AppError("ORDER_NOT_FOUND", "Pedido no encontrado.", 404);
@@ -278,11 +279,13 @@ export async function transitionOrder(input: unknown, actorId: string) {
     const { transitionD1Order } = await import("@/modules/orders/d1-atomic.worker");
     const data = transitionOrderData(parsed.toStatus, parsed.reason);
     try {
+      onStage?.("batch");
       await transitionD1Order({ orderId: parsed.orderId, fromStatus: current.status, toStatus: parsed.toStatus, reason: parsed.reason ?? null, actorId, cancellationReason: data.cancellationReason ?? null, confirmedAt: data.confirmedAt?.toISOString() ?? null, closedAt: data.closedAt?.toISOString() ?? null, verificationStatus, verificationResolvedAt, paymentStatus, paymentConfirmedAt, requireConfirmedPayment: confirming && isDelivery });
     } catch (error) {
       if (error instanceof Error && (["D1_ORDER_CHANGED", "D1_BATCH_FAILED"].includes(error.message) || /OrderEvent\.sequence|SQLITE_BUSY|database is locked/i.test(error.message))) throw new AppError("ORDER_CHANGED", "El pedido cambió mientras lo actualizabas. Recargá e intentá de nuevo.", 409);
       throw error;
     }
+    onStage?.("after-commit");
     const order = await db.order.findUniqueOrThrow({ where: { id: parsed.orderId }, include: { lines: true, events: { orderBy: { createdAt: "asc" } } } });
     const event = latestEventFromOrder(order.events);
     return { order, event };

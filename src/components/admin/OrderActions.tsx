@@ -1,4 +1,5 @@
 "use client";
+import { sendOrderMutation } from "./order-mutation";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -28,7 +29,33 @@ export function OrderActions({orderId,transitions,fulfillment,verificationStatus
   window.addEventListener("keydown",onKeyDown);
   return()=>{window.removeEventListener("keydown",onKeyDown);previous?.focus()};
  },[confirmPayment,cancelOpen]);
- async function send(payload:Record<string,unknown>){const operation=String(payload.action??payload.toStatus);setPending(operation);setError("");try{const response=await fetch(`/api/admin/orders/${orderId}`,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify(payload)});if(response.status===401){router.push("/admin/login?expired=1");return}if(response.status===409){setError("El pedido cambió desde otra sesión. Actualizamos la información.");setWorkflowSynchronized(false);setWorkflowRefresh(value=>value+1);router.refresh();return}if(!response.ok){const body=await response.json().catch(()=>null);setError(body?.message??"No se pudo actualizar el pedido.");return}const body=await response.json().catch(()=>null),order=body?.order??body;if(order?.status){const next={status:order.status,verificationStatus:order.verificationStatus,paymentStatus:order.paymentStatus,refundStatus:order.refundStatus};setWorkflow(next);setWorkflowSynchronized(next.status===status&&next.verificationStatus===verificationStatus&&next.paymentStatus===paymentStatus&&next.refundStatus===refundStatus)}router.refresh();setReason("")}catch{setError("No hay conexión con el servidor.")}finally{setPending(null)}}
+ async function send(payload:Record<string,unknown>){
+  if(pending!==null||!workflowMatchesPage)return;
+  setPending(String(payload.action??payload.toStatus));
+  setError("");
+  try {
+   const result=await sendOrderMutation(`/api/admin/orders/${orderId}`,payload);
+   if(result.kind==="expired"||(result.kind==="response"&&result.response.status===401)){router.push("/admin/login?expired=1");return}
+   if(result.kind==="response"){
+    const body=await result.response.json().catch(()=>null);
+    setError(body?.message??"El servidor rechazó el cambio.");
+    return;
+   }
+   setWorkflowSynchronized(false);
+   if(result.kind==="unknown"){
+    setError("No se pudo confirmar el resultado. Verificá el estado antes de volver a intentar.");
+    setWorkflowRefresh(value=>value+1);
+    return;
+   }
+   const order=result.order;
+   setWorkflow({status:order.status,verificationStatus:order.verificationStatus,paymentStatus:order.paymentStatus,refundStatus:order.refundStatus});
+   if(result.kind==="persisted")setError("Consultamos el estado actual. Revisalo antes de aplicar otro cambio.");
+   router.refresh();
+   setWorkflowRefresh(value=>value+1);
+   setReason("");
+  }finally{setPending(null)}
+ }
+
  function transition(to:OrderStatus){if(to==="CANCELLED"){setCancelOpen(true);return}if(fulfillment==="DELIVERY"&&to==="CONFIRMED"){setConfirmPayment(true);return}void send({toStatus:to})}
  function action(action:WorkflowAction){void send({action})}
  const hasOther=transitions.includes("CANCELLED")||workflow.verificationStatus==="PENDING"||(fulfillment==="DELIVERY"&&["PENDING","REPORTED"].includes(workflow.paymentStatus))||(fulfillment==="PICKUP"&&["READY","DELIVERED"].includes(workflow.status))||(fulfillment==="DELIVERY"&&workflow.status==="CANCELLED"&&workflow.paymentStatus==="CONFIRMED"&&workflow.refundStatus==="NOT_REQUIRED")||workflow.refundStatus==="REQUIRED";
