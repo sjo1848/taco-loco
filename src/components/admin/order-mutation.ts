@@ -30,8 +30,35 @@ export async function readPersistedOrder(path: string, request = fetch) {
 
 const unresolved = new Map<string, Record<string, unknown>>();
 
-function clearMutation(path: string, payload: Record<string, unknown>) {
-  if (unresolved.get(path) === payload) unresolved.delete(path);
+const storagePrefix = "tl-admin-unresolved:";
+
+function getUnresolved(path: string): Record<string, unknown> | undefined {
+  const current = unresolved.get(path);
+  if (current) return current;
+  try {
+    const stored = sessionStorage.getItem(storagePrefix + path);
+    if (stored) {
+      const value = JSON.parse(stored);
+      if (value && (typeof value.action === "string" || typeof value.toStatus === "string")) {
+        unresolved.set(path, value);
+        return value;
+      }
+    }
+  } catch { /* Requests remain guarded in memory if storage is unavailable. */ }
+  return undefined;
+}
+
+function setUnresolved(path: string, payload: Record<string, unknown>) {
+  const marker = { action: payload.action, toStatus: payload.toStatus };
+  unresolved.set(path, marker);
+  try { sessionStorage.setItem(storagePrefix + path, JSON.stringify(marker)); } catch { /* memory fallback */ }
+  return marker;
+}
+
+function clearMutation(path: string, marker: Record<string, unknown>) {
+  if (getUnresolved(path) !== marker) return;
+  unresolved.delete(path);
+  try { sessionStorage.removeItem(storagePrefix + path); } catch { /* memory fallback */ }
 }
 
 const progress = ["RECEIVED", "CONFIRMED", "IN_PREPARATION", "READY", "DELIVERED", "CANCELLED"];
@@ -42,7 +69,7 @@ export function precedesOrderStatus(previous: string, next: string) {
 }
 
 export function hasUnresolvedMutation(path: string) {
-  return unresolved.has(path);
+  return Boolean(getUnresolved(path));
 }
 
 function isReflected(payload: Record<string, unknown>, order: {
@@ -62,15 +89,15 @@ function isReflected(payload: Record<string, unknown>, order: {
 }
 
 export async function reconcileOrderMutation(path: string, request = fetch) {
-  const pending = unresolved.get(path);
+  const pending = getUnresolved(path);
   const result = await readPersistedOrder(path, request);
-  if (pending && result.kind === "persisted" && isReflected(pending, result.order)) clearMutation(path, pending);
+  if (pending && result.kind === "persisted" && (isReflected(pending, result.order) || (typeof pending.toStatus === "string" && ["CANCELLED", "DELIVERED"].includes(result.order.status)))) clearMutation(path, pending);
   return result;
 }
 
 export async function sendOrderMutation(path: string, payload: Record<string, unknown>, request = fetch) {
-  if (unresolved.has(path)) return reconcileOrderMutation(path, request);
-  unresolved.set(path, payload);
+  if (getUnresolved(path)) return reconcileOrderMutation(path, request);
+  const marker = setUnresolved(path, payload);
   try {
     const response = await request(path, {
       method: "PATCH",
@@ -80,22 +107,22 @@ export async function sendOrderMutation(path: string, payload: Record<string, un
     });
     if (response.status === 409) {
       const rejection = await response.clone().json().catch(() => null);
-      if (!rejection || typeof rejection.code !== "string" || rejection.code === "ORDER_CHANGED") {
+      if (!rejection || typeof rejection.code !== "string") {
         return reconcileOrderMutation(path, request);
       }
-      clearMutation(path, payload);
-      if (payload.action) return { kind: "response", response } as const;
+      clearMutation(path, marker);
+      if (payload.action && rejection.code !== "ORDER_CHANGED") return { kind: "response", response } as const;
       return readPersistedOrder(path, request);
     }
     if (response.status < 500 && !response.ok) {
-      clearMutation(path, payload);
+      clearMutation(path, marker);
       return { kind: "response", response } as const;
     }
     if (response.ok) {
       const body = await response.json();
       const order = body?.order ?? body;
       if (isOrderFor(path, order)) {
-        clearMutation(path, payload);
+        clearMutation(path, marker);
         return { kind: "success", order } as const;
       }
     }
