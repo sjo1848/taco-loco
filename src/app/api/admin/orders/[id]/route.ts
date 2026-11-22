@@ -20,13 +20,23 @@ export async function GET(_: Request, context: Context) {
 }
 
 export async function PATCH(request: Request, context: Context) {
+  let stage = "authorization";
   try {
     const admin = await requireAdmin();
+    stage = "request";
     const payload = await request.json();
-    const result = payload.action ? await applyOrderWorkflowAction({ ...payload, orderId: (await context.params).id }, admin.id) : await transitionOrder({ ...payload, orderId: (await context.params).id }, admin.id);
+    const result = payload.action ? await applyOrderWorkflowAction({ ...payload, orderId: (await context.params).id }, admin.id) : await transitionOrder({ ...payload, orderId: (await context.params).id }, admin.id, value => { stage = value; });
+    stage = "response";
     return new NextResponse(JSON.stringify(result, (_key, value) => typeof value === "bigint" ? value.toString() : value), { headers: { "content-type": "application/json" } });
   } catch (error) {
-    console.error("[admin.orders.transition] request failed", error instanceof Error ? error.message : error);
+    if (!(error instanceof AppError && error.status < 500) &&
+        !(error instanceof z.ZodError) && !(error instanceof Error && error.message === "UNAUTHORIZED")) {
+      const ray = request.headers.get("cf-ray");
+      console.error("[admin.orders.transition] failed", {
+        stage, ray: ray && /^[a-f0-9]+(?:-[A-Z]+)?$/i.test(ray) ? ray : undefined,
+        error: error instanceof Error ? error.name : "UnknownError",
+      });
+    }
     if (error instanceof Error && error.message === "UNAUTHORIZED") return NextResponse.json({ code: "UNAUTHORIZED" }, { status: 401 });
     if (error instanceof AppError) return NextResponse.json({ code: error.code, message: error.message }, { status: error.status });
     if (error instanceof z.ZodError) return NextResponse.json({ code: "INVALID_INPUT", message: "Revisá el estado o el motivo." }, { status: 400 });

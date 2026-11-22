@@ -1,5 +1,6 @@
 "use client";
 
+import { checkBeforeManualRetry, hasUnresolvedMutation, precedesOrderStatus, reconcileOrderMutation, sendOrderMutation } from "./order-mutation";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronRight, ShieldAlert } from "lucide-react";
@@ -9,7 +10,7 @@ import { adminCountPresentation, createCountRequestGate } from "./admin-count-pr
 type OrderStatus = "RECEIVED" | "CONFIRMED" | "IN_PREPARATION" | "READY" | "DELIVERED" | "CANCELLED";
 type Queue = "start" | "preparing" | "ready";
 type Line = { quantity: number; productName: string; modifiersSnapshot: unknown; note?: string | null };
-type Order = { id: string; orderNumber: number; status: OrderStatus; fulfillment: "PICKUP" | "DINE_IN" | "DELIVERY"; verificationStatus: string; paymentStatus: string; refundStatus?: string; customerName: string | null; totalAmount: number; createdAt: string; notes?: string | null; lines: Line[] };
+type Order = { id: string; updatedAt?: string; orderNumber: number; status: OrderStatus; fulfillment: "PICKUP" | "DINE_IN" | "DELIVERY"; verificationStatus: string; paymentStatus: string; refundStatus?: string; customerName: string | null; totalAmount: number; createdAt: string; notes?: string | null; lines: Line[] };
 type Counts = { start: number; preparing: number; ready: number; verification: number; unconfirmed: number; incidents: number; attention: number };
 const labels: Record<OrderStatus,string> = { RECEIVED:"Recibido",CONFIRMED:"Confirmado",IN_PREPARATION:"En preparación",READY:"Listo",DELIVERED:"Entregado",CANCELLED:"Cancelado" };
 const queues: Array<{ id: Queue; label: string; count: keyof Counts; action: string; toStatus: OrderStatus }> = [
@@ -29,7 +30,7 @@ export function OrdersBoard({ initialOrders, initialCursor, initialCounts, initi
  const queueRef=useRef<Queue>(initialQueue);const requestRef=useRef(0);const countGate=useRef(createCountRequestGate());const ordersRef=useRef(initialOrders);const liveOverrides=useRef(new Map<string,Order>());const {connection:sharedConnection,subscribe}=useAdminLiveEvents();const connection=sessionExpired?"expired":sharedConnection;
  const isEligible=(order:Order,selected:Queue)=>order.status===(selected==="start"?"CONFIRMED":selected==="preparing"?"IN_PREPARATION":"READY")&&order.verificationStatus==="VERIFIED"&&["NOT_REQUIRED","CONFIRMED"].includes(order.paymentStatus);
  const refreshCounts=useCallback(async()=>{const countRequest=countGate.current.next();const params=new URLSearchParams({queue:queueRef.current,countsOnly:"1"});try{const response=await fetch(`/api/admin/orders/operations?${params}`,{cache:"no-store"});if(!countGate.current.isCurrent(countRequest))return;if(response.status===401){setSessionExpired(true);return}if(!response.ok)throw new Error();const data=await response.json() as {counts:Counts};if(!countGate.current.isCurrent(countRequest))return;setCounts(data.counts);setCountsLoaded(true);setCountsError("")}catch{if(countGate.current.isCurrent(countRequest))setCountsError("No se pudieron actualizar los contadores.")}},[]);
- const updateTicket=useCallback((updated:Order)=>{liveOverrides.current.set(updated.id,updated);if(liveOverrides.current.size>1000)liveOverrides.current.delete(liveOverrides.current.keys().next().value!);setOrders(current=>{const without=current.filter(item=>item.id!==updated.id);const next=isEligible(updated,queueRef.current)?[...without,updated].sort((a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id)):without;ordersRef.current=next;return next});void refreshCounts()},[refreshCounts]);
+ const updateTicket=useCallback((updated:Order)=>{const visible=liveOverrides.current.get(updated.id);if(visible&&precedesOrderStatus(updated.status,visible.status))return;liveOverrides.current.set(updated.id,updated);if(liveOverrides.current.size>1000)liveOverrides.current.delete(liveOverrides.current.keys().next().value!);setOrders(current=>{const without=current.filter(item=>item.id!==updated.id);const next=isEligible(updated,queueRef.current)?[...without,updated].sort((a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id)):without;ordersRef.current=next;return next});void refreshCounts()},[refreshCounts]);
  const load=useCallback(async(nextQueue:Queue,append=false,nextCursor:string|null=null)=>{const request=++requestRef.current,countRequest=countGate.current.next();setLoading(true);setError("");try{const params=new URLSearchParams({queue:nextQueue});if(nextCursor)params.set("cursor",nextCursor);const response=await fetch(`/api/admin/orders/operations?${params}`,{cache:"no-store"});if(request!==requestRef.current)return;if(response.status===401){setSessionExpired(true);return}if(!response.ok)throw new Error();const data=await response.json() as {orders:Order[];counts:Counts;nextCursor:string|null};if(request!==requestRef.current)return;const currentOrders=append?ordersRef.current:[];const merged=[...currentOrders,...data.orders.map(order=>liveOverrides.current.get(order.id)??order)].filter((order,index,all)=>all.findIndex(item=>item.id===order.id)===index&&isEligible(order,nextQueue)).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));ordersRef.current=merged;setOrders(merged);setCursor(data.nextCursor);if(countGate.current.isCurrent(countRequest)){setCounts(data.counts);setCountsLoaded(true);setCountsError("")}}catch{if(request===requestRef.current)setError("No se pudieron actualizar los pedidos.")}finally{if(request===requestRef.current)setLoading(false)}},[]);
  const reconcile=useCallback(async()=>{const selected=queueRef.current,request=++requestRef.current,countRequest=countGate.current.next();setError("");try{const desired=Math.max(ordersRef.current.length,30);let nextCursor:string|null=null;const collected:Order[]=[];let countsSnapshot:Counts|undefined;for(let page=0;page<Math.ceil(desired/30)+3;page++){const params=new URLSearchParams({queue:selected});if(nextCursor)params.set("cursor",nextCursor);const response=await fetch(`/api/admin/orders/operations?${params}`,{cache:"no-store"});if(request!==requestRef.current)return;if(response.status===401){setSessionExpired(true);return}if(!response.ok)throw new Error();const data=await response.json() as {orders:Order[];counts:Counts;nextCursor:string|null};countsSnapshot=data.counts;for(const order of data.orders){const merged=liveOverrides.current.get(order.id)??order;if(isEligible(merged,selected)&&!collected.some(item=>item.id===merged.id))collected.push(merged)}nextCursor=data.nextCursor;if(!nextCursor||collected.length>=desired)break}if(request!==requestRef.current)return;for(const order of liveOverrides.current.values())if(isEligible(order,selected)&&!collected.some(item=>item.id===order.id))collected.push(order);const latest=collected.map(order=>liveOverrides.current.get(order.id)??order).filter(order=>isEligible(order,selected)).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));ordersRef.current=latest;setOrders(latest);setCursor(nextCursor);if(countsSnapshot&&countGate.current.isCurrent(countRequest)){setCounts(countsSnapshot);setCountsLoaded(true);setCountsError("")}}catch{if(request===requestRef.current)setError("No se pudieron reconciliar los pedidos. Reintentá.")}finally{if(request===requestRef.current)setLoading(false)}},[]);
  const selectQueue=(next:Queue)=>{queueRef.current=next;setQueue(next);setOrders([]);setCursor(null);const url=new URL(window.location.href);url.searchParams.set("cola",queueParam(next));window.history.pushState({},"",url);void load(next)};
@@ -55,7 +56,7 @@ export function OrdersBoard({ initialOrders, initialCursor, initialCounts, initi
     const transition=queues.find(item=>item.id===queue);
     const valid=order.status=== (queue==="start"?"CONFIRMED":queue==="preparing"?"IN_PREPARATION":"READY") && order.verificationStatus==="VERIFIED" && ["NOT_REQUIRED","CONFIRMED"].includes(order.paymentStatus);
     const mode=order.fulfillment==="PICKUP"?"Retiro":order.fulfillment==="DELIVERY"?"Delivery":"Consumo local";
-    return <article className="order-ticket" key={order.id}><header className="order-ticket__top"><strong>{code(order.orderNumber)}</strong><time dateTime={order.createdAt}>Espera {waitTime(order.createdAt,clock)}</time></header><div className="order-ticket__identity"><div><strong>{order.customerName||"Sin nombre"}</strong><span>{mode}</span></div><span className={`order-status order-status--${order.status.toLowerCase()}`}>{labels[order.status]}</span></div><div className="order-ticket__lines">{order.lines.map((line,index)=><div key={`${line.productName}-${index}`}><strong>{line.quantity} × {line.productName}</strong>{lineModifiers(line.modifiersSnapshot)&&<small>{lineModifiers(line.modifiersSnapshot)}</small>}{line.note&&<small>Nota: {line.note}</small>}</div>)}{order.notes&&<p><b>Observaciones:</b> {order.notes}</p>}</div><footer className="order-ticket__footer"><strong>Total <span>{money(order.totalAmount)}</span></strong><div className="order-ticket__actions">{valid&&transition&&<QuickAction order={order} label={transition.action} toStatus={transition.toStatus} onSuccess={updateTicket} onConflict={updateTicket} onExpired={()=>setSessionExpired(true)}/>}<Link className="admin-button admin-button--secondary" href={`/admin/orders/${order.id}`}>Ver detalle</Link></div></footer></article>
+    return <article className="order-ticket" key={order.id}><header className="order-ticket__top"><strong>{code(order.orderNumber)}</strong><time dateTime={order.createdAt}>Espera {waitTime(order.createdAt,clock)}</time></header><div className="order-ticket__identity"><div><strong>{order.customerName||"Sin nombre"}</strong><span>{mode}</span></div><span className={`order-status order-status--${order.status.toLowerCase()}`}>{labels[order.status]}</span></div><div className="order-ticket__lines">{order.lines.map((line,index)=><div key={`${line.productName}-${index}`}><strong>{line.quantity} × {line.productName}</strong>{lineModifiers(line.modifiersSnapshot)&&<small>{lineModifiers(line.modifiersSnapshot)}</small>}{line.note&&<small>Nota: {line.note}</small>}</div>)}{order.notes&&<p><b>Observaciones:</b> {order.notes}</p>}</div><footer className="order-ticket__footer"><strong>Total <span>{money(order.totalAmount)}</span></strong><div className="order-ticket__actions">{valid&&transition&&<QuickAction order={order} label={transition.action} toStatus={transition.toStatus} latest={() => liveOverrides.current.get(order.id)} onSuccess={updateTicket} onConflict={updateTicket} onExpired={()=>setSessionExpired(true)}/>}<Link className="admin-button admin-button--secondary" href={`/admin/orders/${order.id}`}>Ver detalle</Link></div></footer></article>
    })}</div>
    {orders.length===0&&!loading&&<div className="empty-state"><strong>{error?"No se pudo cargar esta cola":"No hay pedidos por acá"}</strong><p>{error?"Revisá la conexión e intentá nuevamente.":"Los nuevos pedidos aparecerán en esta lista."}</p>{error&&<button className="admin-button admin-button--secondary" onClick={()=>void load(queue)}>Reintentar</button>}</div>}
    {loading&&!orders.length&&<div className="admin-skeleton-list" role="status" aria-label="Actualizando pedidos"><div className="admin-skeleton-card"/><div className="admin-skeleton-card"/><div className="admin-skeleton-card"/></div>}
@@ -65,9 +66,54 @@ export function OrdersBoard({ initialOrders, initialCursor, initialCounts, initi
  </main>
 }
 
-function QuickAction({order,label,toStatus,onSuccess,onConflict,onExpired}:{order:Order;label:string;toStatus:OrderStatus;onSuccess:(order:Order)=>void;onConflict:(order:Order)=>void;onExpired:()=>void}){
+function QuickAction({order,label,toStatus,latest,onSuccess,onConflict,onExpired}:{order:Order;label:string;toStatus:OrderStatus;latest:()=>Order|undefined;onSuccess:(order:Order)=>void;onConflict:(order:Order)=>void;onExpired:()=>void}){
  const [pending,setPending]=useState(false),[message,setMessage]=useState("");
  useEffect(()=>{if(!message)return;const timer=setTimeout(()=>setMessage(""),4000);return()=>clearTimeout(timer)},[message]);
- async function run(){if(pending)return;setPending(true);setMessage("");try{const response=await fetch(`/api/admin/orders/${order.id}`,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({toStatus})});if(response.status===401){setMessage("Sesión vencida");onExpired();return}if(response.status===409){setMessage("El pedido cambió. Sincronizando el estado actual…");const current=await fetch(`/api/admin/orders/${order.id}`,{cache:"no-store"});if(current.status===401){onExpired();return}if(!current.ok)throw new Error();onConflict(await current.json() as Order);return}if(!response.ok)throw new Error();const body=await response.json() as {order?:Order}|Order;onSuccess(("order" in body&&body.order?body.order:body) as Order);setMessage(`${code(order.orderNumber)} actualizado`)}catch{setMessage("No se pudo actualizar. Reintentá.")}finally{setPending(false)}}
- return <><button type="button" className="admin-button admin-button--primary" onClick={()=>void run()} disabled={pending}>{pending?"Actualizando…":label}</button>{message&&<span role="status" className="quick-result">{message}</span>}</>
+ const [needsRead, setNeedsRead] = useState(false);
+ const [retryAvailable, setRetryAvailable] = useState(false);
+ const path = `/api/admin/orders/${order.id}`;
+ async function run(){
+  if(pending)return;
+  setPending(true);
+  setMessage("");
+  const previous = latest();
+  try {
+   const result = retryAvailable ? await checkBeforeManualRetry(path) : needsRead ? await reconcileOrderMutation(path) : await sendOrderMutation(path,{toStatus});
+   setRetryAvailable(false);
+   if(result.kind==="expired"||(result.kind==="response"&&result.response.status===401)){onExpired();return}
+   if(result.kind==="unknown"){
+    setNeedsRead(true);
+    setMessage("No se pudo verificar el estado. Consultalo antes de volver a intentar.");
+    return;
+   }
+   if(result.kind==="persisted"||result.kind==="success"){
+    const live = latest();
+    if(live && live!==previous && !precedesOrderStatus(live.status,result.order.status) && (!live.updatedAt || !result.order.updatedAt || live.updatedAt>=result.order.updatedAt)){
+     setNeedsRead(live.status===order.status);
+     setMessage("El tablero recibió una actualización durante la consulta.");
+     return;
+    }
+   }
+   if(result.kind==="persisted"){
+    if(hasUnresolvedMutation(path)){
+     setNeedsRead(true);
+     setRetryAvailable(true);
+     setMessage("El servidor todavía muestra el estado anterior. Podés verificarlo nuevamente antes de habilitar un reintento.");
+     return;
+    }
+    setNeedsRead(false);
+    onConflict(result.order as Order);
+    setMessage(result.order.status===toStatus?"Estado confirmado en el servidor.":"Estado actualizado desde el servidor.");
+    return;
+   }
+   if(result.kind==="success"){
+    onSuccess(result.order as Order);
+    setMessage(`${code(order.orderNumber)} actualizado`);
+    return;
+   }
+   setMessage("El servidor rechazó el cambio.");
+  } finally {setPending(false)}
+ }
+ return <><button type="button" className="admin-button admin-button--primary" onClick={()=>void run()} disabled={pending}>{pending?"Actualizando…":retryAvailable?"Verificar para reintentar":(needsRead||hasUnresolvedMutation(path))?"Consultar estado":label}</button>{message&&<span role="status" className="quick-result">{message}</span>}</>
+
 }

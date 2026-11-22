@@ -1,4 +1,5 @@
 "use client";
+import { checkBeforeManualRetry, hasUnresolvedMutation, reconcileOrderMutation, sendOrderMutation } from "./order-mutation";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -9,8 +10,25 @@ type Props={orderId:string;transitions:OrderStatus[];fulfillment:"PICKUP"|"DINE_
 export function OrderActions({orderId,transitions,fulfillment,verificationStatus="VERIFIED",paymentStatus="NOT_REQUIRED",refundStatus="NOT_REQUIRED",status="RECEIVED",orderNumber,totalAmount,transferHolderName}:Props){
  const router=useRouter(),dialogPanelRef=useRef<HTMLElement>(null);
  const [pending,setPending]=useState<string|null>(null),[reason,setReason]=useState(""),[error,setError]=useState(""),[confirmPayment,setConfirmPayment]=useState(false),[cancelOpen,setCancelOpen]=useState(false),[workflowSynchronized,setWorkflowSynchronized]=useState(false),[workflowSyncError,setWorkflowSyncError]=useState(false),[workflowRefresh,setWorkflowRefresh]=useState(0);
+ const mutationPath=`/api/admin/orders/${orderId}`;
  const [workflow,setWorkflow]=useState({status,verificationStatus,paymentStatus,refundStatus});
- useEffect(()=>{let alive=true;setWorkflowSynchronized(false);setWorkflowSyncError(false);void fetch(`/api/admin/orders/${orderId}`,{cache:"no-store"}).then(async response=>{if(response.status===401){router.push("/admin/login?expired=1");return null}if(!response.ok)throw new Error("No se pudo verificar el estado actual.");return response.json()}).then(order=>{if(!alive||!order)return;const next={status:order.status,verificationStatus:order.verificationStatus,paymentStatus:order.paymentStatus,refundStatus:order.refundStatus};setWorkflow(next);setWorkflowSynchronized(true);if(next.status!==status||next.verificationStatus!==verificationStatus||next.paymentStatus!==paymentStatus||next.refundStatus!==refundStatus)router.refresh()}).catch(()=>{if(alive)setWorkflowSyncError(true)});return()=>{alive=false}},[orderId,status,verificationStatus,paymentStatus,refundStatus,router,workflowRefresh]);
+ useEffect(()=>{
+  let alive=true;
+  setWorkflowSynchronized(false);
+  setWorkflowSyncError(false);
+  void reconcileOrderMutation(mutationPath).then(result=>{
+   if(!alive)return;
+   if(result.kind==="expired"){router.push("/admin/login?expired=1");return}
+   if(result.kind==="unknown"){setWorkflowSyncError(true);return}
+   const order=result.order;
+   if(hasUnresolvedMutation(mutationPath)){setWorkflowSyncError(true);return}
+   const next={status:order.status as OrderStatus,verificationStatus:order.verificationStatus,paymentStatus:order.paymentStatus,refundStatus:order.refundStatus};
+   setWorkflow(next);
+   setWorkflowSynchronized(true);
+   if(next.status!==status||next.verificationStatus!==verificationStatus||next.paymentStatus!==paymentStatus||next.refundStatus!==refundStatus)router.refresh();
+  });
+  return()=>{alive=false};
+ },[mutationPath,status,verificationStatus,paymentStatus,refundStatus,router,workflowRefresh]);
  useEffect(()=>{
   if(!confirmPayment&&!cancelOpen)return;
   const previous=document.activeElement instanceof HTMLElement?document.activeElement:null;
@@ -28,12 +46,54 @@ export function OrderActions({orderId,transitions,fulfillment,verificationStatus
   window.addEventListener("keydown",onKeyDown);
   return()=>{window.removeEventListener("keydown",onKeyDown);previous?.focus()};
  },[confirmPayment,cancelOpen]);
- async function send(payload:Record<string,unknown>){const operation=String(payload.action??payload.toStatus);setPending(operation);setError("");try{const response=await fetch(`/api/admin/orders/${orderId}`,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify(payload)});if(response.status===401){router.push("/admin/login?expired=1");return}if(response.status===409){setError("El pedido cambió desde otra sesión. Actualizamos la información.");setWorkflowSynchronized(false);setWorkflowRefresh(value=>value+1);router.refresh();return}if(!response.ok){const body=await response.json().catch(()=>null);setError(body?.message??"No se pudo actualizar el pedido.");return}const body=await response.json().catch(()=>null),order=body?.order??body;if(order?.status){const next={status:order.status,verificationStatus:order.verificationStatus,paymentStatus:order.paymentStatus,refundStatus:order.refundStatus};setWorkflow(next);setWorkflowSynchronized(next.status===status&&next.verificationStatus===verificationStatus&&next.paymentStatus===paymentStatus&&next.refundStatus===refundStatus)}router.refresh();setReason("")}catch{setError("No hay conexión con el servidor.")}finally{setPending(null)}}
+ async function send(payload:Record<string,unknown>){
+  if(pending!==null||!workflowMatchesPage)return;
+  setPending(String(payload.action??payload.toStatus));
+  setError("");
+  try {
+   const result=await sendOrderMutation(mutationPath,payload);
+   if(result.kind==="expired"||(result.kind==="response"&&result.response.status===401)){router.push("/admin/login?expired=1");return}
+   if(result.kind==="response"){
+    const body=await result.response.json().catch(()=>null);
+    setError(body?.message??"El servidor rechazó el cambio.");
+    return;
+   }
+   setWorkflowSynchronized(false);
+   if(result.kind==="unknown" || hasUnresolvedMutation(mutationPath)){
+    setError("No se pudo confirmar el resultado. Verificá el estado antes de volver a intentar.");
+    setWorkflowRefresh(value=>value+1);
+    return;
+   }
+   const order=result.order;
+   setWorkflow({status:order.status as OrderStatus,verificationStatus:order.verificationStatus,paymentStatus:order.paymentStatus,refundStatus:order.refundStatus});
+   if(result.kind==="persisted")setError("Consultamos el estado actual. Revisalo antes de aplicar otro cambio.");
+   router.refresh();
+   setWorkflowRefresh(value=>value+1);
+   setReason("");
+  }finally{setPending(null)}
+ }
+
+ async function verifyForRetry(){
+  if(pending!==null)return;
+  setPending("read");
+  try {
+   const result=await checkBeforeManualRetry(mutationPath);
+   if(result.kind==="expired"){router.push("/admin/login?expired=1");return}
+   if(result.kind==="unknown"){
+    setError("No se pudo verificar el estado. Las acciones siguen bloqueadas.");
+    return;
+   }
+   setError("Estado verificado. Revisá el pedido antes de volver a intentar.");
+   setWorkflowSynchronized(false);
+   setWorkflowRefresh(value=>value+1);
+   router.refresh();
+  }finally{setPending(null)}
+ }
  function transition(to:OrderStatus){if(to==="CANCELLED"){setCancelOpen(true);return}if(fulfillment==="DELIVERY"&&to==="CONFIRMED"){setConfirmPayment(true);return}void send({toStatus:to})}
  function action(action:WorkflowAction){void send({action})}
  const hasOther=transitions.includes("CANCELLED")||workflow.verificationStatus==="PENDING"||(fulfillment==="DELIVERY"&&["PENDING","REPORTED"].includes(workflow.paymentStatus))||(fulfillment==="PICKUP"&&["READY","DELIVERED"].includes(workflow.status))||(fulfillment==="DELIVERY"&&workflow.status==="CANCELLED"&&workflow.paymentStatus==="CONFIRMED"&&workflow.refundStatus==="NOT_REQUIRED")||workflow.refundStatus==="REQUIRED";
  const workflowMatchesPage=workflowSynchronized&&workflow.status===status&&workflow.verificationStatus===verificationStatus&&workflow.paymentStatus===paymentStatus&&workflow.refundStatus===refundStatus;
- return <section className="order-actions"><h2>Acción siguiente</h2>{error&&<p className="form-error" role="alert">{error}</p>}{workflowSyncError&&<p className="form-error" role="alert">No se pudo verificar el estado actual. <button className="text-button" type="button" onClick={()=>setWorkflowRefresh(value=>value+1)}>Reintentar</button></p>}{transitions.length===0?<p className="order-final">Este pedido está cerrado.</p>:<div>{transitions.filter(x=>x!=="CANCELLED").map(next=><button key={next} className="admin-button admin-button--primary" type="button" disabled={pending!==null||!workflowMatchesPage} onClick={()=>transition(next)}>{pending===next||!workflowMatchesPage?"Actualizando…":fulfillment==="DELIVERY"&&next==="CONFIRMED"?"Confirmar pago y pedido":labels[workflow.status]}</button>)}</div>}{hasOther&&<details className="other-actions"><summary>Otras acciones</summary><div>{transitions.includes("CANCELLED")&&<button className="admin-button admin-button--danger" type="button" disabled={pending!==null||!workflowMatchesPage} onClick={()=>transition("CANCELLED")}>Cancelar pedido</button>}{workflow.verificationStatus==="PENDING"&&<button className="admin-button admin-button--secondary" disabled={pending!==null||!workflowMatchesPage} onClick={()=>action("EXPIRE_PENDING")}>Cerrar pendiente</button>}{fulfillment==="DELIVERY"&&workflow.paymentStatus==="PENDING"&&<button className="admin-button admin-button--secondary" disabled={pending!==null||!workflowMatchesPage} onClick={()=>action("REPORT_PAYMENT")}>Marcar pago informado</button>}{fulfillment==="DELIVERY"&&["PENDING","REPORTED"].includes(workflow.paymentStatus)&&<button className="admin-button admin-button--danger" disabled={pending!==null||!workflowMatchesPage} onClick={()=>action("REJECT_PAYMENT")}>Rechazar pago</button>}{fulfillment==="PICKUP"&&["READY","DELIVERED"].includes(workflow.status)&&<button className="admin-button admin-button--secondary" disabled={pending!==null||!workflowMatchesPage} onClick={()=>action("MARK_NO_SHOW")}>Registrar no-show</button>}{fulfillment==="DELIVERY"&&workflow.status==="CANCELLED"&&workflow.paymentStatus==="CONFIRMED"&&workflow.refundStatus==="NOT_REQUIRED"&&<button className="admin-button admin-button--secondary" disabled={pending!==null||!workflowMatchesPage} onClick={()=>action("REQUIRE_REFUND")}>Marcar devolución requerida</button>}{workflow.refundStatus==="REQUIRED"&&<button className="admin-button admin-button--secondary" disabled={pending!==null||!workflowMatchesPage} onClick={()=>action("MARK_REFUNDED")}>Marcar devolución realizada</button>}</div></details>}
+ return <section className="order-actions"><h2>Acción siguiente</h2>{error&&<p className="form-error" role="alert">{error}</p>}{workflowSyncError&&<p className="form-error" role="alert">No se pudo verificar el estado actual. <button className="text-button" type="button" disabled={pending!==null} onClick={()=>void verifyForRetry()}>Verificar para reintentar</button></p>}{transitions.length===0?<p className="order-final">Este pedido está cerrado.</p>:<div>{transitions.filter(x=>x!=="CANCELLED").map(next=><button key={next} className="admin-button admin-button--primary" type="button" disabled={pending!==null||!workflowMatchesPage} onClick={()=>transition(next)}>{pending===next||!workflowMatchesPage?"Actualizando…":fulfillment==="DELIVERY"&&next==="CONFIRMED"?"Confirmar pago y pedido":labels[workflow.status]}</button>)}</div>}{hasOther&&<details className="other-actions"><summary>Otras acciones</summary><div>{transitions.includes("CANCELLED")&&<button className="admin-button admin-button--danger" type="button" disabled={pending!==null||!workflowMatchesPage} onClick={()=>transition("CANCELLED")}>Cancelar pedido</button>}{workflow.verificationStatus==="PENDING"&&<button className="admin-button admin-button--secondary" disabled={pending!==null||!workflowMatchesPage} onClick={()=>action("EXPIRE_PENDING")}>Cerrar pendiente</button>}{fulfillment==="DELIVERY"&&workflow.paymentStatus==="PENDING"&&<button className="admin-button admin-button--secondary" disabled={pending!==null||!workflowMatchesPage} onClick={()=>action("REPORT_PAYMENT")}>Marcar pago informado</button>}{fulfillment==="DELIVERY"&&["PENDING","REPORTED"].includes(workflow.paymentStatus)&&<button className="admin-button admin-button--danger" disabled={pending!==null||!workflowMatchesPage} onClick={()=>action("REJECT_PAYMENT")}>Rechazar pago</button>}{fulfillment==="PICKUP"&&["READY","DELIVERED"].includes(workflow.status)&&<button className="admin-button admin-button--secondary" disabled={pending!==null||!workflowMatchesPage} onClick={()=>action("MARK_NO_SHOW")}>Registrar no-show</button>}{fulfillment==="DELIVERY"&&workflow.status==="CANCELLED"&&workflow.paymentStatus==="CONFIRMED"&&workflow.refundStatus==="NOT_REQUIRED"&&<button className="admin-button admin-button--secondary" disabled={pending!==null||!workflowMatchesPage} onClick={()=>action("REQUIRE_REFUND")}>Marcar devolución requerida</button>}{workflow.refundStatus==="REQUIRED"&&<button className="admin-button admin-button--secondary" disabled={pending!==null||!workflowMatchesPage} onClick={()=>action("MARK_REFUNDED")}>Marcar devolución realizada</button>}</div></details>}
  {confirmPayment&&<div className="admin-dialog-backdrop"><section ref={dialogPanelRef} className="admin-dialog" role="alertdialog" aria-modal="true" aria-labelledby="payment-dialog-title" aria-describedby="payment-dialog-copy"><p className="eyebrow">Verificación manual</p><h3 id="payment-dialog-title">Confirmar transferencia</h3><p id="payment-dialog-copy">¿Verificaste que el importe del pedido TL-{String(orderNumber).padStart(4,"0")} se acreditó en la cuenta correspondiente?</p><p className="dialog-payment-amount">Importe <strong>${totalAmount.toLocaleString("es-AR")}</strong></p>{transferHolderName&&<p className="dialog-holder">Titular informado: {transferHolderName}</p>}<div className="dialog-actions"><button className="admin-button admin-button--secondary" type="button" onClick={()=>setConfirmPayment(false)}>Volver</button><button className="admin-button admin-button--primary" type="button" disabled={pending!==null} onClick={()=>{setConfirmPayment(false);action("CONFIRM_PAYMENT_AND_ORDER")}}>{pending==="CONFIRM_PAYMENT_AND_ORDER"?"Confirmando…":"Sí, verifiqué el pago"}</button></div></section></div>}
  {cancelOpen&&<div className="admin-dialog-backdrop"><section ref={dialogPanelRef} className="admin-dialog" role="alertdialog" aria-modal="true" aria-labelledby="cancel-dialog-title"><h3 id="cancel-dialog-title">Cancelar pedido</h3><label>Motivo obligatorio<textarea rows={3} value={reason} onChange={e=>setReason(e.target.value)} placeholder="Contá brevemente por qué se cancela"/></label><div className="dialog-actions"><button className="admin-button admin-button--secondary" type="button" onClick={()=>setCancelOpen(false)}>Volver</button><button className="admin-button admin-button--danger" type="button" disabled={!reason.trim()||pending!==null} onClick={()=>{setCancelOpen(false);void send({toStatus:"CANCELLED",reason})}}>Confirmar cancelación</button></div></section></div>}
  </section>
