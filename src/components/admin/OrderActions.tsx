@@ -1,5 +1,5 @@
 "use client";
-import { mutationStateFingerprint, readPersistedOrder, sendOrderMutation } from "./order-mutation";
+import { hasUnresolvedMutation, reconcileOrderMutation, sendOrderMutation } from "./order-mutation";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -10,28 +10,25 @@ type Props={orderId:string;transitions:OrderStatus[];fulfillment:"PICKUP"|"DINE_
 export function OrderActions({orderId,transitions,fulfillment,verificationStatus="VERIFIED",paymentStatus="NOT_REQUIRED",refundStatus="NOT_REQUIRED",status="RECEIVED",orderNumber,totalAmount,transferHolderName}:Props){
  const router=useRouter(),dialogPanelRef=useRef<HTMLElement>(null);
  const [pending,setPending]=useState<string|null>(null),[reason,setReason]=useState(""),[error,setError]=useState(""),[confirmPayment,setConfirmPayment]=useState(false),[cancelOpen,setCancelOpen]=useState(false),[workflowSynchronized,setWorkflowSynchronized]=useState(false),[workflowSyncError,setWorkflowSyncError]=useState(false),[workflowRefresh,setWorkflowRefresh]=useState(0);
- const observed=useRef<string|null>(null),unresolved=useRef<string|null>(null);
+ const mutationPath=`/api/admin/orders/${orderId}`;
  const [workflow,setWorkflow]=useState({status,verificationStatus,paymentStatus,refundStatus});
  useEffect(()=>{
   let alive=true;
   setWorkflowSynchronized(false);
   setWorkflowSyncError(false);
-  void readPersistedOrder(`/api/admin/orders/${orderId}`).then(result=>{
+  void reconcileOrderMutation(mutationPath).then(result=>{
    if(!alive)return;
    if(result.kind==="expired"){router.push("/admin/login?expired=1");return}
    if(result.kind==="unknown"){setWorkflowSyncError(true);return}
    const order=result.order;
-   const fingerprint=mutationStateFingerprint(order);
-   observed.current=fingerprint;
-   if(unresolved.current===fingerprint){setWorkflowSyncError(true);return}
-   unresolved.current=null;
+   if(hasUnresolvedMutation(mutationPath)){setWorkflowSyncError(true);return}
    const next={status:order.status as OrderStatus,verificationStatus:order.verificationStatus,paymentStatus:order.paymentStatus,refundStatus:order.refundStatus};
    setWorkflow(next);
    setWorkflowSynchronized(true);
    if(next.status!==status||next.verificationStatus!==verificationStatus||next.paymentStatus!==paymentStatus||next.refundStatus!==refundStatus)router.refresh();
   });
   return()=>{alive=false};
- },[orderId,status,verificationStatus,paymentStatus,refundStatus,router,workflowRefresh]);
+ },[mutationPath,status,verificationStatus,paymentStatus,refundStatus,router,workflowRefresh]);
  useEffect(()=>{
   if(!confirmPayment&&!cancelOpen)return;
   const previous=document.activeElement instanceof HTMLElement?document.activeElement:null;
@@ -54,8 +51,7 @@ export function OrderActions({orderId,transitions,fulfillment,verificationStatus
   setPending(String(payload.action??payload.toStatus));
   setError("");
   try {
-   const before=observed.current;
-   const result=await sendOrderMutation(`/api/admin/orders/${orderId}`,payload);
+   const result=await sendOrderMutation(mutationPath,payload);
    if(result.kind==="expired"||(result.kind==="response"&&result.response.status===401)){router.push("/admin/login?expired=1");return}
    if(result.kind==="response"){
     const body=await result.response.json().catch(()=>null);
@@ -63,13 +59,11 @@ export function OrderActions({orderId,transitions,fulfillment,verificationStatus
     return;
    }
    setWorkflowSynchronized(false);
-   if(result.kind==="unknown" || (result.kind==="persisted" && mutationStateFingerprint(result.order)===before)){
-    unresolved.current=before;
+   if(result.kind==="unknown" || hasUnresolvedMutation(mutationPath)){
     setError("No se pudo confirmar el resultado. Verificá el estado antes de volver a intentar.");
     setWorkflowRefresh(value=>value+1);
     return;
    }
-   unresolved.current=null;
    const order=result.order;
    setWorkflow({status:order.status as OrderStatus,verificationStatus:order.verificationStatus,paymentStatus:order.paymentStatus,refundStatus:order.refundStatus});
    if(result.kind==="persisted")setError("Consultamos el estado actual. Revisalo antes de aplicar otro cambio.");
