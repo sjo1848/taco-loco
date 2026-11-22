@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canConfirmDelivery, createPublicOrderIntentInputSchema, resolveOrderOwner } from "./service";
+import { canConfirmDelivery, createPublicOrderIntentInputSchema, latestEventFromOrder, resolveOrderOwner } from "./service";
 
 const line = { productId: "11111111-1111-4111-8111-111111111111", quantity: 1, modifiers: [] };
 
@@ -33,5 +33,20 @@ describe("public order intent checkout", () => {
     expect(resolveOrderOwner(null, "customer-authenticated")).toBe("customer-authenticated");
     expect(resolveOrderOwner({ customerId: null }, "customer-authenticated")).toBeNull();
     expect(resolveOrderOwner({ customerId: "customer-original" }, "customer-authenticated")).toBe("customer-original");
+  });
+});
+
+describe("D1 transition readback", () => {
+  it("returns the highest sequence from the order events already loaded", () => {
+    const events = [
+      { id: "earlier", sequence: 8n },
+      { id: "latest", sequence: 10n },
+      { id: "middle", sequence: 9n },
+    ];
+    expect(latestEventFromOrder(events)).toBe(events[1]);
+  });
+
+  it("fails explicitly if the committed order has no visible events", () => {
+    expect(() => latestEventFromOrder([])).toThrow("No se pudo recuperar el evento del pedido.");
   });
 });
