@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import nextConfig from "./next.config";
+import nextConfig from "../../next.config";
 
 describe("tracking referrer policy", () => {
   it("keeps a global policy but prioritizes no-referrer for token-bearing URLs", async () => {
@@ -18,12 +18,11 @@ describe("tracking referrer policy", () => {
       "/api/orders/tracking/:token",
       "/api/orders/tracking/:token/payment",
     ]) {
-      const index = rules.findIndex((rule) => rule.source === source);
-      expect(index).toBeGreaterThan(globalIndex);
-      expect(rules[index].headers).toContainEqual({
-        key: "Referrer-Policy",
-        value: "no-referrer",
-      });
+      const policy = rules
+        .filter((rule) => rule.source === "/(.*)" || rule.source === source)
+        .flatMap((rule) => rule.headers)
+        .findLast((header) => header.key.toLowerCase() === "referrer-policy");
+      expect(policy?.value).toBe("no-referrer");
     }
   });
 });
