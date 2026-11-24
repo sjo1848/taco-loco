@@ -137,9 +137,13 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       retireLegacyTrackingStorage();
       const url = new URL(window.location.href);
       const openCart = url.searchParams.has("carrito");
-      if (openCart) {
+      const historyState = { ...window.history.state };
+      // A reload starts with a closed sheet. Don't stack a second cart entry
+      // over a marker left by the previous document.
+      if (openCart || historyState.tacoCart) {
+        delete historyState.tacoCart;
         url.searchParams.delete("carrito");
-        window.history.replaceState(window.history.state, "", url);
+        window.history.replaceState(historyState, "", url);
       }
       setLines(draft.length ? draft : cart);
       setCartHydrated(true);
