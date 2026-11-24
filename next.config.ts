@@ -26,6 +26,10 @@ const nextConfig: NextConfig = {
         source,
         headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
       })),
+      ...["/cuenta", "/cuenta/:section"].map((source) => ({
+        source,
+        headers: [{ key: "Cache-Control", value: "private, no-store" }, { key: "Referrer-Policy", value: "no-referrer" }],
+      })),
     ];
   },
 };

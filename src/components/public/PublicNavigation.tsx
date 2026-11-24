@@ -1,40 +1,68 @@
 "use client";
 
-import { useEffect } from "react";
-import { onCustomerSessionChange } from "@/modules/orders/tracking-resume";
+import { useEffect, useState } from "react";
+import { onCustomerSessionChange, trackingSessionStorage } from "@/modules/orders/tracking-resume";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 
-export function PublicNavigation({ cartCount = 0, onCartClick }: { cartCount?: number; onCartClick?: () => void }) {
+function readCartCount() {
+  try {
+    const lines = JSON.parse(trackingSessionStorage()?.getItem("taco-loco-selection") ?? "[]") as unknown;
+    if (Array.isArray(lines)) return lines.reduce<number>((sum, line) => sum + (
+      line && typeof line.productId === "string" && Number.isSafeInteger(line.quantity) && line.quantity > 0 ? line.quantity : 0
+    ), 0);
+  } catch { /* Session storage may be unavailable. */ }
+  return 0;
+}
+
+export function PublicNavigation({ cartCount, onCartClick, cartOpen = false }: { cartCount?: number; onCartClick?: () => void; cartOpen?: boolean }) {
   const pathname = usePathname();
+  const [storedCount, setStoredCount] = useState(0);
   useEffect(() => onCustomerSessionChange(), []);
-  const menuActive = pathname === "/menu";
-  const accountActive = pathname === "/cuenta";
+  useEffect(() => {
+    if (cartCount !== undefined) return;
+    const refresh = () => setStoredCount(readCartCount());
+    const initial = window.setTimeout(refresh, 0);
+    window.addEventListener("pageshow", refresh);
+    window.addEventListener("focus", refresh);
+    return () => { clearTimeout(initial); window.removeEventListener("pageshow", refresh); window.removeEventListener("focus", refresh); };
+  }, [cartCount]);
+
+  const count = cartCount ?? storedCount;
+  const menuActive = !cartOpen && pathname === "/menu";
+  const accountActive = pathname === "/cuenta" || pathname?.startsWith("/cuenta/");
   const ordersActive = pathname === "/pedidos" || pathname?.startsWith("/pedidos/") || pathname?.startsWith("/pedido/");
-  const ordersHref = "/pedidos";
-  const cartHref = "/menu?carrito=1";
-  const cartControl = onCartClick
-    ? <button className="public-navigation__cart" type="button" onClick={onCartClick} aria-label={`Abrir carrito${cartCount ? `, ${cartCount} productos` : ""}`}><span aria-hidden="true">🛒</span> Carrito{cartCount > 0 && <span className="public-navigation__count">{cartCount}</span>}</button>
-    : <Link className="public-navigation__cart" href={cartHref}><span aria-hidden="true">🛒</span> Carrito</Link>;
+  const tab = (label: string, icon: string, href: string, active?: boolean) => (
+    <Link className={`public-bottom-nav__item${active ? " public-bottom-nav__item--active" : ""}`} href={href} prefetch={false} aria-current={active ? "page" : undefined}>
+      <span aria-hidden="true">{icon}</span><small>{label}</small>
+    </Link>
+  );
+  function cartControl(desktop = false) {
+    const label = desktop ? <><span aria-hidden="true">🛒</span> Carrito{count > 0 && <span className="public-navigation__count">{count}</span>}</>
+      : <><span aria-hidden="true">🛒</span><small>Carrito{count > 0 ? ` (${count})` : ""}</small></>;
+    const props = { className: desktop ? "public-navigation__cart" : `public-bottom-nav__item${cartOpen ? " public-bottom-nav__item--active" : ""}`,
+      "aria-current": cartOpen ? "page" as const : undefined };
+    return onCartClick
+      ? <button {...props} type="button" onClick={onCartClick} aria-haspopup="dialog" aria-label={`Abrir carrito${count ? `, ${count} ${count === 1 ? "producto" : "productos"}` : ""}`}>{label}</button>
+      : <Link {...props} href="/menu?carrito=1" prefetch={false}>{label}</Link>;
+  }
 
   return <>
     <header className="public-navigation" aria-label="Navegación principal">
       <Link className="public-navigation__brand" href="/menu"><Image className="public-navigation__logo" src="/brand/logo-taco-loco.jpg" alt="Taco Loco" width={42} height={42} priority /><span><strong>Taco Loco</strong><small>Menú digital</small></span></Link>
       <nav className="public-navigation__links" aria-label="Secciones principales">
-        <Link className="public-navigation__desktop-link" href="/menu" aria-current={menuActive ? "page" : undefined}>Menú</Link>
-        <Link className="public-navigation__desktop-link" href={ordersHref} prefetch={false} aria-current={ordersActive ? "page" : undefined}>Pedidos</Link>
-        <Link className="public-navigation__desktop-link" href="/cuenta" aria-current={accountActive ? "page" : undefined}>Cuenta</Link>
-        {cartControl}
+        <Link href="/menu" aria-current={menuActive ? "page" : undefined}>Menú</Link>
+        <Link href="/pedidos" prefetch={false} aria-current={ordersActive ? "page" : undefined}>Pedidos</Link>
+        <Link href="/cuenta" aria-current={accountActive ? "page" : undefined}>Cuenta</Link>
+        {cartControl(true)}
       </nav>
     </header>
     <nav className="public-bottom-nav" aria-label="Navegación de la app">
-      <Link className={menuActive ? "public-bottom-nav__item public-bottom-nav__item--active" : "public-bottom-nav__item"} href="/menu" aria-current={menuActive ? "page" : undefined}><span aria-hidden="true">⌂</span><small>Menú</small></Link>
-      <Link className={ordersActive ? "public-bottom-nav__item public-bottom-nav__item--active" : "public-bottom-nav__item"} href={ordersHref} prefetch={false} aria-current={ordersActive ? "page" : undefined}><span aria-hidden="true">▣</span><small>Pedidos</small></Link>
-      <Link className={accountActive ? "public-bottom-nav__item public-bottom-nav__item--active" : "public-bottom-nav__item"} href="/cuenta" aria-current={accountActive ? "page" : undefined}><span aria-hidden="true">◎</span><small>Cuenta</small></Link>
-      {onCartClick
-        ? <button className="public-bottom-nav__item" type="button" onClick={onCartClick} aria-label={`Abrir carrito${cartCount ? `, ${cartCount} productos` : ""}`}><span aria-hidden="true">🛒</span><small>Carrito{cartCount ? ` (${cartCount})` : ""}</small></button>
-        : <Link className="public-bottom-nav__item" href={cartHref}><span aria-hidden="true">🛒</span><small>Carrito</small></Link>}
+      {tab("Menú", "⌂", "/menu", menuActive)}
+      {tab("Pedidos", "▣", "/pedidos", ordersActive)}
+      {cartControl()}
+      {tab("Cuenta", "◎", "/cuenta", accountActive)}
     </nav>
   </>;
 }

@@ -40,7 +40,9 @@ export async function signInWithGoogle(profile: GoogleIdentityProfile) {
   const existingIdentity = await db.customerIdentity.findUnique({ where: { provider_providerSubject: { provider: "google", providerSubject: profile.subject } }, include: { customer: true } });
   if (existingIdentity) {
     if (!existingIdentity.customer.active) throw new Error("CUSTOMER_DISABLED");
-    const customer = await db.customer.update({ where: { id: existingIdentity.customerId }, data: { email: profile.email, displayName: profile.displayName, avatarUrl: profile.avatarUrl, lastLoginAt: new Date() } });
+    // The name is customer-managed after account creation; Google remains the source
+    // for the email and avatar when an existing identity signs in again.
+    const customer = await db.customer.update({ where: { id: existingIdentity.customerId }, data: { email: profile.email, avatarUrl: profile.avatarUrl, lastLoginAt: new Date() } });
     await createCustomerSession(customer.id);
     return customer;
   }
@@ -77,6 +79,10 @@ export async function signInWithGoogle(profile: GoogleIdentityProfile) {
 
 export async function logoutCustomer() {
   await revokeCurrentCustomerSession();
+}
+
+export async function updateCustomerDisplayName(customerId: string, displayName: string) {
+  return db.customer.update({ where: { id: customerId }, data: { displayName } });
 }
 
 export function publicCustomer(customer: { id: string; email: string | null; displayName: string | null; avatarUrl: string | null }) {

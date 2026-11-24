@@ -1,21 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-let favoritesPromise: Promise<Set<string> | null> | null = null;
-function loadFavorites() {
-  favoritesPromise ??= fetch("/api/customer/preferences", { credentials: "same-origin", cache: "no-store" }).then(async (response) => {
-    if (!response.ok) return null;
-    const body = await response.json() as { favorites?: Array<{ id: string }> };
-    return new Set((body.favorites ?? []).map((favorite) => favorite.id));
-  }).catch(() => null);
-  return favoritesPromise;
-}
+import Link from "next/link";
+import { useState } from "react";
+import { updateFavorite, useFavorites } from "./favorites-store";
 
 export function FavoriteButton({ productId }: { productId: string }) {
-  const [favorite, setFavorite] = useState(false); const [message, setMessage] = useState("");
-  // One shared request hydrates all cards without exposing preference data to the public API.
-  useEffect(() => { void loadFavorites().then((favorites) => { if (favorites) setFavorite(favorites.has(productId)); }); }, [productId]);
-  async function toggle() { const response = await fetch(`/api/customer/favorites/${productId}`, { method: "PUT", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ favorite: !favorite }) }); if (response.status === 401) { setMessage("Iniciá sesión para guardar favoritos."); return; } if (response.ok) { setFavorite(!favorite); setMessage(!favorite ? "Guardado" : "Quitado"); } }
-  return <span><button className="product-card__favorite" type="button" aria-pressed={favorite} onClick={() => void toggle()}>{favorite ? "★ Favorito" : "☆ Guardar"}</button>{message && <small role="status"> {message}</small>}</span>;
+  const { status, items, viewerId, reload } = useFavorites();
+  const [pending, setPending] = useState(false);
+  const [feedback, setFeedback] = useState<{ viewerId: string | null; message: string } | null>(null);
+  const favorite = items.some(item => item.id === productId);
+  if (status === "guest") return <Link className="product-card__favorite" href="/cuenta" aria-label="Ingresá para guardar favoritos">☆ Guardar</Link>;
+
+  async function toggle() {
+    if (pending) return;
+    if (status === "error") { reload(); return; }
+    setPending(true);
+    const result = await updateFavorite(productId, !favorite, viewerId);
+    if (result !== "stale") setFeedback({ viewerId, message: result === "ok" ? favorite ? "Quitado" : "Guardado" : "No pudimos actualizar el favorito." });
+    setPending(false);
+  }
+
+  return <span className="product-card__favorite-control">
+    <button className="product-card__favorite" type="button" aria-pressed={favorite} disabled={pending || status === "loading"} onClick={() => void toggle()}>{status === "error" ? "Reintentar favoritos" : favorite ? "★ Favorito" : "☆ Guardar"}</button>
+    {feedback && feedback.viewerId === viewerId && <small className="sr-only" role="status">{feedback.message}</small>}
+  </span>;
 }

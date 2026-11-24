@@ -5,7 +5,7 @@ import Link from "next/link";
 import { terminalTrackingStages, type PublicOrderTracking } from "@/modules/orders/public-tracking";
 import { finishTrackingHandoff, onCustomerSessionChange } from "@/modules/orders/tracking-resume";
 import { initialTrackingPollDelay, maxTrackingPollDelay, nextTrackingPollDelay } from "./tracking-polling";
-import { PublicNavigation } from "@/components/public/PublicNavigation";
+import { PublicShell } from "@/components/public/PublicShell";
 function formatPrice(amount: number) { return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(amount); }
 async function trackingSpotlightStorageKey(token: string) {
   const bytes = new TextEncoder().encode(token);
@@ -14,7 +14,7 @@ async function trackingSpotlightStorageKey(token: string) {
   return `taco-loco:tracking-spotlight:v1:${fingerprint}`;
 }
 
-export function OrderTracking({ initial, privateOrderId }: { initial: PublicOrderTracking; privateOrderId?: string }) {
+export function OrderTracking({ initial, privateOrderId, children }: { initial: PublicOrderTracking; privateOrderId?: string; children?: React.ReactNode }) {
   const [tracking, setTracking] = useState(initial);
   const [denied, setDenied] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(Boolean(privateOrderId));
@@ -126,12 +126,12 @@ export function OrderTracking({ initial, privateOrderId }: { initial: PublicOrde
     return () => { unsubscribe?.(); cancelled = true; generation += 1; requestController.current?.abort(); clear(); document.removeEventListener("visibilitychange", onVisibility); window.removeEventListener("focus", onVisibility); window.removeEventListener("pageshow", onVisibility); };
   }, [privateOrderId]);
 
-  if (denied) return <main className="public-shell"><PublicNavigation /><section className="public-panel"><h1>Seguimiento no disponible</h1><p>Ingresá con la cuenta que hizo el pedido para consultar su estado.</p><Link className="button" href="/cuenta">Ir a mi cuenta</Link></section></main>;
+  if (denied) return <PublicShell><section className="public-panel"><h1>Seguimiento no disponible</h1><p>Ingresá con la cuenta que hizo el pedido para consultar su estado.</p><Link className="button" href="/cuenta">Ir a mi cuenta</Link></section></PublicShell>;
 
-  if (checkingAccess) return <main className="public-shell"><PublicNavigation /><section className="public-panel"><h1>Seguimiento</h1><p role="status">{error ? "No pudimos verificar el acceso. Estamos reintentando…" : "Verificando acceso al pedido…"}</p></section></main>;
+  if (checkingAccess) return <PublicShell><section className="public-panel"><h1>Seguimiento</h1><p role="status">{error ? "No pudimos verificar el acceso. Estamos reintentando…" : "Verificando acceso al pedido…"}</p></section></PublicShell>;
 
-  return <main className="public-menu public-tracking" ref={(node) => { if (node) node.setAttribute("aria-live", "polite"); }}><PublicNavigation />
-    <section className={`brand-pattern brand-pattern--hero tracking-hero${spotlightOpen ? " tracking-hero--spotlight" : ""}`}><div className="public-menu__content"><p className="eyebrow">Taco Loco · Seguimiento</p><h1>Pedido {tracking.orderCode}</h1>
+  return <PublicShell className="public-menu public-tracking" live="polite">
+    <section className={`brand-pattern brand-pattern--hero tracking-hero${spotlightOpen ? " tracking-hero--spotlight" : ""}`}><div className="public-menu__content"><Link className="tracking-back" href="/pedidos"><span aria-hidden="true">‹</span> Volver a Pedidos</Link><p className="eyebrow">Taco Loco · Seguimiento</p><h1>Pedido {tracking.orderCode}</h1>
       <section className={`tracking-current tracking-current--active${spotlightOpen ? " tracking-current--spotlight" : ""}${statusChanged ? " tracking-current--changed" : ""}`} aria-labelledby="tracking-current-title" aria-describedby="tracking-current-message"><p className="eyebrow">Estado actual</p><h2 id="tracking-current-title">{tracking.title}</h2><p id="tracking-current-message">{tracking.message}</p>{spotlightOpen && <button ref={spotlightDismissRef} className="tracking-spotlight-dismiss" type="button" onClick={dismissSpotlight}>Entendido</button>}</section></div></section>
     <div className="public-menu__content">
       {error && <p role="status">Estamos intentando actualizar el estado…</p>}
@@ -139,5 +139,6 @@ export function OrderTracking({ initial, privateOrderId }: { initial: PublicOrde
       <section className="tracking-history" aria-labelledby="tracking-history-title"><h2 id="tracking-history-title">Historial</h2><ol>{tracking.history.map((event, index) => <li key={`${event.at}-${event.stage}-${index}`}><strong>{event.label}</strong><time dateTime={event.at} suppressHydrationWarning>{new Date(event.at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</time></li>)}</ol></section>
       <section className="tracking-summary" aria-labelledby="tracking-summary-title"><h2 id="tracking-summary-title">Pedido</h2>{tracking.lines.map((line, index) => <div key={`${line.name}-${index}`}><span>{line.quantity} × {line.name}</span>{line.modifiers.length > 0 && <small>{line.modifiers.map((modifier) => `${modifier.group}: ${modifier.option}`).join(" · ")}</small>}</div>)}<strong>Total: {formatPrice(tracking.totalAmount)}</strong></section>
     </div>
-  </main>;
+    {children}
+  </PublicShell>;
 }
