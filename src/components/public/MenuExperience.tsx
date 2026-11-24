@@ -148,6 +148,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   useEffect(() => {
     let mounted = true;
     const navigateToTracking = async (reference: TrackingReference) => {
+      const sessionRevision = sessionChangeRevision.current;
       if ((reference.sessionGeneration ?? null) !== readCustomerSessionGeneration()) return;
       if (reference.ownerId) {
         try {
@@ -159,7 +160,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
           }
         } catch { return; }
       }
-      if (mounted && (reference.sessionGeneration ?? null) === readCustomerSessionGeneration()) window.location.assign(reference.path);
+      if (mounted && sessionRevision === sessionChangeRevision.current && (reference.sessionGeneration ?? null) === readCustomerSessionGeneration()) window.location.assign(reference.path);
     };
     const resumeTracking = () => {
       const handoff = handoffRef.current;
