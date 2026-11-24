@@ -7,7 +7,7 @@ import { ProductCard } from "@/components/public/ProductCard";
 import { SaucesInfo } from "@/components/public/SaucesInfo";
 import { PublicNavigation } from "@/components/public/PublicNavigation";
 import { filterCatalog } from "@/modules/catalog/discovery";
-import { activeTrackingStorageKey, createTrackingReference, finishTrackingHandoff, readTrackingReference, recentGuestTrackingKey, retireLegacyTrackingStorage, trackingChangedEvent, trackingResumeMaxAgeMs, trackingSessionStorage, writeTrackingReference, type TrackingReference } from "@/modules/orders/tracking-resume";
+import { activeTrackingStorageKey, createTrackingReference, finishTrackingHandoff, readTrackingReference, rememberGuestOrder, retireLegacyTrackingStorage, trackingResumeMaxAgeMs, trackingSessionStorage, writeTrackingReference, type TrackingReference } from "@/modules/orders/tracking-resume";
 import { buildWhatsAppAppUrl, buildWhatsAppMessageWithCheckout, buildWhatsAppUrl, checkoutIntentStorageKey, createClientReference, addSelectionLine, lineId, removeSelectionLine, selectionCount, selectionTotal, updateSelectionQuantity, type CheckoutDetails, type SelectionLine } from "@/modules/selection/model";
 
 type Product = { id: string; name: string; description: string | null; priceAmount: number; available: boolean; featured: boolean; imageKey: string | null; imageAlt: string | null; modifiers: Array<{ name: string; required: boolean; minSelections: number | null; maxSelections: number | null; options: string[] }> };
@@ -474,8 +474,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       const handoff = handoffRef.current;
       if (handoff) handoff.reference = reference;
       if (popup || isMobileDevice) writeTrackingReference(storage, activeTrackingStorageKey, reference);
-      if (result.customerId === null) writeTrackingReference(storage, recentGuestTrackingKey, reference);
-      window.dispatchEvent(new Event(trackingChangedEvent));
+      if (result.customerId === null) rememberGuestOrder(reference);
       setCompletedOrder(preparedOrder);
       pendingIntent.current = null;
       setNeedsOrderRecovery(false);
@@ -515,7 +514,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     }
   }
 
-  return <main className="public-menu"><PublicNavigation cartCount={count} onCartClick={openCart} authenticated={Boolean(customerId)} /><section className="brand-pattern brand-pattern--hero brand-hero"><div className="brand-hero__copy"><p className="eyebrow">{menu.settings.businessName} · Menú digital</p><h1>Elegí tu próximo antojo</h1><p>Sabores para compartir, pedir y volver a disfrutar.</p></div></section><CategoryNav categories={visibleCategories} /><p className="sr-only" aria-live="polite">{addedProductId ? "Producto agregado al pedido" : ""}</p>
+  return <main className="public-menu"><PublicNavigation cartCount={count} onCartClick={openCart} /><section className="brand-pattern brand-pattern--hero brand-hero"><div className="brand-hero__copy"><p className="eyebrow">{menu.settings.businessName} · Menú digital</p><h1>Elegí tu próximo antojo</h1><p>Sabores para compartir, pedir y volver a disfrutar.</p></div></section><CategoryNav categories={visibleCategories} /><p className="sr-only" aria-live="polite">{addedProductId ? "Producto agregado al pedido" : ""}</p>
     <div className="public-menu__content">
       <section className={`operating-status operating-status--${operatingContext.isOpen ? "open" : "closed"}`} aria-live="polite"><strong>{operatingContext.label}</strong><span>{operatingContext.detail}</span></section>
       {feedbackMessage && !showSummary && <p className="menu-order-feedback" role="status">{feedbackMessage}</p>}

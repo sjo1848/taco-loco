@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeTrackingStorageKey, createTrackingReference, readTrackingReference, recentGuestTrackingKey, removeTrackingReference, trackingResumeMaxAgeMs, writeTrackingReference } from "./tracking-resume";
+import { activeTrackingStorageKey, createTrackingReference, readGuestOrders, readTrackingReference, recentGuestTrackingKey, removeTrackingReference, trackingResumeMaxAgeMs, writeTrackingReference } from "./tracking-resume";
 
 function memoryStorage() {
   const values = new Map<string, string>();
@@ -24,6 +24,17 @@ describe("tracking handoff and guest navigation", () => {
     removeTrackingReference(storage, activeTrackingStorageKey);
     expect(readTrackingReference(storage, activeTrackingStorageKey, 1000)).toBeNull();
     expect(readTrackingReference(storage, recentGuestTrackingKey, 1000)).toEqual(reference);
+  });
+
+  it("keeps multiple tab references, includes the legacy reference and removes expired entries", () => {
+    const storage = memoryStorage();
+    const now = 1_000 + trackingResumeMaxAgeMs;
+    writeTrackingReference(storage, recentGuestTrackingKey, createTrackingReference(validPath, 27, now)!);
+    const recent = createTrackingReference("/pedido/" + "b".repeat(43), 28, now - 1)!;
+    const expired = createTrackingReference("/pedido/" + "c".repeat(43), 26, 999)!;
+    storage.setItem("taco-loco-guest-orders", JSON.stringify([expired, recent]));
+    expect(readGuestOrders(storage, now).map((item) => item.orderNumber)).toEqual([27, 28]);
+    expect(storage.getItem("taco-loco-guest-orders")).toBe(JSON.stringify([recent]));
   });
 
   it("rejects unsafe paths, expires stale records and ignores unavailable storage", () => {

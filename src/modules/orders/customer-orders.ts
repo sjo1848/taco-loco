@@ -1,5 +1,5 @@
 import { toCustomerOrderSummary, type CustomerOrderSummary } from "@/modules/orders/public-tracking";
-import { orderRepository, type CustomerOrderCursor } from "@/modules/orders/repository";
+import { orderRepository, type CustomerOrderCursor, type CustomerOrderView } from "@/modules/orders/repository";
 
 export const CUSTOMER_ORDER_PAGE_SIZE = 10;
 
@@ -22,7 +22,11 @@ export function encodeCustomerOrderCursor(cursor: CustomerOrderCursor) {
   return btoa(JSON.stringify(cursor)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
-export async function listCustomerOrders(customerId: string, cursor: CustomerOrderCursor | null): Promise<{ orders: CustomerOrderSummary[]; nextCursor: string | null }> {
-  const result = await orderRepository.listForCustomer(customerId, cursor, CUSTOMER_ORDER_PAGE_SIZE);
+export async function listCustomerOrders(customerId: string, cursor: CustomerOrderCursor | null, view: CustomerOrderView = "all"): Promise<{ orders: CustomerOrderSummary[]; nextCursor: string | null }> {
+  const result = await orderRepository.listForCustomer(customerId, cursor, CUSTOMER_ORDER_PAGE_SIZE, view);
   return { orders: result.orders.map(toCustomerOrderSummary), nextCursor: result.nextCursor ? encodeCustomerOrderCursor(result.nextCursor) : null };
+}
+
+export function isCustomerOrderId(value: string) {
+  return /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value);
 }

@@ -4,9 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GoogleSignInButton } from "@/components/public/GoogleSignInButton";
-import { finishTrackingHandoff, recentGuestTrackingKey, removeTrackingReference, trackingSessionStorage } from "@/modules/orders/tracking-resume";
+import { announceCustomerSessionChange, clearGuestOrders, finishTrackingHandoff } from "@/modules/orders/tracking-resume";
 import type { PublicCustomer } from "@/modules/auth/customer-types";
-import { CustomerOrders } from "@/components/public/CustomerOrders";
 import { CustomerPreferences } from "@/components/public/CustomerPreferences";
 import { PublicNavigation } from "@/components/public/PublicNavigation";
 
@@ -45,7 +44,8 @@ export function CustomerAccount() {
 
   const handleAuthenticated = useCallback((value: PublicCustomer) => {
     finishTrackingHandoff();
-    removeTrackingReference(trackingSessionStorage(), recentGuestTrackingKey);
+    clearGuestOrders();
+    announceCustomerSessionChange();
     setCustomer(value);
     setState("authenticated");
     setMessage("Sesión iniciada correctamente.");
@@ -66,7 +66,8 @@ export function CustomerAccount() {
       return;
     }
     finishTrackingHandoff();
-    removeTrackingReference(trackingSessionStorage(), recentGuestTrackingKey);
+    clearGuestOrders();
+    announceCustomerSessionChange();
     setCustomer(null);
     setState("visitor");
     setMessage("Sesión cerrada.");
@@ -78,7 +79,7 @@ export function CustomerAccount() {
     }
   }, [state]);
 
-  return <main className="public-shell"><PublicNavigation authenticated={state === "authenticated"} /><section className="public-panel" aria-labelledby="account-title">
+  return <main className="public-shell"><PublicNavigation /><section className="public-panel" aria-labelledby="account-title">
     <p className="eyebrow">Taco Club</p>
     <h1 id="account-title">Tu cuenta, cuando quieras</h1>
     <p className="selection-help">Comprar como invitado sigue siendo siempre posible. El acceso al Taco Club es opcional.</p>
@@ -87,5 +88,5 @@ export function CustomerAccount() {
     {(state === "visitor" || state === "authenticating") && <><GoogleSignInButton onStatusChange={handleAuthStatus} onAuthenticated={handleAuthenticated} />{state === "authenticating" && <p className="selection-help" role="status" aria-live="polite">Validando tu cuenta…</p>}<p className="selection-help" role="status" aria-live="polite">{message}</p></>}
     {state === "authenticated" && customer && <div className="customer-account" aria-live="polite"><p className="customer-account__welcome">¡Bienvenido{customer.displayName ? `, ${customer.displayName}` : " al Taco Club"}!</p><p className="selection-help">Tu sesión está activa en este navegador.</p><div className="selection-actions"><Link className="button" href="/menu">Ver menú</Link><button className="button button--secondary" type="button" onClick={logout}>Cerrar sesión</button></div>{message && <p className="selection-help" role="status">{message}</p>}</div>}
     <p className="selection-help"><Link href="/menu">Volver al menú</Link></p>
-  </section>{state === "authenticated" && customer && <><CustomerOrders /><CustomerPreferences /></>}</main>;
+  </section>{state === "authenticated" && customer && <><section id="customer-orders" className="public-panel"><Link className="button button--secondary" href="/pedidos">Ver mis pedidos</Link></section><CustomerPreferences /></>}</main>;
 }

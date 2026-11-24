@@ -5,6 +5,7 @@ import { businessDayStart } from "@/modules/orders/business-day";
 import type { OrderStatus } from "@/modules/orders/model";
 
 export type OrderListFilter = { status?: OrderStatus; query?: string };
+export type CustomerOrderView = "all" | "active" | "history";
 export type CustomerOrderCursor = { createdAt: string; id: string };
 export type AdminOrderCursor = { createdAt: Date; id: string };
 type AdminQueue = "start" | "preparing" | "ready";
@@ -105,11 +106,19 @@ function attentionCountsD1(kind: AttentionKind, start: Date, nextStart: Date) {
   `;
 }
 
+// Match toPublicTrackingStage precedence, including cancelled orders awaiting a refund.
+const activeCustomerOrder = {
+  OR: [
+    { refundStatus: "REQUIRED" as const },
+    { refundStatus: { not: "REFUNDED" as const }, verificationStatus: { not: "EXPIRED" as const }, status: { notIn: ["DELIVERED" as const, "CANCELLED" as const] } },
+  ],
+};
 export const orderRepository = {
-  async listForCustomer(customerId: string, cursor: CustomerOrderCursor | null, take = 10) {
+  async listForCustomer(customerId: string, cursor: CustomerOrderCursor | null, take = 10, view: CustomerOrderView = "all") {
     const rows = await db.order.findMany({
       where: {
         customerId,
+        ...(view === "all" ? {} : { AND: [view === "active" ? activeCustomerOrder : { NOT: activeCustomerOrder }] }),
         ...(cursor ? { OR: [{ createdAt: { lt: new Date(cursor.createdAt) } }, { createdAt: new Date(cursor.createdAt), id: { lt: cursor.id } }] } : {}),
       },
       include: { lines: true, events: { orderBy: { sequence: "asc" } } },
@@ -120,6 +129,15 @@ export const orderRepository = {
     const orders = hasMore ? rows.slice(0, take) : rows;
     const last = orders.at(-1);
     return { orders, nextCursor: hasMore && last ? { createdAt: new Date(last.createdAt).toISOString(), id: last.id } : null };
+  },
+
+  async findCustomerTrackingOrder(customerId: string, id: string) {
+    return db.order.findFirst({ where: { id, customerId }, include: { lines: true, events: { orderBy: { sequence: "asc" } } } });
+  },
+
+  async findCustomerPaymentToken(customerId: string, id: string) {
+    const order = await db.order.findFirst({ where: { id, customerId }, select: { publicTrackingToken: true } });
+    return order?.publicTrackingToken ?? null;
   },
 
   async latestEventSequence() {

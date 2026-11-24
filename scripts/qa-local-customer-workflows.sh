@@ -9,12 +9,14 @@ config=dist/server/wrangler.json
 w=./node_modules/.bin/wrangler
 args=(--config "$config" --local --persist-to "$state/d1")
 export TACO_QA_LOCAL_URL="http://127.0.0.1:$port"
+export TACO_QA_LOCAL_STATE="$state/d1"
 echo "Local QA evidence: $state"
 worker=''
 cleanup() { if [[ -n "$worker" ]]; then kill -- "-$worker" 2>/dev/null || true; fi; }
 trap cleanup EXIT
 trap 'exit 130' INT TERM
 "$w" d1 migrations apply DB "${args[@]}" >"$state/migrations.log"
+other_hash=$(node -e 'console.log(require("node:crypto").createHash("sha256").update("c".repeat(64)).digest("hex"))')
 hash=$(node -e 'console.log(require("node:crypto").createHash("sha256").update("b".repeat(64)).digest("hex"))')
 cat >"$state/fixtures.sql" <<SQL
 INSERT INTO Category (id,name,slug,active,sortOrder,createdAt,updatedAt) VALUES ('qa-cat','QA','qa',1,0,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
@@ -25,6 +27,17 @@ INSERT INTO ProductModifierGroup VALUES ('acacacac-acac-4aca-8aca-acacacacacac',
 INSERT INTO MenuSettings (id,businessName,whatsappPhone,whatsappMessage,currency,acceptingOrders,weeklySchedule,deliveryEnabled,deliveryFeeAmount,updatedAt) VALUES ('00000000-0000-0000-0000-000000000001','QA local','10000000000','QA','ARS',1,'[]',1,300,CURRENT_TIMESTAMP);
 INSERT INTO Customer (id,email,displayName,active,createdAt,updatedAt) VALUES ('qa-customer','customer@example.com','QA Cliente',1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
 INSERT INTO CustomerSession (id,tokenHash,customerId,expiresAt,createdAt) VALUES ('qa-session','$hash','qa-customer','2099-01-01T00:00:00Z',CURRENT_TIMESTAMP);
+INSERT INTO Customer (id,email,displayName,active,createdAt,updatedAt) VALUES ('qa-other','other@example.com','QA Otro',1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
+INSERT INTO CustomerSession (id,tokenHash,customerId,expiresAt,createdAt) VALUES ('qa-other-session','$other_hash','qa-other','2099-01-01T00:00:00Z',CURRENT_TIMESTAMP);
+INSERT INTO "Order" (id,orderNumber,customerId,status,fulfillment,source,verificationStatus,paymentStatus,refundStatus,subtotalAmount,totalAmount,publicTrackingToken,createdAt,updatedAt)
+VALUES ('aaaaaaaa-1111-4111-8111-111111111111',7,'qa-customer','CANCELLED','DELIVERY','PUBLIC_MENU','VERIFIED','CONFIRMED','REQUIRED',1200,1500,NULL,'2000-01-01T00:00:00.000Z',CURRENT_TIMESTAMP),
+('aaaaaaaa-1111-4111-8111-111111111112',8,'qa-customer','RECEIVED','DELIVERY','PUBLIC_MENU','PENDING','PENDING','NOT_REQUIRED',1200,1500,'ddddddddddddddddddddddddddddddddddddddddddd','2000-01-01T00:00:00.000Z',CURRENT_TIMESTAMP),
+('aaaaaaaa-1111-4111-8111-111111111115',10,'qa-customer','CANCELLED','DELIVERY','PUBLIC_MENU','PENDING','PENDING','NOT_REQUIRED',1200,1500,'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee','2000-01-01T00:00:00.000Z',CURRENT_TIMESTAMP),
+('aaaaaaaa-1111-4111-8111-111111111114',9,'qa-other','READY','PICKUP','PUBLIC_MENU','VERIFIED','NOT_REQUIRED','NOT_REQUIRED',1200,1200,NULL,'2000-01-01T00:00:00.000Z',CURRENT_TIMESTAMP);
+WITH RECURSIVE n(i) AS (SELECT 20 UNION ALL SELECT i+1 FROM n WHERE i<30)
+INSERT INTO "Order" (id,orderNumber,customerId,status,fulfillment,source,verificationStatus,subtotalAmount,totalAmount,createdAt,updatedAt)
+SELECT printf('bbbbbbbb-1111-4111-8111-%012d',i),i,'qa-customer','DELIVERED','PICKUP','PUBLIC_MENU','VERIFIED',1200,1200,'2001-01-01T00:00:00.000Z',CURRENT_TIMESTAMP FROM n;
+
 SQL
 "$w" d1 execute DB "${args[@]}" --file "$state/fixtures.sql" >"$state/seed.log"
 setsid "$w" dev "${args[@]}" --ip 127.0.0.1 --port "$port" --inspector-port "${TACO_QA_INSPECTOR_PORT:-9285}" --show-interactive-dev-session false >"$state/worker.log" 2>&1 &
@@ -39,10 +52,10 @@ timeout 150 node scripts/qa-customer-workflows.mjs | tee "$state/workflows.log"
 schedule=$(node -e 'const n = new Date(Date.now()+12*60*60*1000);const t = (x)=>x.toISOString().slice(11,16); console.log(JSON.stringify(Array.from({length:7},(_,day)=>({day,enabled:true,open:t(n),close:t(new Date(+n+60000))}))))')
 "$w" d1 execute DB "${args[@]}" --command "UPDATE MenuSettings SET weeklySchedule='$schedule';" >"$state/closed.log"
 timeout 60 node scripts/qa-customer-workflows.mjs --closed | tee -a "$state/workflows.log"
-"$w" d1 execute DB "${args[@]}" --json --command 'SELECT count(*) AS orders,count(DISTINCT clientReference) AS refs FROM "Order"; SELECT count(*) AS events FROM OrderEvent WHERE kind="ORDER_CREATED"; PRAGMA foreign_key_check;' >"$state/ledger.json"
+"$w" d1 execute DB "${args[@]}" --json --command 'SELECT count(*) AS orders,count(DISTINCT clientReference) AS refs FROM "Order" WHERE clientReference IS NOT NULL; SELECT count(*) AS events FROM OrderEvent WHERE kind="ORDER_CREATED"; SELECT count(*) AS paymentReports FROM OrderEvent WHERE kind="PAYMENT_REPORTED"; PRAGMA foreign_key_check;' >"$state/ledger.json"
 node - "$state/ledger.json" <<'JS'
 const assert = require("node:assert/strict");
 const rows=JSON.parse(require("node:fs").readFileSync(process.argv[2])).map(q=>q.results);
-assert.deepEqual(rows,[[{orders:4,refs:4}],[{events:4}],[]]);
+assert.deepEqual(rows,[[{orders:4,refs:4}],[{events:4}],[{paymentReports:1}],[]]);
 console.log("PASS D1 ledger: four orders, four distinct references and four create events; zero FK violations");
 JS

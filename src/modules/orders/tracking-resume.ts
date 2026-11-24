@@ -1,7 +1,6 @@
 export const activeTrackingStorageKey = "taco-loco-active-tracking";
 export const recentGuestTrackingKey = "taco-loco-recent-guest-tracking";
 export const trackingResumeMaxAgeMs = 24 * 60 * 60 * 1000;
-export const trackingChangedEvent = "taco-loco:tracking-changed";
 
 export type TrackingReference = { path: string; orderNumber: number; createdAt: number; ownerId?: string };
 const trackingPathPattern = /^\/pedido\/[A-Za-z0-9_-]{43}$/;
@@ -54,4 +53,58 @@ export function finishTrackingHandoff(path?: string) {
   if (!path || readTrackingReference(storage, activeTrackingStorageKey)?.path === path) {
     removeTrackingReference(storage, activeTrackingStorageKey);
   }
+}
+
+const guestOrdersKey = "taco-loco-guest-orders";
+
+export function readGuestOrders(storage = trackingSessionStorage(), now = Date.now()): TrackingReference[] {
+  const legacy = readTrackingReference(storage, recentGuestTrackingKey, now);
+  try {
+    const records: unknown = JSON.parse(storage?.getItem(guestOrdersKey) ?? "[]");
+    const entries = Array.isArray(records) ? records.flatMap((record) => {
+      if (!record || typeof record !== "object" || record.ownerId !== undefined || typeof record.path !== "string"
+        || typeof record.createdAt !== "number" || record.createdAt > now || now - record.createdAt > trackingResumeMaxAgeMs) return [];
+      return createTrackingReference(record.path, record.orderNumber, record.createdAt) ?? [];
+    }) : [];
+    const orders = [...new Map([...entries, ...(legacy && !legacy.ownerId ? [legacy] : [])].map((entry) => [entry.path, entry])).values()].sort((a, b) => b.createdAt - a.createdAt);
+    try {
+      if (Array.isArray(records) && entries.length !== records.length) {
+        if (entries.length) storage?.setItem(guestOrdersKey, JSON.stringify(entries));
+        else storage?.removeItem(guestOrdersKey);
+      }
+    } catch { /* Expired entries are never returned. */ }
+    return orders;
+  } catch { return legacy && !legacy.ownerId ? [legacy] : []; }
+}
+
+export function rememberGuestOrder(reference: TrackingReference) {
+  const storage = trackingSessionStorage();
+  try {
+    const orders = readGuestOrders(storage).filter((entry) => entry.path !== reference.path);
+    storage?.setItem(guestOrdersKey, JSON.stringify([reference, ...orders]));
+    removeTrackingReference(storage, recentGuestTrackingKey);
+  } catch { /* Manual tracking remains available. */ }
+}
+
+export function clearGuestOrders() {
+  const storage = trackingSessionStorage();
+  removeTrackingReference(storage, recentGuestTrackingKey);
+  removeTrackingReference(storage, guestOrdersKey);
+}
+
+// Only a change notification crosses tabs. Each surface revalidates its own session.
+const customerSessionChannel = "taco-loco-customer-session";
+
+export function announceCustomerSessionChange() {
+  if (typeof BroadcastChannel === "undefined") return;
+  const channel = new BroadcastChannel(customerSessionChannel);
+  channel.postMessage("changed");
+  channel.close();
+}
+
+export function onCustomerSessionChange(refresh?: () => void) {
+  if (typeof BroadcastChannel === "undefined") return () => {};
+  const channel = new BroadcastChannel(customerSessionChannel);
+  channel.addEventListener("message", () => { clearGuestOrders(); refresh?.(); });
+  return () => channel.close();
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import nextConfig from "../../next.config";
 
 describe("tracking referrer policy", () => {
-  it("keeps a global policy but prioritizes no-referrer for token-bearing URLs", async () => {
+  it("keeps a global policy but prioritizes no-referrer for tracking and private order URLs", async () => {
     const rules = await nextConfig.headers?.();
     if (!rules) throw new Error("Expected next.config.ts headers");
 
@@ -15,6 +15,11 @@ describe("tracking referrer policy", () => {
 
     for (const source of [
       "/pedido/:token",
+      "/pedidos",
+      "/pedidos/:id",
+      "/api/customer/orders",
+      "/api/customer/orders/:id/tracking",
+      "/api/customer/orders/:id/tracking/payment",
       "/api/orders/tracking/:token",
       "/api/orders/tracking/:token/payment",
     ]) {

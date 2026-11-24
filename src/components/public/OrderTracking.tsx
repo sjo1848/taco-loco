@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { PublicOrderTracking } from "@/modules/orders/public-tracking";
-import { finishTrackingHandoff } from "@/modules/orders/tracking-resume";
-import { initialTrackingPollDelay, nextTrackingPollDelay, terminalTrackingStages } from "./tracking-polling";
+import Link from "next/link";
+import { terminalTrackingStages, type PublicOrderTracking } from "@/modules/orders/public-tracking";
+import { finishTrackingHandoff, onCustomerSessionChange } from "@/modules/orders/tracking-resume";
+import { initialTrackingPollDelay, maxTrackingPollDelay, nextTrackingPollDelay } from "./tracking-polling";
 import { PublicNavigation } from "@/components/public/PublicNavigation";
 function formatPrice(amount: number) { return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(amount); }
 async function trackingSpotlightStorageKey(token: string) {
@@ -13,8 +14,10 @@ async function trackingSpotlightStorageKey(token: string) {
   return `taco-loco:tracking-spotlight:v1:${fingerprint}`;
 }
 
-export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
+export function OrderTracking({ initial, privateOrderId }: { initial: PublicOrderTracking; privateOrderId?: string }) {
   const [tracking, setTracking] = useState(initial);
+  const [denied, setDenied] = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(Boolean(privateOrderId));
   const [error, setError] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState("");
   const [reportingPayment, setReportingPayment] = useState(false);
@@ -28,7 +31,7 @@ export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
   const inFlight = useRef(false);
 
   useEffect(() => {
-    finishTrackingHandoff(window.location.pathname);
+    if (!privateOrderId) finishTrackingHandoff(window.location.pathname);
     const token = window.location.pathname.split("/").filter(Boolean).at(-1);
     if (!token) return;
     let cancelled = false;
@@ -42,7 +45,7 @@ export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
       }).catch(() => { if (!cancelled) setSpotlightOpen(true); });
     }, 0);
     return () => { cancelled = true; window.clearTimeout(reveal); };
-  }, []);
+  }, [privateOrderId]);
 
   function dismissSpotlight() {
     const token = window.location.pathname.split("/").filter(Boolean).at(-1);
@@ -63,8 +66,10 @@ export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
     try {
       const token = window.location.pathname.split("/").filter(Boolean).at(-1);
       if (!token) throw new Error("TRACKING_TOKEN_MISSING");
-      const response = await fetch(`/api/orders/tracking/${encodeURIComponent(token)}/payment`, { method: "POST", credentials: "same-origin" });
-      if (response.ok) {
+      const endpoint = privateOrderId ? `/api/customer/orders/${encodeURIComponent(privateOrderId)}/tracking` : `/api/orders/tracking/${encodeURIComponent(token)}`;
+      const response = await fetch(`${endpoint}/payment`, { method: "POST", credentials: "same-origin" });
+      if (privateOrderId && (response.status === 401 || response.status === 404)) setDenied(true);
+      else if (response.ok) {
         const result = await response.json() as { reused?: boolean };
         setPaymentMessage(result.reused ? "El pago ya había sido informado. El local debe verificarlo antes de confirmar el pedido." : "Pago informado. El local debe verificarlo antes de confirmar el pedido.");
       } else setPaymentMessage("Este pedido ya no admite informar el pago.");
@@ -75,20 +80,32 @@ export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
   useEffect(() => {
     let cancelled = false;
     let generation = 0;
+    let accessLost = false;
+    const canPoll = () => !accessLost && (Boolean(privateOrderId) || !terminalTrackingStages.includes(currentTracking.current.currentStage));
+    const endpoint = privateOrderId ? `/api/customer/orders/${encodeURIComponent(privateOrderId)}/tracking`
+      : window.location.pathname.replace(/\/$/, "").replace("/pedido/", "/api/orders/tracking/");
     const requestController = { current: null as AbortController | null };
     const clear = () => { if (timer.current !== undefined) window.clearTimeout(timer.current); timer.current = undefined; };
-    const schedule = (wait: number, poll: () => Promise<void>) => { clear(); if (!cancelled && visible.current && !terminalTrackingStages.includes(currentTracking.current.currentStage)) timer.current = window.setTimeout(() => void poll(), wait); };
+    const schedule = (wait: number, poll: () => Promise<void>) => { clear(); if (!cancelled && visible.current && canPoll()) timer.current = window.setTimeout(() => void poll(), wait); };
     const poll = async (immediate = false): Promise<void> => {
-      if (cancelled || !visible.current || terminalTrackingStages.includes(currentTracking.current.currentStage) || inFlight.current) return;
+      if (cancelled || !visible.current || !canPoll() || inFlight.current) return;
       if (!immediate) { schedule(delay.current, () => poll(true)); return; }
       const requestGeneration = generation;
       inFlight.current = true;
       const controller = new AbortController();
       requestController.current = controller;
       try {
-        const response = await fetch(`${window.location.pathname.replace(/\/$/, "").replace("/pedido/", "/api/orders/tracking/")}?after=${encodeURIComponent(currentTracking.current.version)}`, { cache: "no-store", signal: controller.signal });
+        const response = await fetch(`${endpoint}?after=${encodeURIComponent(currentTracking.current.version)}`, { cache: "no-store", signal: controller.signal });
+        if (cancelled || controller.signal.aborted || requestGeneration !== generation) return;
+        if (privateOrderId && (response.status === 401 || response.status === 404)) {
+          accessLost = true;
+          setDenied(true);
+          return;
+        }
+        if (privateOrderId && (response.status === 200 || response.status === 204)) setCheckingAccess(false);
         if (response.status === 200) {
           const next = await response.json() as PublicOrderTracking;
+          if (cancelled || controller.signal.aborted || requestGeneration !== generation) return;
           const stageChanged = next.currentStage !== currentTracking.current.currentStage;
           currentTracking.current = next;
           setTracking(next);
@@ -99,13 +116,19 @@ export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
         else if (response.status !== 204) throw new Error("TRACKING_FAILED");
         else delay.current = nextTrackingPollDelay(delay.current, true);
       } catch { if (cancelled || controller.signal.aborted || requestGeneration !== generation) return; setError(true); delay.current = nextTrackingPollDelay(delay.current, false); }
-      finally { if (requestGeneration !== generation) return; inFlight.current = false; requestController.current = null; if (!cancelled && visible.current && !terminalTrackingStages.includes(currentTracking.current.currentStage)) schedule(delay.current, () => poll(true)); }
+      finally { if (requestGeneration !== generation) return; inFlight.current = false; requestController.current = null; if (!cancelled && visible.current && canPoll()) schedule(terminalTrackingStages.includes(currentTracking.current.currentStage) ? maxTrackingPollDelay : delay.current, () => poll(true)); }
     };
-    const onVisibility = () => { visible.current = document.visibilityState === "visible"; generation += 1; if (visible.current) { requestController.current?.abort(); inFlight.current = false; delay.current = initialTrackingPollDelay; void poll(true); } else { clear(); requestController.current?.abort(); inFlight.current = false; } };
+    const onVisibility = () => { if (privateOrderId) setCheckingAccess(true); visible.current = document.visibilityState === "visible"; generation += 1; if (visible.current) { requestController.current?.abort(); inFlight.current = false; delay.current = initialTrackingPollDelay; void poll(true); } else { clear(); requestController.current?.abort(); inFlight.current = false; } };
     document.addEventListener("visibilitychange", onVisibility);
+    const unsubscribe = privateOrderId ? onCustomerSessionChange(onVisibility) : undefined;
+    if (privateOrderId) { window.addEventListener("focus", onVisibility); window.addEventListener("pageshow", onVisibility); }
     if (document.visibilityState === "visible") void poll(true);
-    return () => { cancelled = true; generation += 1; requestController.current?.abort(); clear(); document.removeEventListener("visibilitychange", onVisibility); };
-  }, []);
+    return () => { unsubscribe?.(); cancelled = true; generation += 1; requestController.current?.abort(); clear(); document.removeEventListener("visibilitychange", onVisibility); window.removeEventListener("focus", onVisibility); window.removeEventListener("pageshow", onVisibility); };
+  }, [privateOrderId]);
+
+  if (denied) return <main className="public-shell"><PublicNavigation /><section className="public-panel"><h1>Seguimiento no disponible</h1><p>Ingresá con la cuenta que hizo el pedido para consultar su estado.</p><Link className="button" href="/cuenta">Ir a mi cuenta</Link></section></main>;
+
+  if (checkingAccess) return <main className="public-shell"><PublicNavigation /><section className="public-panel"><h1>Seguimiento</h1><p role="status">{error ? "No pudimos verificar el acceso. Estamos reintentando…" : "Verificando acceso al pedido…"}</p></section></main>;
 
   return <main className="public-menu public-tracking" ref={(node) => { if (node) node.setAttribute("aria-live", "polite"); }}><PublicNavigation />
     <section className={`brand-pattern brand-pattern--hero tracking-hero${spotlightOpen ? " tracking-hero--spotlight" : ""}`}><div className="public-menu__content"><p className="eyebrow">Taco Loco · Seguimiento</p><h1>Pedido {tracking.orderCode}</h1>
