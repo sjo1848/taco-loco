@@ -153,6 +153,13 @@ try {
     await page.getByRole("button",{name:"Vaciar pedido",exact:true}).click();
     assert(await send(page).isEnabled());
     assert.match(await send(page).textContent(),/Recuperar intento/);
+    await page.route("**/api/orders/intents", async route => {
+      assert.equal(route.request().postDataJSON().clientReference,interruptedReference);
+      await route.fulfill({ status:409, json:{code:"ORDERS_CLOSED"} });
+    }, {times:1});
+    await send(page).click();
+    await page.getByText(/No estamos tomando pedidos en este momento\. Revisá nuestros horarios/).waitFor();
+    assert.match(await send(page).textContent(),/Recuperar intento/);
   }
   await page.route("**/api/orders/intents", async route => {
     const persisted = await route.fetch({maxRetries:0});

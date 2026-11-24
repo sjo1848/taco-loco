@@ -446,8 +446,8 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       if (!response.ok) {
         const error = await response.json().catch(() => null) as { code?: string; message?: string } | null;
         if (!menuMounted.current) { popup?.close(); return; }
-        if (response.status === 400 || error?.code === "ORDERS_CLOSED") {
-          // The server checks replay before rejecting a closed shop or unavailable item.
+        if (!saved && (response.status === 400 || error?.code === "ORDERS_CLOSED")) {
+          // On a retry the original request could still commit after this rejection.
           pendingIntent.current = null;
           setNeedsOrderRecovery(false);
           try { storage?.removeItem(checkoutIntentStorageKey); } catch { /* Optional storage. */ }
