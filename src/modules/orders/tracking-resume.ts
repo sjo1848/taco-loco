@@ -1,56 +1,57 @@
 export const activeTrackingStorageKey = "taco-loco-active-tracking";
+export const recentGuestTrackingKey = "taco-loco-recent-guest-tracking";
 export const trackingResumeMaxAgeMs = 24 * 60 * 60 * 1000;
+export const trackingChangedEvent = "taco-loco:tracking-changed";
 
-export type ActiveTrackingResume = {
-  path: string;
-  orderNumber: number;
-  createdAt: number;
-  handoffPending: boolean;
-};
-
+export type TrackingReference = { path: string; orderNumber: number; createdAt: number; ownerId?: string };
 const trackingPathPattern = /^\/pedido\/[A-Za-z0-9_-]{43}$/;
 
 export function isTrackingResumePath(path: string) {
   return trackingPathPattern.test(path);
 }
 
-export function createActiveTrackingResume(path: string, orderNumber: number, createdAt = Date.now()): ActiveTrackingResume | null {
+export function createTrackingReference(path: string, orderNumber: number, createdAt = Date.now()): TrackingReference | null {
   if (!isTrackingResumePath(path) || !Number.isInteger(orderNumber) || orderNumber < 1) return null;
-  return { path, orderNumber, createdAt, handoffPending: true };
+  return { path, orderNumber, createdAt };
 }
 
-export function isActiveTrackingResume(value: unknown, now = Date.now()): value is ActiveTrackingResume {
-  if (!value || typeof value !== "object") return false;
-  const candidate = value as Partial<ActiveTrackingResume>;
-  return isTrackingResumePath(typeof candidate.path === "string" ? candidate.path : "")
-    && Number.isInteger(candidate.orderNumber) && (candidate.orderNumber ?? 0) > 0
-    && typeof candidate.createdAt === "number"
-    && now - candidate.createdAt >= 0
-    && now - candidate.createdAt <= trackingResumeMaxAgeMs
-    && candidate.handoffPending === true;
-}
-
-export function readActiveTrackingResume(storage: Pick<Storage, "getItem" | "removeItem">, now = Date.now()) {
+export function readTrackingReference(storage: Storage | undefined, key: string, now = Date.now()): TrackingReference | null {
   try {
-    const raw = storage.getItem(activeTrackingStorageKey);
+    const raw = storage?.getItem(key);
     if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
-    if (isActiveTrackingResume(parsed, now)) return parsed;
-    storage.removeItem(activeTrackingStorageKey);
-    return null;
-  } catch {
-    return null;
-  }
+    const record = JSON.parse(raw) as Partial<TrackingReference> | null;
+    if (record && typeof record.path === "string" && isTrackingResumePath(record.path)
+      && Number.isInteger(record.orderNumber) && (record.orderNumber ?? 0) > 0
+      && (record.ownerId === undefined || typeof record.ownerId === "string")
+      && typeof record.createdAt === "number" && now - record.createdAt >= 0
+      && now - record.createdAt <= trackingResumeMaxAgeMs) return record as TrackingReference;
+  } catch { /* Ignore unavailable or invalid browser storage. */ }
+  removeTrackingReference(storage, key);
+  return null;
 }
 
-export function writeActiveTrackingResume(storage: Pick<Storage, "setItem">, resume: ActiveTrackingResume) {
-  try { storage.setItem(activeTrackingStorageKey, JSON.stringify(resume)); } catch {
-    // Tracking recovery is an enhancement; the server-side order remains authoritative.
-  }
+export function writeTrackingReference(storage: Storage | undefined, key: string, reference: TrackingReference) {
+  try { storage?.setItem(key, JSON.stringify(reference)); } catch { /* The server-side order remains available. */ }
 }
 
-export function clearActiveTrackingResume(storage: Pick<Storage, "removeItem">) {
-  try { storage.removeItem(activeTrackingStorageKey); } catch {
-    // Storage may be unavailable or blocked by browser policy.
+export function removeTrackingReference(storage: Storage | undefined, key: string) {
+  try { storage?.removeItem(key); } catch { /* Storage may be blocked. */ }
+}
+
+export function trackingSessionStorage() {
+  try { return window.sessionStorage; } catch { return undefined; }
+}
+
+export function retireLegacyTrackingStorage() {
+  try {
+    window.localStorage.removeItem(activeTrackingStorageKey);
+    window.sessionStorage.removeItem("taco-loco-completed-order");
+  } catch { /* Legacy state is no longer read. */ }
+}
+
+export function finishTrackingHandoff(path?: string) {
+  const storage = trackingSessionStorage();
+  if (!path || readTrackingReference(storage, activeTrackingStorageKey)?.path === path) {
+    removeTrackingReference(storage, activeTrackingStorageKey);
   }
 }

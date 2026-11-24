@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GoogleSignInButton } from "@/components/public/GoogleSignInButton";
+import { finishTrackingHandoff, recentGuestTrackingKey, removeTrackingReference, trackingSessionStorage } from "@/modules/orders/tracking-resume";
 import type { PublicCustomer } from "@/modules/auth/customer-types";
 import { CustomerOrders } from "@/components/public/CustomerOrders";
 import { CustomerPreferences } from "@/components/public/CustomerPreferences";
@@ -43,6 +44,8 @@ export function CustomerAccount() {
   useEffect(() => { void loadSession(); }, [loadSession]);
 
   const handleAuthenticated = useCallback((value: PublicCustomer) => {
+    finishTrackingHandoff();
+    removeTrackingReference(trackingSessionStorage(), recentGuestTrackingKey);
     setCustomer(value);
     setState("authenticated");
     setMessage("Sesión iniciada correctamente.");
@@ -57,17 +60,25 @@ export function CustomerAccount() {
 
   async function logout() {
     setMessage("");
-    const response = await fetch("/api/customer/auth/logout", { method: "POST", credentials: "same-origin" });
-    if (!response.ok) {
+    const response = await fetch("/api/customer/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => null);
+    if (!response?.ok) {
       setMessage("No pudimos cerrar la sesión. Intentá nuevamente.");
       return;
     }
+    finishTrackingHandoff();
+    removeTrackingReference(trackingSessionStorage(), recentGuestTrackingKey);
     setCustomer(null);
     setState("visitor");
     setMessage("Sesión cerrada.");
   }
 
-  return <main className="public-shell"><PublicNavigation /><section className="public-panel" aria-labelledby="account-title">
+  useEffect(() => {
+    if (state === "authenticated" && window.location.hash === "#customer-orders") {
+      document.getElementById("customer-orders")?.scrollIntoView();
+    }
+  }, [state]);
+
+  return <main className="public-shell"><PublicNavigation authenticated={state === "authenticated"} /><section className="public-panel" aria-labelledby="account-title">
     <p className="eyebrow">Taco Club</p>
     <h1 id="account-title">Tu cuenta, cuando quieras</h1>
     <p className="selection-help">Comprar como invitado sigue siendo siempre posible. El acceso al Taco Club es opcional.</p>

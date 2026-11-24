@@ -33,6 +33,19 @@ export function CustomerOrders() {
     finally { setRepeating(null); }
   }
 
+  function openRepeatDraft() {
+    if (!proposal) return;
+    try {
+      const cart = JSON.parse(window.sessionStorage.getItem("taco-loco-selection") ?? "[]");
+      if (Array.isArray(cart) && cart.length > 0 && !window.confirm("Ya tenés productos en el carrito. ¿Querés reemplazarlos por este pedido?")) return;
+      window.sessionStorage.setItem("taco-loco-repeat-draft", JSON.stringify(proposal));
+    } catch {
+      setRepeatMessage("No pudimos llevar el borrador al carrito. Permití el almacenamiento en esta pestaña y reintentá.");
+      return;
+    }
+    router.push("/menu?carrito=1");
+  }
+
   const load = useCallback(async (cursor: string | null, append: boolean) => {
     if (append) setLoadingMore(true);
     else setLoading(true);
@@ -61,7 +74,7 @@ export function CustomerOrders() {
     {error && <div role="alert"><p className="form-error">No pudimos cargar tus pedidos.</p><button className="button button--secondary" type="button" onClick={() => void load(null, false)}>Reintentar</button></div>}
     {!loading && !error && orders.length === 0 && <p className="selection-help">Todavía no tenés pedidos asociados a esta cuenta. Comprar como invitado sigue siendo posible.</p>}
     {!loading && !error && orders.length > 0 && <div className="customer-orders" aria-live="polite">{orders.map((order) => <article className="customer-order-card" key={`${order.orderCode}-${order.createdAt}`}><header><div><strong>{order.orderCode}</strong><p className="selection-help">{formatDate(order.createdAt)} · {order.fulfillment === "DELIVERY" ? "Delivery" : "Retiro"}</p></div><span className="order-status">{order.title}</span></header><p>{order.message}</p><div>{order.lines.map((line, index) => <div key={`${line.name}-${index}`}><span>{line.quantity} × {line.name}</span>{line.modifiers.length > 0 && <small> · {line.modifiers.map((modifier) => `${modifier.group}: ${modifier.option}`).join(", ")}</small>}</div>)}</div><strong>{formatPrice(order.totalAmount)}</strong><button className="button button--secondary" type="button" disabled={repeating !== null || !order.repeatReference} onClick={() => void repeatOrder(order.repeatReference, order.orderCode)}>{repeating === order.orderCode ? "Revisando…" : order.repeatReference ? "Repetir pedido" : "No disponible"}</button></article>)}</div>}
-    {proposal && <section className="public-panel" aria-labelledby="repeat-proposal-title"><h2 id="repeat-proposal-title">Revisá tu pedido repetido</h2><p className="selection-help">Estos son los precios, disponibilidad y modificadores actuales. La orden todavía no fue creada.</p>{proposal.lines.map((line) => <p key={`${line.productId}-${line.name}`}><strong>{line.quantity} × {line.name}</strong> · {formatPrice(line.priceAmount)}{line.modifiers.length > 0 && ` · ${line.modifiers.map((modifier) => `${modifier.group}: ${modifier.option}`).join(", ")}`}</p>)}<strong>Subtotal actual: {formatPrice(proposal.subtotalAmount)}</strong><div className="selection-actions"><button className="button" type="button" onClick={() => { try { window.sessionStorage.setItem("taco-loco-repeat-draft", JSON.stringify(proposal)); } catch { /* optional */ } router.push("/menu"); }}>Continuar al checkout</button><button className="button button--secondary" type="button" onClick={() => setProposal(null)}>Cancelar</button></div></section>}
+    {proposal && <section className="public-panel" aria-labelledby="repeat-proposal-title"><h2 id="repeat-proposal-title">Revisá tu pedido repetido</h2><p className="selection-help">Estos son los precios, disponibilidad y modificadores actuales. La orden todavía no fue creada.</p>{proposal.lines.map((line) => <p key={`${line.productId}-${line.name}`}><strong>{line.quantity} × {line.name}</strong> · {formatPrice(line.priceAmount)}{line.modifiers.length > 0 && ` · ${line.modifiers.map((modifier) => `${modifier.group}: ${modifier.option}`).join(", ")}`}</p>)}<strong>Subtotal actual: {formatPrice(proposal.subtotalAmount)}</strong><div className="selection-actions"><button className="button" type="button" onClick={openRepeatDraft}>Continuar al checkout</button><button className="button button--secondary" type="button" onClick={() => setProposal(null)}>Cancelar</button></div></section>}
     {repeatMessage && <p className="selection-help" role="status">{repeatMessage}</p>}
     {!loading && !error && nextCursor && <button className="button button--secondary" type="button" disabled={loadingMore} onClick={() => void load(nextCursor, true)}>{loadingMore ? "Cargando…" : "Ver más pedidos"}</button>}
   </section>;
