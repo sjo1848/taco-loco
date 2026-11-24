@@ -8,7 +8,10 @@ const headers = { "cache-control": "no-store" };
 const inputSchema = z.object({ displayName: z.string() }).strict();
 
 export async function PATCH(request: Request) {
-  if (!isSameOrigin(request)) return NextResponse.json({ code: "CSRF_REJECTED" }, { status: 403, headers });
+  let sameOrigin = false;
+  try { sameOrigin = Boolean(request.headers.get("origin")) && isSameOrigin(request); }
+  catch { /* A malformed Origin is unauthorized. */ }
+  if (!sameOrigin) return NextResponse.json({ code: "CSRF_REJECTED" }, { status: 403, headers });
   try {
     const customer = await requireCustomer();
     const viewer = request.headers.get("x-customer-viewer");

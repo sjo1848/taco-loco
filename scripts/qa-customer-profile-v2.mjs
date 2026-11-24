@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
@@ -161,16 +162,27 @@ try {
     await context.close();
   }
   if (mode === "candidate") {
+    await writeFile(join(output,"report.json"), JSON.stringify(report,null,2));
     const { context, page } = await setup(390);
     const headers = { origin: base };
     const profile = filteredUrl("/api/customer/profile");
-    assert.equal((await context.request.patch(profile,{headers,data:{displayName:"Invitado"}})).status(),401);
-    await setCustomer(context,"b");
-    assert.equal((await context.request.patch(profile,{headers:{origin:"https://example.invalid"},data:{displayName:"CSRF"}})).status(),403);
-    for (const data of [{displayName:" "},{displayName:"ñ".repeat(161)},{displayName:"Válido",email:"otro@example.test"}]) {
-      assert.equal((await context.request.patch(profile,{headers,data})).status(),400);
+    // Independent HTTP connections isolate the expected rejection statuses from local keep-alive cancellation.
+    function profileStatus(data,{origin=base,authenticated=true,viewer}={}) {
+      const args=["--silent","--show-error","--max-time","10","--http1.1","-o","/dev/null","-w","%{http_code}","-X","PATCH",
+        "-H","Connection: close","-H","Content-Type: application/json"];
+      if (origin) args.push("-H",`Origin: ${origin}`);
+      if (authenticated) args.push("-b",`${sessionCookie}=${"b".repeat(64)}`);
+      if (viewer) args.push("-H",`X-Customer-Viewer: ${viewer}`);
+      return Number(execFileSync("curl",[...args,"--data",JSON.stringify(data),profile],{encoding:"utf8"}));
     }
-    assert.equal((await context.request.patch(profile,{headers:{...headers,"x-customer-viewer":"qa-other"},data:{displayName:"Cuenta incorrecta"}})).status(),409);
+    assert.equal(profileStatus({displayName:"Invitado"},{authenticated:false}),401);
+    assert.equal(profileStatus({displayName:"CSRF"},{origin:"https://example.invalid"}),403);
+    assert.equal(profileStatus({displayName:"CSRF"},{origin:null}),403);
+    for (const data of [{displayName:" "},{displayName:"ñ".repeat(161)},{displayName:"Válido",email:"otro@example.test"}]) {
+      assert.equal(profileStatus(data),400);
+    }
+    assert.equal(profileStatus({displayName:"Cuenta incorrecta"},{viewer:"qa-other"}),409);
+    await setCustomer(context,"b");
     await visit(page,"/cuenta/datos");
     await page.getByRole("button",{name:/Editar nombre|^Editar$/}).click();
     await page.getByRole("textbox",{name:/Nombre/}).fill("  María Ñandú 🌮  ");

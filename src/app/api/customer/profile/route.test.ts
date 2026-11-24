@@ -40,6 +40,13 @@ describe("PATCH /api/customer/profile", () => {
     expect(mocked.requireCustomer).not.toHaveBeenCalled();
   });
 
+  it("rejects missing and malformed Origin headers", async () => {
+    expect((await PATCH(new Request("https://taco.test/api/customer/profile", { method: "PATCH", body: "{}" }))).status).toBe(403);
+    mocked.isSameOrigin.mockImplementationOnce(() => { throw new TypeError("Invalid URL"); });
+    expect((await PATCH(request({ displayName: "Nombre" }, "null"))).status).toBe(403);
+    expect(mocked.requireCustomer).not.toHaveBeenCalled();
+  });
+
   it("requires an authenticated customer", async () => {
     mocked.requireCustomer.mockRejectedValue(new Error("CUSTOMER_UNAUTHORIZED"));
     const response = await PATCH(request({ displayName: "Nombre" }));
