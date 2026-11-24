@@ -93,3 +93,4 @@
 }
 
 .panel :global(.eyebrow) { color: #795000; }
+.panel :global(.button:not(.button--secondary)) { background: #b51f24; }

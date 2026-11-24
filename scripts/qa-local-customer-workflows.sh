@@ -51,6 +51,9 @@ INSERT INTO CustomerAddress (id,customerId,label,address,reference,createdAt,upd
 INSERT INTO CustomerFavorite (customerId,productId,createdAt) VALUES ('qa-customer','acacacac-acac-4aca-8aca-acacacacacac',CURRENT_TIMESTAMP),('qa-other','abababab-abab-4aba-8aba-abababababab',CURRENT_TIMESTAMP);
 SQL
 fi
+if [[ "${TACO_QA_PROFILE_MODE:-}" == "candidate" && "${TACO_QA_PROFILE_ONLY:-}" != "visual" ]]; then
+  timeout 90 node "$qa_root/scripts/qa-profile-worker-checks.mjs" | tee "$state/profile-worker.log"
+fi
 "$w" d1 execute DB "${args[@]}" --file "$state/fixtures.sql" >"$state/seed.log"
 setsid "$w" dev "${args[@]}" --ip 127.0.0.1 --port "$port" --inspector-port "${TACO_QA_INSPECTOR_PORT:-9285}" --show-interactive-dev-session false >"$state/worker.log" 2>&1 &
 worker=$!

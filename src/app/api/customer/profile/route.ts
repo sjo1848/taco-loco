@@ -9,7 +9,10 @@ const inputSchema = z.object({ displayName: z.string() }).strict();
 
 export async function PATCH(request: Request) {
   let sameOrigin = false;
-  try { sameOrigin = Boolean(request.headers.get("origin")) && isSameOrigin(request); }
+  try {
+    const origin = request.headers.get("origin");
+    sameOrigin = Boolean(origin && new URL(origin).origin === origin && isSameOrigin(request));
+  }
   catch { /* A malformed Origin is unauthorized. */ }
   if (!sameOrigin) return NextResponse.json({ code: "CSRF_REJECTED" }, { status: 403, headers });
   try {
