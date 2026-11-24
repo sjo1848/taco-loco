@@ -2,7 +2,7 @@ export const activeTrackingStorageKey = "taco-loco-active-tracking";
 export const recentGuestTrackingKey = "taco-loco-recent-guest-tracking";
 export const trackingResumeMaxAgeMs = 24 * 60 * 60 * 1000;
 
-export type TrackingReference = { path: string; orderNumber: number; createdAt: number; ownerId?: string };
+export type TrackingReference = { path: string; orderNumber: number; createdAt: number; ownerId?: string; sessionGeneration?: string | null };
 const trackingPathPattern = /^\/pedido\/[A-Za-z0-9_-]{43}$/;
 
 export function isTrackingResumePath(path: string) {
@@ -21,6 +21,7 @@ export function readTrackingReference(storage: Storage | undefined, key: string,
     const record = JSON.parse(raw) as Partial<TrackingReference> | null;
     if (record && typeof record.path === "string" && isTrackingResumePath(record.path)
       && Number.isInteger(record.orderNumber) && (record.orderNumber ?? 0) > 0
+      && (record.sessionGeneration == null || typeof record.sessionGeneration === "string")
       && (record.ownerId === undefined || typeof record.ownerId === "string")
       && typeof record.createdAt === "number" && now - record.createdAt >= 0
       && now - record.createdAt <= trackingResumeMaxAgeMs) return record as TrackingReference;
@@ -58,14 +59,14 @@ export function finishTrackingHandoff(path?: string) {
 const guestOrdersKey = "taco-loco-guest-orders";
 const customerSessionGenerationKey = "taco-loco-customer-session-generation";
 
-function customerSessionGeneration() {
+export function readCustomerSessionGeneration() {
   try { return window.localStorage.getItem(customerSessionGenerationKey); }
   catch { return null; }
 }
 
 export function readGuestOrders(storage = trackingSessionStorage(), now = Date.now()): TrackingReference[] {
   // The shared marker has no token or identity. A tab outside the app may miss the broadcast.
-  const generation = customerSessionGeneration();
+  const generation = readCustomerSessionGeneration();
   try {
     if (generation && storage?.getItem(customerSessionGenerationKey) !== generation) {
       removeTrackingReference(storage, recentGuestTrackingKey);
@@ -96,7 +97,7 @@ export function rememberGuestOrder(reference: TrackingReference) {
   const storage = trackingSessionStorage();
   try {
     const orders = readGuestOrders(storage).filter((entry) => entry.path !== reference.path);
-    const generation = customerSessionGeneration();
+    const generation = readCustomerSessionGeneration();
     if (generation) storage?.setItem(customerSessionGenerationKey, generation);
     storage?.setItem(guestOrdersKey, JSON.stringify([reference, ...orders]));
     removeTrackingReference(storage, recentGuestTrackingKey);

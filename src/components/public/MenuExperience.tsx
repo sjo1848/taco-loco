@@ -7,12 +7,12 @@ import { ProductCard } from "@/components/public/ProductCard";
 import { SaucesInfo } from "@/components/public/SaucesInfo";
 import { PublicNavigation } from "@/components/public/PublicNavigation";
 import { filterCatalog } from "@/modules/catalog/discovery";
-import { activeTrackingStorageKey, createTrackingReference, finishTrackingHandoff, readTrackingReference, rememberGuestOrder, retireLegacyTrackingStorage, trackingResumeMaxAgeMs, trackingSessionStorage, writeTrackingReference, type TrackingReference } from "@/modules/orders/tracking-resume";
+import { activeTrackingStorageKey, createTrackingReference, finishTrackingHandoff, onCustomerSessionChange, readCustomerSessionGeneration, readTrackingReference, rememberGuestOrder, retireLegacyTrackingStorage, trackingResumeMaxAgeMs, trackingSessionStorage, writeTrackingReference, type TrackingReference } from "@/modules/orders/tracking-resume";
 import { buildWhatsAppAppUrl, buildWhatsAppMessageWithCheckout, buildWhatsAppUrl, checkoutIntentStorageKey, createClientReference, addSelectionLine, lineId, removeSelectionLine, selectionCount, selectionTotal, updateSelectionQuantity, type CheckoutDetails, type SelectionLine } from "@/modules/selection/model";
 
 type Product = { id: string; name: string; description: string | null; priceAmount: number; available: boolean; featured: boolean; imageKey: string | null; imageAlt: string | null; modifiers: Array<{ name: string; required: boolean; minSelections: number | null; maxSelections: number | null; options: string[] }> };
 type Menu = { settings: { businessName: string; whatsappUrl: string; deliveryEnabled: boolean; deliveryFeeAmount: number; operatingContext: { isOpen: boolean; label: string; detail: string } }; categories: Array<{ id: string; name: string; slug: string; products: Product[] }> };
-type CompletedOrder = { number: number; lines: SelectionLine[]; total: number; whatsappHref: string; whatsappAppHref: string; trackingHref: string; message: string; ownerId?: string };
+type CompletedOrder = { number: number; lines: SelectionLine[]; total: number; whatsappHref: string; whatsappAppHref: string; trackingHref: string; message: string; ownerId?: string; sessionGeneration: string | null };
 type CustomerSession = { authenticated?: boolean; customer?: { id?: string; displayName?: string | null } };
 type SavedAddress = { id: string; label: string; address: string; reference: string | null };
 
@@ -147,6 +147,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   useEffect(() => {
     let mounted = true;
     const navigateToTracking = async (reference: TrackingReference) => {
+      if ((reference.sessionGeneration ?? null) !== readCustomerSessionGeneration()) return;
       if (reference.ownerId) {
         try {
           const response = await fetch("/api/customer/auth/session", { cache: "no-store" });
@@ -157,7 +158,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
           }
         } catch { return; }
       }
-      if (mounted) window.location.assign(reference.path);
+      if (mounted && (reference.sessionGeneration ?? null) === readCustomerSessionGeneration()) window.location.assign(reference.path);
     };
     const resumeTracking = () => {
       const handoff = handoffRef.current;
@@ -168,6 +169,12 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       if (Date.now() - createdAt <= trackingResumeMaxAgeMs) void navigateToTracking(handoff.reference);
     };
     resumeTrackingRef.current = resumeTracking;
+    const unsubscribe = onCustomerSessionChange(() => {
+      handoffRef.current = null;
+      finishTrackingHandoff();
+      setCompletedOrder(null);
+      setShowWhatsAppWebFallback(false);
+    });
     const markBackground = () => {
       if (handoffRef.current) handoffRef.current.sawBackground = true;
     };
@@ -202,6 +209,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     window.addEventListener("pageshow", onPageShow);
     return () => {
       mounted = false;
+      unsubscribe();
       window.clearTimeout(restore);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("blur", markBackground);
@@ -397,6 +405,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     const reference = createTrackingReference(completedOrder.trackingHref, completedOrder.number);
     if (!reference) return;
     reference.ownerId = completedOrder.ownerId;
+    reference.sessionGeneration = completedOrder.sessionGeneration;
     handoffRef.current = { sawBackground: false, reference };
     writeTrackingReference(trackingSessionStorage(), activeTrackingStorageKey, reference);
   }
@@ -408,6 +417,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       setFeedbackMessage("Completá la dirección y el titular de la transferencia.");
       return;
     }
+    const sessionGeneration = readCustomerSessionGeneration();
     submitInFlight.current = true;
     setSubmittingOrder(true);
     setFeedbackMessage("Preparando tu pedido para WhatsApp…");
@@ -464,18 +474,6 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       const reference = result.tracking && createTrackingReference(result.tracking.path, result.order.orderNumber);
       if (!reference || !result.tracking) throw new Error("TRACKING_UNAVAILABLE");
       registered = true;
-      reference.ownerId = result.customerId ?? undefined;
-      const message = buildWhatsAppMessageWithCheckout(lines, menu.settings.businessName, result.order.orderNumber, checkout, result.tracking.url);
-      const preparedOrder: CompletedOrder = {
-        number: result.order.orderNumber, lines, total: result.order.totalAmount, trackingHref: reference.path, message, ownerId: reference.ownerId,
-        whatsappHref: buildWhatsAppUrl(menu.settings.whatsappUrl, message),
-        whatsappAppHref: buildWhatsAppAppUrl(menu.settings.whatsappUrl, message),
-      };
-      const handoff = handoffRef.current;
-      if (handoff) handoff.reference = reference;
-      if (popup || isMobileDevice) writeTrackingReference(storage, activeTrackingStorageKey, reference);
-      if (result.customerId === null) rememberGuestOrder(reference);
-      setCompletedOrder(preparedOrder);
       pendingIntent.current = null;
       setNeedsOrderRecovery(false);
       try {
@@ -484,6 +482,25 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       } catch { /* The registered order remains authoritative. */ }
       setLines([]);
       setShowSummary(false);
+      if (sessionGeneration !== readCustomerSessionGeneration()) {
+        popup?.close();
+        handoffRef.current = null;
+        setFeedbackMessage("El pedido quedó registrado antes del cambio de sesión. Revisá Pedidos desde la sesión original.");
+        return;
+      }
+      reference.ownerId = result.customerId ?? undefined;
+      reference.sessionGeneration = sessionGeneration;
+      const message = buildWhatsAppMessageWithCheckout(lines, menu.settings.businessName, result.order.orderNumber, checkout, result.tracking.url);
+      const preparedOrder: CompletedOrder = {
+        number: result.order.orderNumber, lines, total: result.order.totalAmount, trackingHref: reference.path, message, ownerId: reference.ownerId, sessionGeneration,
+        whatsappHref: buildWhatsAppUrl(menu.settings.whatsappUrl, message),
+        whatsappAppHref: buildWhatsAppAppUrl(menu.settings.whatsappUrl, message),
+      };
+      const handoff = handoffRef.current;
+      if (handoff) handoff.reference = reference;
+      if (popup || isMobileDevice) writeTrackingReference(storage, activeTrackingStorageKey, reference);
+      if (result.customerId === null) rememberGuestOrder(reference);
+      setCompletedOrder(preparedOrder);
       if (!result.reused && saveNewAddress && customerId && customerId === result.customerId && payload.fulfillment === "DELIVERY" && payload.deliveryAddress && addressLabel.trim()) {
         void fetch("/api/customer/preferences", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ label: addressLabel.trim(), address: payload.deliveryAddress, reference: payload.deliveryReference }) }).catch(() => undefined);
       }
