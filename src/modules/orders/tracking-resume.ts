@@ -56,8 +56,23 @@ export function finishTrackingHandoff(path?: string) {
 }
 
 const guestOrdersKey = "taco-loco-guest-orders";
+const customerSessionGenerationKey = "taco-loco-customer-session-generation";
+
+function customerSessionGeneration() {
+  try { return window.localStorage.getItem(customerSessionGenerationKey); }
+  catch { return null; }
+}
 
 export function readGuestOrders(storage = trackingSessionStorage(), now = Date.now()): TrackingReference[] {
+  // The shared marker has no token or identity. A tab outside the app may miss the broadcast.
+  const generation = customerSessionGeneration();
+  try {
+    if (generation && storage?.getItem(customerSessionGenerationKey) !== generation) {
+      removeTrackingReference(storage, recentGuestTrackingKey);
+      removeTrackingReference(storage, guestOrdersKey);
+      return [];
+    }
+  } catch { return []; }
   const legacy = readTrackingReference(storage, recentGuestTrackingKey, now);
   try {
     const records: unknown = JSON.parse(storage?.getItem(guestOrdersKey) ?? "[]");
@@ -81,6 +96,8 @@ export function rememberGuestOrder(reference: TrackingReference) {
   const storage = trackingSessionStorage();
   try {
     const orders = readGuestOrders(storage).filter((entry) => entry.path !== reference.path);
+    const generation = customerSessionGeneration();
+    if (generation) storage?.setItem(customerSessionGenerationKey, generation);
     storage?.setItem(guestOrdersKey, JSON.stringify([reference, ...orders]));
     removeTrackingReference(storage, recentGuestTrackingKey);
   } catch { /* Manual tracking remains available. */ }
@@ -96,6 +113,8 @@ export function clearGuestOrders() {
 const customerSessionChannel = "taco-loco-customer-session";
 
 export function announceCustomerSessionChange() {
+  try { window.localStorage.setItem(customerSessionGenerationKey, crypto.randomUUID()); }
+  catch { /* The live notification still works when shared storage is unavailable. */ }
   if (typeof BroadcastChannel === "undefined") return;
   const channel = new BroadcastChannel(customerSessionChannel);
   channel.postMessage("changed");
