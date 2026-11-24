@@ -133,12 +133,26 @@ try {
   let lost;
   let interruptedReference;
   if (!baseline) {
+    let releaseRequest;
+    const requestGate = new Promise(resolve => { releaseRequest = resolve; });
     await page.route("**/api/orders/intents", async route => {
       interruptedReference = route.request().postDataJSON().clientReference;
+      await requestGate;
       await route.abort("failed");
     }, {times:1});
     await send(page).click();
+    try {
+      await page.getByRole("button",{name:"Preparando pedido…",exact:true}).waitFor();
+      await page.keyboard.press("Tab");
+      assert(await page.getByRole("dialog").evaluate(dialog => dialog.contains(document.activeElement)));
+      await page.keyboard.press("Shift+Tab");
+      assert(await page.getByRole("dialog").evaluate(dialog => dialog.contains(document.activeElement)));
+    } finally { releaseRequest(); }
     await page.getByText(/No pudimos confirmar si se registró/).waitFor();
+    page.once("dialog", dialog => dialog.dismiss());
+    await page.getByRole("button",{name:"Vaciar pedido",exact:true}).click();
+    assert(await send(page).isEnabled());
+    assert.match(await send(page).textContent(),/Recuperar intento/);
   }
   await page.route("**/api/orders/intents", async route => {
     const persisted = await route.fetch({maxRetries:0});
@@ -215,6 +229,13 @@ try {
     if (process.env.TACO_QA_SCREENSHOT) await phone.screenshot({path:process.env.TACO_QA_SCREENSHOT});
     await phone.keyboard.press("Escape");
     await phone.getByRole("dialog").waitFor({state:"hidden"});
+    await details(phone);
+    await phone.route("**/api/orders/intents", route => route.abort("failed"), {times:1});
+    await send(phone).click();
+    await phone.getByText(/No pudimos confirmar si se registró/).waitFor();
+    phone.once("dialog", dialog => dialog.accept());
+    await phone.getByRole("button",{name:"Descartar intento anterior",exact:true}).click();
+    assert.match(await send(phone).textContent(),/Enviar pedido/);
     await mobile.close();
     console.log("PASS mobile: catalogue/search/modifiers, Cuenta → Carrito, DELIVERY details and fee");
 

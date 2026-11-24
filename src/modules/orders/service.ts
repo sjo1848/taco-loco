@@ -184,7 +184,7 @@ export async function createManualOrder(input: unknown, actorId: string | null, 
 export async function createPublicOrderIntent(input: unknown, customerId: string | null = null) {
   const parsed = createPublicOrderIntentInputSchema.parse(input);
   const canonicalLines = (lines: Array<{ productId: string | null; quantity: number; modifiers: Array<{ group: string; option: string }> }>) =>
-    lines.map((line) => JSON.stringify([line.productId, line.quantity, [...new Set(line.modifiers.map(({ group, option }) => JSON.stringify([group, option])))].sort()])).sort();
+    lines.map((line) => JSON.stringify([line.productId, line.quantity, line.modifiers.map(({ group, option }) => JSON.stringify([group, option])).sort()])).sort();
   const assertReplay = (order: {
     customerId: string | null; source: string; fulfillment: string; customerName: string | null;
     deliveryAddress: string | null; deliveryReference: string | null; transferHolderName: string | null;

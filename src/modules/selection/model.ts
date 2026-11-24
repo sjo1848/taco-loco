@@ -1,3 +1,5 @@
+export const checkoutIntentStorageKey = "taco-loco-checkout-intent";
+
 export type SelectionModifier = { group: string; option: string };
 
 export type SelectionLine = {

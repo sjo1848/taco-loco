@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { checkoutIntentStorageKey } from "@/modules/selection/model";
 import type { CustomerOrderSummary } from "@/modules/orders/public-tracking";
 
 type CustomerOrdersResponse = { orders: CustomerOrderSummary[]; nextCursor: string | null };
@@ -36,6 +37,10 @@ export function CustomerOrders() {
   function openRepeatDraft() {
     if (!proposal) return;
     try {
+      if (window.sessionStorage.getItem(checkoutIntentStorageKey)) {
+        setRepeatMessage("Hay un intento sin confirmar. Recuperalo o descartalo desde el carrito antes de repetir este pedido.");
+        return;
+      }
       const cart = JSON.parse(window.sessionStorage.getItem("taco-loco-selection") ?? "[]");
       if (Array.isArray(cart) && cart.length > 0 && !window.confirm("Ya tenés productos en el carrito. ¿Querés reemplazarlos por este pedido?")) return;
       window.sessionStorage.setItem("taco-loco-repeat-draft", JSON.stringify(proposal));
