@@ -286,6 +286,11 @@ try {
     const customer = await account.newPage();
     await go(customer, "/cuenta");
     await customer.getByText(/Bienvenido, QA Cliente/).waitFor();
+    const changedSession = await account.request.post(local("/api/orders/intents"), {
+      data:{...first.request, clientReference:"qa-session-change-no-create", expectedCustomerId:null}, headers:{origin},
+    });
+    assert.equal(changedSession.status(),409);
+    assert.equal((await changedSession.json()).code,"CHECKOUT_SESSION_CHANGED");
     // Claim the guest order via its private link and test that an explicit repeat only opens the draft.
     await go(customer,first.data.tracking.path);
     await customer.getByRole("button",{name:/Guardar pedido|Guardar en mi cuenta/}).click();

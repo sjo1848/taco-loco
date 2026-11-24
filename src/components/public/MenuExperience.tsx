@@ -447,16 +447,20 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       }
       if (!saved && !(await refreshOperatingStatus()).isOpen) throw new Error("ORDERS_CLOSED");
       if (!menuMounted.current) { popup?.close(); return; }
+      if (sessionGeneration !== readCustomerSessionGeneration()) {
+        rejectionMessage = "La sesión cambió. Recargá la página y revisá tu cuenta antes de enviar el pedido.";
+        throw new Error("CHECKOUT_SESSION_CHANGED");
+      }
       const clientReference = saved?.reference ?? createClientReference();
       pendingIntent.current = { fingerprint, reference: clientReference };
       setNeedsOrderRecovery(true);
       try { storage?.setItem(checkoutIntentStorageKey, JSON.stringify(pendingIntent.current)); } catch { /* Preserve the in-memory attempt. */ }
-      const response = await fetch("/api/orders/intents", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...payload, clientReference }) });
+      const response = await fetch("/api/orders/intents", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...payload, clientReference, expectedCustomerId: customerId }) });
       if (!menuMounted.current) { popup?.close(); return; }
       if (!response.ok) {
         const error = await response.json().catch(() => null) as { code?: string; message?: string } | null;
         if (!menuMounted.current) { popup?.close(); return; }
-        if (!saved && (response.status === 400 || error?.code === "ORDERS_CLOSED")) {
+        if (!saved && (response.status === 400 || error?.code === "ORDERS_CLOSED" || error?.code === "CHECKOUT_SESSION_CHANGED")) {
           // On a retry the original request could still commit after this rejection.
           pendingIntent.current = null;
           setNeedsOrderRecovery(false);
@@ -473,6 +477,12 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       if (!menuMounted.current) { popup?.close(); return; }
       const reference = result.tracking && createTrackingReference(result.tracking.path, result.order.orderNumber);
       if (!reference || !result.tracking) throw new Error("TRACKING_UNAVAILABLE");
+      if (sessionGeneration !== readCustomerSessionGeneration()) {
+        popup?.close();
+        handoffRef.current = null;
+        setFeedbackMessage("La sesión cambió durante el envío. Volvé a la sesión anterior y elegí Recuperar intento para consultar el pedido.");
+        return;
+      }
       registered = true;
       pendingIntent.current = null;
       setNeedsOrderRecovery(false);
@@ -482,12 +492,6 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       } catch { /* The registered order remains authoritative. */ }
       setLines([]);
       setShowSummary(false);
-      if (sessionGeneration !== readCustomerSessionGeneration()) {
-        popup?.close();
-        handoffRef.current = null;
-        setFeedbackMessage("El pedido quedó registrado antes del cambio de sesión. Revisá Pedidos desde la sesión original.");
-        return;
-      }
       reference.ownerId = result.customerId ?? undefined;
       reference.sessionGeneration = sessionGeneration;
       const message = buildWhatsAppMessageWithCheckout(lines, menu.settings.businessName, result.order.orderNumber, checkout, result.tracking.url);
