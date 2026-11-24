@@ -95,10 +95,10 @@ export function CustomerAccount() {
     authRevision.current++;
     const logoutRevision = authRevision.current;
     const response = await fetch("/api/customer/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => null);
+    if (response?.ok) { finishTrackingHandoff(); clearGuestOrders(); announceCustomerSessionChange(); }
     if (logoutRevision !== authRevision.current || !mounted.current) return;
     if (!response?.ok) { setMessage("No pudimos cerrar la sesión. Intentá nuevamente."); return; }
     sessionGeneration.current++;
-    finishTrackingHandoff(); clearGuestOrders(); announceCustomerSessionChange();
     setCustomer(null); setState("visitor"); setMessage("Sesión cerrada.");
     if (isProfileRoute) router.replace("/cuenta");
   }

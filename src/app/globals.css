@@ -525,3 +525,7 @@ fieldset.selection-lines, fieldset.checkout-details { border: 0; margin: 0; padd
 @media (min-width: 768px) {
   .public-frame { --public-tab-offset: 0px; --public-action-gap: 24px; }
 }
+
+.selection-sheet__scroll { scroll-padding-block: 12px; }
+.selection-sheet__scroll :where(input, select, textarea) { scroll-margin-block: 12px; }
+.public-frame .selection-bar, .public-frame .selection-sheet__footer .button--whatsapp { background: #207b36; }

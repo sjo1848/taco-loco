@@ -157,11 +157,14 @@ export function CustomerPreferences({ section, customer, onCustomerUpdated }: { 
     finally { setBusy(false); }
   }
   async function removeFavorite(productId: string) {
+    const generation = requestGeneration.current;
     setFavoritesBusy(productId); setMessage("");
     const result = await updateFavorite(productId, false, favoriteState.viewerId);
+    if (generation !== requestGeneration.current) return;
     setFavoritesBusy(null);
+    if (result === "stale") return;
     if (result === "ok") setMessage("Favorito eliminado.");
-    else if (result === "guest" || result === "stale") router.replace(`/cuenta?returnTo=${encodeURIComponent(section)}`);
+    else if (result === "guest") router.replace(`/cuenta?returnTo=${encodeURIComponent(section)}`);
     else setMessage("No pudimos actualizar tus favoritos. Intentá nuevamente.");
   }
 

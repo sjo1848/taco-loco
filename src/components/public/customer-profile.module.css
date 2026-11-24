@@ -91,3 +91,5 @@
   .avatar, .avatarFallback { flex-basis: 3.25rem; width: 3.25rem; height: 3.25rem; }
   .actions > :where(button, a) { max-width: 100%; }
 }
+
+.panel :global(.eyebrow) { color: #795000; }

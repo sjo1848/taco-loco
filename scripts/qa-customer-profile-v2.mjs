@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { chromium } from "playwright";
+import AxeBuilder from "@axe-core/playwright";
 
 const base = new URL(process.env.TACO_QA_LOCAL_URL ?? "").origin;
 assert.equal(new URL(base).hostname, "127.0.0.1");
@@ -13,7 +15,7 @@ const browser = await chromium.launch({ headless: true });
 const sessionCookie = "taco_loco_customer_session";
 const product = "acacacac-acac-4aca-8aca-acacacacacac";
 const tracked = "/pedido/" + "d".repeat(43);
-const report = { mode, views: [], network: {}, functional: [] };
+const report = { mode, views: [], network: {}, functional: [], accessibility: {} };
 const filteredUrl = (path) => base + path;
 const modal = (p) => p.getByRole("dialog");
 async function setCustomer(context, letter) {
@@ -35,6 +37,10 @@ async function snapshot(page, width, name) {
   if (mode === "candidate") assert(layout.root <= layout.width + 1, `${name} horizontal overflow ${layout.root} at ${width}`);
   report.views.push({ width, name, overflow: layout.root - layout.width });
   await page.screenshot({ path: join(output, `${width}-${name}.png`), animations: "disabled" });
+  if (mode === "candidate" && width === 390 && ["producto","delivery","cuenta","datos","direcciones","favoritos"].includes(name)) {
+    const result = await new AxeBuilder({page}).withTags(["wcag2a","wcag2aa","wcag21a","wcag21aa"]).analyze();
+    report.accessibility[name] = result.violations.map(({id,impact,nodes}) => ({id,impact,targets:nodes.map(({target})=>target)}));
+  }
 }
 async function menu(page) {
   await visit(page, "/menu");
@@ -168,6 +174,10 @@ try {
     await visit(page,"/cuenta/datos");
     await page.getByRole("button",{name:/Editar nombre|^Editar$/}).click();
     await page.getByRole("textbox",{name:/Nombre/}).fill("  María Ñandú 🌮  ");
+    page.once("dialog",dialog=>void dialog.dismiss());
+    await page.getByRole("navigation",{name:"Navegación de la app"}).getByRole("link",{name:"Menú",exact:true}).click();
+    assert.equal(new URL(page.url()).pathname,"/cuenta/datos");
+    assert.equal(await page.getByRole("textbox",{name:/Nombre/}).inputValue(),"  María Ñandú 🌮  ");
     let patches = 0;
     await page.route("**/api/customer/profile",async route => {
       patches++;
@@ -199,6 +209,34 @@ try {
     assert.equal(await modal(page).getByRole("textbox",{name:/Nombre para el pedido/}).inputValue(),"María Ñandú 🌮");
     await modal(page).getByRole("radio",{name:/Delivery/}).check();
     await modal(page).getByRole("combobox",{name:"Dirección guardada"}).getByRole("option",{name:/Trabajo QA.*Calle de prueba 24/}).waitFor({state:"attached"});
+    await goBackToMenu(page);
+    // A saved pickup may restore its unchanged default. A newer profile name cannot alter the old fingerprint.
+    const savedLines = await page.evaluate(() => JSON.parse(sessionStorage.getItem("taco-loco-selection") ?? "[]"));
+    const recovery = {
+      reference:"qa-existing-recovery-only",
+      ownerId:"qa-customer",
+      fingerprint:createHash("sha256").update(JSON.stringify({
+        customerName:"María Ñandú 🌮",fulfillment:"PICKUP",deliveryAddress:null,deliveryReference:null,transferHolderName:null,
+        lines:savedLines.map(({productId,quantity,modifiers})=>({productId,quantity,modifiers})),
+      })).digest("hex"),
+    };
+    await page.evaluate(value=>sessionStorage.setItem("taco-loco-checkout-intent",JSON.stringify(value)),recovery);
+    await page.reload();
+    await cart(page);
+    await modal(page).getByRole("button",{name:"Continuar con tus datos"}).click();
+    const nameBox=modal(page).getByRole("textbox",{name:/Nombre para el pedido/});
+    await page.waitForFunction(()=>document.querySelector(".checkout-name input")?.value==="María Ñandú 🌮");
+    assert.equal(await nameBox.inputValue(),"María Ñandú 🌮");
+    assert.equal((await context.request.patch(profile,{headers,data:{displayName:"Nombre nuevo"}})).status(),200);
+    await page.reload();
+    await cart(page);
+    await modal(page).getByRole("button",{name:"Continuar con tus datos"}).click();
+    await modal(page).getByRole("button",{name:"Recuperar intento"}).waitFor();
+    assert.equal(await nameBox.inputValue(),"");
+    const savedRecovery=await page.evaluate(()=>JSON.parse(sessionStorage.getItem("taco-loco-checkout-intent")));
+    assert.deepEqual(savedRecovery,recovery);
+    await page.evaluate(()=>sessionStorage.removeItem("taco-loco-checkout-intent"));
+    assert.equal((await context.request.patch(profile,{headers,data:{displayName:"María Ñandú 🌮"}})).status(),200);
     await goBackToMenu(page);
     await visit(page,"/cuenta/direcciones");
     await page.getByText("Trabajo QA",{exact:true}).waitFor();
@@ -235,8 +273,8 @@ try {
     await visit(page,"/cuenta/favoritos");
     await page.getByText("Limonada QA",{exact:true}).waitFor();
     assert.equal(await page.getByText("QA Taco",{exact:true}).count(),0);
-    // Use two real local sessions; hold A's response until B has refreshed.
-    await setCustomer(context,"b");
+    // The first A session was revoked above; use A's second synthetic session.
+    await setCustomer(context,"d");
     let releaseOld;
     let oldCaptured;
     const captured = new Promise(resolve => { oldCaptured=resolve; });
@@ -249,7 +287,10 @@ try {
       await route.fulfill({response:old}).catch(()=>{});
     },{times:1});
     await page.goto(filteredUrl("/cuenta/favoritos"));
-    await captured;
+    let captureTimeout;
+    try {
+      await Promise.race([captured,new Promise((_,reject)=>{captureTimeout=setTimeout(()=>reject(new Error("Old favorites response was not intercepted")),10000);})]);
+    } finally { clearTimeout(captureTimeout); }
     await setCustomer(context,"c");
     await page.evaluate(()=>{
       const channel=new BroadcastChannel("taco-loco-customer-session");
