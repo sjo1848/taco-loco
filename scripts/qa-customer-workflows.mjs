@@ -291,6 +291,11 @@ try {
     });
     assert.equal(changedSession.status(),409);
     assert.equal((await changedSession.json()).code,"CHECKOUT_SESSION_CHANGED");
+    const legacyMissing = await account.request.post(local("/api/orders/intents"), {
+      data:{...first.request, clientReference:"qa-legacy-recovery-no-create", expectedCustomerId:"qa-customer", recoveryOnly:true}, headers:{origin},
+    });
+    assert.equal(legacyMissing.status(),409);
+    assert.equal((await legacyMissing.json()).code,"ORDER_INTENT_NOT_REGISTERED");
     // Claim the guest order via its private link and test that an explicit repeat only opens the draft.
     await go(customer,first.data.tracking.path);
     await customer.getByRole("button",{name:/Guardar pedido|Guardar en mi cuenta/}).click();

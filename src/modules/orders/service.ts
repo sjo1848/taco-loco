@@ -181,7 +181,7 @@ export async function createManualOrder(input: unknown, actorId: string | null, 
   }); } catch (error) { const concurrentReplay = await findReused().catch(() => null); if (concurrentReplay) return concurrentReplay; throw error; }
 }
 
-export async function createPublicOrderIntent(input: unknown, customerId: string | null = null) {
+export async function createPublicOrderIntent(input: unknown, customerId: string | null = null, recoveryOnly = false) {
   const parsed = createPublicOrderIntentInputSchema.parse(input);
   const canonicalLines = (lines: Array<{ productId: string | null; quantity: number; modifiers: Array<{ group: string; option: string }> }>) =>
     lines.map((line) => JSON.stringify([line.productId, line.quantity, line.modifiers.map(({ group, option }) => JSON.stringify([group, option])).sort()])).sort();
@@ -205,6 +205,7 @@ export async function createPublicOrderIntent(input: unknown, customerId: string
     assertReplay(existing);
     return { order: existing, event: null, reused: true };
   }
+  if (recoveryOnly) throw new AppError("ORDER_INTENT_NOT_REGISTERED", "El intento anterior todavía no aparece registrado. Podés volver a consultar o descartarlo desde el carrito.", 409);
   const settings = await db.menuSettings.findFirstOrThrow();
   const { getOperatingContext } = await import("@/modules/settings/operating-context");
   if (!getOperatingContext(settings).isOpen) throw new AppError("ORDERS_CLOSED", "No estamos tomando pedidos en este momento. Revisá nuestros horarios para volver a pedir.", 409);
