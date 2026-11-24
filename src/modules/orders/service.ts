@@ -183,19 +183,42 @@ export async function createManualOrder(input: unknown, actorId: string | null, 
 
 export async function createPublicOrderIntent(input: unknown, customerId: string | null = null) {
   const parsed = createPublicOrderIntentInputSchema.parse(input);
+  const canonicalLines = (lines: Array<{ productId: string | null; quantity: number; modifiers: Array<{ group: string; option: string }> }>) =>
+    lines.map((line) => JSON.stringify([line.productId, line.quantity, line.modifiers.map(({ group, option }) => JSON.stringify([group, option])).sort()])).sort();
+  const assertReplay = (order: {
+    customerId: string | null; source: string; fulfillment: string; customerName: string | null;
+    deliveryAddress: string | null; deliveryReference: string | null; transferHolderName: string | null;
+    lines: Array<{ productId: string | null; quantity: number; modifiersSnapshot: unknown }>;
+  }) => {
+    if (order.customerId !== customerId || order.source !== "PUBLIC_MENU") {
+      throw new AppError("ORDER_INTENT_SESSION_CHANGED", "Este intento pertenece a otra sesión. Revisá tus pedidos.", 409);
+    }
+    if (order.fulfillment !== parsed.fulfillment || order.customerName !== (parsed.customerName ?? null)
+      || order.deliveryAddress !== (parsed.deliveryAddress ?? null) || order.deliveryReference !== (parsed.deliveryReference ?? null)
+      || order.transferHolderName !== (parsed.transferHolderName ?? null)
+      || JSON.stringify(canonicalLines(buildRepeatOrderLines(order.lines))) !== JSON.stringify(canonicalLines(parsed.lines))) {
+      throw new AppError("ORDER_INTENT_MISMATCH", "El intento ya registrado tiene otros datos.", 409);
+    }
+  };
   const existing = await db.order.findUnique({ where: { clientReference: parsed.clientReference }, include: { lines: true } });
-  if (existing) return { order: existing, event: null, reused: true };
+  if (existing) {
+    assertReplay(existing);
+    return { order: existing, event: null, reused: true };
+  }
   const settings = await db.menuSettings.findFirstOrThrow();
   const { getOperatingContext } = await import("@/modules/settings/operating-context");
   if (!getOperatingContext(settings).isOpen) throw new AppError("ORDERS_CLOSED", "No estamos tomando pedidos en este momento. Revisá nuestros horarios para volver a pedir.", 409);
   if (parsed.fulfillment === "DELIVERY" && !settings.deliveryEnabled) throw new AppError("DELIVERY_UNAVAILABLE", "El delivery no está disponible en este momento.", 400);
   const deliveryFeeAmount = parsed.fulfillment === "DELIVERY" ? settings.deliveryFeeAmount : 0;
   try {
-    return await createManualOrder({ fulfillment: parsed.fulfillment, customerName: parsed.customerName ?? null, customerPhone: null, tableLabel: null, notes: "Intención registrada desde el menú. Confirmar recepción por WhatsApp.", adjustmentAmount: deliveryFeeAmount, lines: parsed.lines }, null, parsed.clientReference, "Intención preparada desde el menú público", "PUBLIC_MENU", { verificationStatus: "PENDING", paymentStatus: parsed.fulfillment === "DELIVERY" ? "PENDING" : "NOT_REQUIRED", deliveryAddress: parsed.deliveryAddress ?? null, deliveryReference: parsed.deliveryReference ?? null, deliveryFeeAmount, transferHolderName: parsed.transferHolderName ?? null, publicTrackingToken: createPublicTrackingToken(), customerId });
+    const result = await createManualOrder({ fulfillment: parsed.fulfillment, customerName: parsed.customerName ?? null, customerPhone: null, tableLabel: null, notes: "Intención registrada desde el menú. Confirmar recepción por WhatsApp.", adjustmentAmount: deliveryFeeAmount, lines: parsed.lines }, null, parsed.clientReference, "Intención preparada desde el menú público", "PUBLIC_MENU", { verificationStatus: "PENDING", paymentStatus: parsed.fulfillment === "DELIVERY" ? "PENDING" : "NOT_REQUIRED", deliveryAddress: parsed.deliveryAddress ?? null, deliveryReference: parsed.deliveryReference ?? null, deliveryFeeAmount, transferHolderName: parsed.transferHolderName ?? null, publicTrackingToken: createPublicTrackingToken(), customerId });
+    if (result.reused) assertReplay(result.order);
+    return result;
   } catch (error) {
     const isClientReferenceConflict = error && typeof error === "object" && (("code" in error && error.code === "P2002") || ("message" in error && typeof error.message === "string" && error.message.includes("Order.clientReference")));
     if (isClientReferenceConflict) {
       const concurrent = await db.order.findUniqueOrThrow({ where: { clientReference: parsed.clientReference }, include: { lines: true } });
+      assertReplay(concurrent);
       return { order: concurrent, event: null, reused: true };
     }
     throw error;

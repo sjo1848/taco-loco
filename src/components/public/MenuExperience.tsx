@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CategoryNav } from "@/components/public/CategoryNav";
 import { FeaturedProductCard } from "@/components/public/FeaturedProductCard";
 import { ProductCard } from "@/components/public/ProductCard";
 import { SaucesInfo } from "@/components/public/SaucesInfo";
 import { PublicNavigation } from "@/components/public/PublicNavigation";
 import { filterCatalog } from "@/modules/catalog/discovery";
-import { clearActiveTrackingResume, createActiveTrackingResume, readActiveTrackingResume, writeActiveTrackingResume } from "@/modules/orders/tracking-resume";
-import { buildWhatsAppAppUrl, buildWhatsAppMessage, buildWhatsAppMessageWithCheckout, buildWhatsAppUrl, createClientReference, addSelectionLine, lineId, removeSelectionLine, selectionCount, selectionTotal, updateSelectionQuantity, type CheckoutDetails, type SelectionLine } from "@/modules/selection/model";
+import { activeTrackingStorageKey, createTrackingReference, finishTrackingHandoff, readTrackingReference, recentGuestTrackingKey, retireLegacyTrackingStorage, trackingChangedEvent, trackingResumeMaxAgeMs, trackingSessionStorage, writeTrackingReference, type TrackingReference } from "@/modules/orders/tracking-resume";
+import { buildWhatsAppAppUrl, buildWhatsAppMessageWithCheckout, buildWhatsAppUrl, checkoutIntentStorageKey, createClientReference, addSelectionLine, lineId, removeSelectionLine, selectionCount, selectionTotal, updateSelectionQuantity, type CheckoutDetails, type SelectionLine } from "@/modules/selection/model";
 
 type Product = { id: string; name: string; description: string | null; priceAmount: number; available: boolean; featured: boolean; imageKey: string | null; imageAlt: string | null; modifiers: Array<{ name: string; required: boolean; minSelections: number | null; maxSelections: number | null; options: string[] }> };
 type Menu = { settings: { businessName: string; whatsappUrl: string; deliveryEnabled: boolean; deliveryFeeAmount: number; operatingContext: { isOpen: boolean; label: string; detail: string } }; categories: Array<{ id: string; name: string; slug: string; products: Product[] }> };
-type CompletedOrder = { number: number; lines: SelectionLine[]; total: number; whatsappHref: string; whatsappAppHref: string; trackingHref: string; message: string };
-type CustomerSession = { authenticated?: boolean; customer?: { displayName?: string | null } };
+type CompletedOrder = { number: number; lines: SelectionLine[]; total: number; whatsappHref: string; whatsappAppHref: string; trackingHref: string; message: string; ownerId?: string };
+type CustomerSession = { authenticated?: boolean; customer?: { id?: string; displayName?: string | null } };
 type SavedAddress = { id: string; label: string; address: string; reference: string | null };
 
 const priceFormatter = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
@@ -24,6 +24,7 @@ function WhatsAppIcon() {
 }
 
 export function MenuExperience({ menu }: { menu: Menu }) {
+  const [cartHydrated, setCartHydrated] = useState(false);
   const [lines, setLines] = useState<SelectionLine[]>([]);
   const [pendingProduct, setPendingProduct] = useState<Product | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
@@ -41,17 +42,19 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [showWhatsAppWebFallback, setShowWhatsAppWebFallback] = useState(false);
-  const [whatsappWebFallbackHref, setWhatsappWebFallbackHref] = useState("");
   const [completedOrder, setCompletedOrder] = useState<CompletedOrder | null>(null);
   const [checkout, setCheckout] = useState<CheckoutDetails>({ fulfillment: "PICKUP" });
   const [customerName, setCustomerName] = useState("");
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
-  const [authenticatedCustomer, setAuthenticatedCustomer] = useState(false);
+  const [customerId, setCustomerId] = useState<string | null>(null);
   const [saveNewAddress, setSaveNewAddress] = useState(false);
   const [addressLabel, setAddressLabel] = useState("");
   const [copiedMessage, setCopiedMessage] = useState(false);
-  const [orderIntent, setOrderIntent] = useState<{ reference: string; signature: string; number: number } | null>(null);
-  const handoffRef = useRef<{ sawBackground: boolean } | null>(null);
+  const [needsOrderRecovery, setNeedsOrderRecovery] = useState(false);
+  const menuMounted = useRef(false);
+  const pendingIntent = useRef<{ reference: string; fingerprint: string } | null>(null);
+  const submitInFlight = useRef(false);
+  const handoffRef = useRef<{ sawBackground: boolean; reference?: TrackingReference } | null>(null);
   const resumeTrackingRef = useRef<(() => void) | null>(null);
   const dialogCloseRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
@@ -59,11 +62,6 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   const featured = visibleCategories.flatMap((category) => category.products.filter((product) => product.featured)).slice(0, 2);
   const count = selectionCount(lines);
   const total = selectionTotal(lines);
-  const selectionSignature = useMemo(() => JSON.stringify(lines.map(({ productId, quantity, modifiers }) => ({ productId, quantity, modifiers }))), [lines]);
-  const currentOrderIntent = orderIntent?.signature === selectionSignature ? orderIntent : null;
-  const whatsappHref = useMemo(() => lines.length > 0 ? buildWhatsAppUrl(menu.settings.whatsappUrl, buildWhatsAppMessage(lines, menu.settings.businessName)) : menu.settings.whatsappUrl, [lines, menu.settings.businessName, menu.settings.whatsappUrl]);
-  const whatsappAppHref = useMemo(() => lines.length > 0 ? buildWhatsAppAppUrl(menu.settings.whatsappUrl, buildWhatsAppMessage(lines, menu.settings.businessName)) : menu.settings.whatsappUrl, [lines, menu.settings.businessName, menu.settings.whatsappUrl]);
-
   useEffect(() => {
     if (!feedback.message) return;
     const timer = window.setTimeout(() => setFeedbackMessage(""), 4_000);
@@ -87,27 +85,45 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", refresh); window.removeEventListener("focus", refresh); };
   }, []);
 
-  function hasNewSelectionInStorage() {
-    try {
-      const selection = JSON.parse(window.sessionStorage.getItem("taco-loco-selection") ?? "null") as unknown;
-      return Array.isArray(selection) && selection.length > 0;
-    } catch {
-      return false;
-    }
-  }
-
   useEffect(() => {
-    let timer: number | undefined;
-    try {
-      const saved = window.sessionStorage.getItem("taco-loco-selection");
-      if (saved) {
-        const parsed: unknown = JSON.parse(saved);
-        if (Array.isArray(parsed)) timer = window.setTimeout(() => setLines(parsed as SelectionLine[]), 0);
+    menuMounted.current = true;
+    const timer = window.setTimeout(() => {
+      const storage = trackingSessionStorage();
+      function readLines(key: string) {
+        try {
+          const raw = JSON.parse(storage?.getItem(key) ?? "null") as unknown;
+          const parsed = key === "taco-loco-repeat-draft" && raw && typeof raw === "object" && "lines" in raw ? raw.lines : raw;
+          if (!Array.isArray(parsed)) return [];
+          return parsed.filter((line): line is SelectionLine => line && typeof line.productId === "string"
+            && typeof line.name === "string" && Number.isFinite(line.priceAmount)
+            && Number.isInteger(line.quantity) && line.quantity > 0 && Array.isArray(line.modifiers)
+            && line.modifiers.every((modifier: unknown) => modifier && typeof modifier === "object"
+              && "group" in modifier && typeof modifier.group === "string" && "option" in modifier && typeof modifier.option === "string"))
+            .map((line) => ({ ...line, id: lineId(line.productId, line.modifiers) }));
+        } catch { return []; }
       }
-    } catch {
-      // La selección es opcional: si storage está bloqueado, el menú sigue funcionando.
-    }
-    return () => { if (timer) window.clearTimeout(timer); };
+      try {
+        const saved = JSON.parse(storage?.getItem(checkoutIntentStorageKey) ?? "null");
+        if (saved && /^[a-zA-Z0-9-]{16,100}$/.test(saved.reference) && /^[0-9a-f]{64}$/.test(saved.fingerprint)) {
+          pendingIntent.current = saved;
+          setNeedsOrderRecovery(true);
+        }
+      } catch { /* Ignore malformed prior attempts. */ }
+      const draft = readLines("taco-loco-repeat-draft");
+      const cart = readLines("taco-loco-selection");
+      try { storage?.removeItem("taco-loco-repeat-draft"); } catch { /* Optional storage. */ }
+      retireLegacyTrackingStorage();
+      const url = new URL(window.location.href);
+      const openCart = url.searchParams.has("carrito");
+      if (openCart) {
+        url.searchParams.delete("carrito");
+        window.history.replaceState(window.history.state, "", url);
+      }
+      setLines(draft.length ? draft : cart);
+      setCartHydrated(true);
+      if (openCart || draft.length) setShowSummary(true);
+    }, 0);
+    return () => { menuMounted.current = false; window.clearTimeout(timer); };
   }, []);
 
   useEffect(() => {
@@ -117,7 +133,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       return await response.json() as CustomerSession;
     }).then(async (session) => {
       if (cancelled || !session?.authenticated) return;
-      setAuthenticatedCustomer(true);
+      setCustomerId(session.customer?.id ?? null);
       setCustomerName(session.customer?.displayName ?? "");
       const preferences = await fetch("/api/customer/preferences", { credentials: "same-origin", cache: "no-store" });
       if (preferences.ok && !cancelled) {
@@ -129,94 +145,76 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   }, []);
 
   useEffect(() => {
-    try {
-      const saved = window.sessionStorage.getItem("taco-loco-repeat-draft");
-      if (!saved) return;
-      const draft = JSON.parse(saved) as { lines?: Array<{ productId: string; name: string; priceAmount: number; quantity: number; modifiers: SelectionLine["modifiers"] }> };
-      if (!Array.isArray(draft.lines) || draft.lines.length === 0) return;
-      window.setTimeout(() => {
-        setLines(draft.lines!.map((line) => ({ ...line, id: lineId(line.productId, line.modifiers) })));
-        setCheckout({ fulfillment: "PICKUP" });
-        setCheckoutStep("cart");
-        setShowSummary(true);
-      }, 0);
-      window.sessionStorage.removeItem("taco-loco-repeat-draft");
-    } catch {
-      window.sessionStorage.removeItem("taco-loco-repeat-draft");
-    }
-  }, []);
-
-  useEffect(() => {
-    const resumeTracking = () => {
-      const resume = readActiveTrackingResume(window.localStorage);
-      const handoff = handoffRef.current;
-      if (!resume || !handoff?.sawBackground) return;
-      if (hasNewSelectionInStorage()) {
-        clearActiveTrackingResume(window.localStorage);
-        return;
+    let mounted = true;
+    const navigateToTracking = async (reference: TrackingReference) => {
+      if (reference.ownerId) {
+        try {
+          const response = await fetch("/api/customer/auth/session", { cache: "no-store" });
+          const session = response.ok ? await response.json() as CustomerSession : null;
+          if (!session?.authenticated || session.customer?.id !== reference.ownerId) {
+            if (mounted) { setCompletedOrder(null); setShowWhatsAppWebFallback(false); }
+            return;
+          }
+        } catch { return; }
       }
-      const consumed = { ...resume, handoffPending: false };
-      writeActiveTrackingResume(window.localStorage, consumed);
-      window.location.assign(resume.path);
+      if (mounted) window.location.assign(reference.path);
+    };
+    const resumeTracking = () => {
+      const handoff = handoffRef.current;
+      if (!handoff?.sawBackground || !handoff.reference || document.visibilityState !== "visible") return;
+      const { path, createdAt } = handoff.reference;
+      handoffRef.current = null;
+      finishTrackingHandoff(path);
+      if (Date.now() - createdAt <= trackingResumeMaxAgeMs) void navigateToTracking(handoff.reference);
     };
     resumeTrackingRef.current = resumeTracking;
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        if (handoffRef.current) handoffRef.current.sawBackground = true;
-        return;
-      }
-      resumeTracking();
-    };
-    const onBlur = () => {
+    const markBackground = () => {
       if (handoffRef.current) handoffRef.current.sawBackground = true;
     };
-    const onFocus = () => resumeTracking();
-    const onPageShow = () => {
-      const resume = readActiveTrackingResume(window.localStorage);
-      if (!resume) return;
-      if (handoffRef.current?.sawBackground) resumeTracking();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") markBackground();
+      else resumeTracking();
     };
-    const initialResumeTimer = window.setTimeout(() => {
-      const resume = readActiveTrackingResume(window.localStorage);
-      if (!resume || window.location.pathname !== "/menu") return;
-      if (hasNewSelectionInStorage()) {
-        clearActiveTrackingResume(window.localStorage);
-        return;
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // Browser Back restores a snapshot. A completed order must not reopen its dialog.
+        handoffRef.current = null;
+        setCompletedOrder(null);
+        setShowWhatsAppWebFallback(false);
       }
-      const consumed = { ...resume, handoffPending: false };
-      writeActiveTrackingResume(window.localStorage, consumed);
-      window.location.assign(resume.path);
+    };
+    const explicitlyOpeningCart = new URLSearchParams(window.location.search).has("carrito");
+    const restore = window.setTimeout(() => {
+      const reload = performance.getEntriesByType("navigation").some((entry) => (entry as PerformanceNavigationTiming).type === "reload");
+      if (!reload || explicitlyOpeningCart) return;
+      const storage = trackingSessionStorage();
+      const pending = readTrackingReference(storage, activeTrackingStorageKey);
+      if (!pending) return;
+      try {
+        if (JSON.parse(storage?.getItem("taco-loco-selection") ?? "[]")?.length) return;
+      } catch { return; }
+      finishTrackingHandoff(pending.path);
+      void navigateToTracking(pending);
     }, 0);
     document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener("blur", onBlur);
-    window.addEventListener("focus", onFocus);
+    window.addEventListener("blur", markBackground);
+    window.addEventListener("focus", resumeTracking);
     window.addEventListener("pageshow", onPageShow);
     return () => {
-      window.clearTimeout(initialResumeTimer);
+      mounted = false;
+      window.clearTimeout(restore);
       document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener("blur", onBlur);
-      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("blur", markBackground);
+      window.removeEventListener("focus", resumeTracking);
       window.removeEventListener("pageshow", onPageShow);
       resumeTrackingRef.current = null;
     };
   }, []);
 
   useEffect(() => {
-    let timer: number | undefined;
-    try {
-      const saved = window.sessionStorage.getItem("taco-loco-completed-order");
-      if (saved) timer = window.setTimeout(() => setCompletedOrder(JSON.parse(saved) as CompletedOrder), 0);
-    } catch {
-      // El resumen de cierre es opcional: el menú continúa disponible.
-    }
-    return () => { if (timer) window.clearTimeout(timer); };
-  }, []);
-
-  useEffect(() => {
-    try { window.sessionStorage.setItem("taco-loco-selection", JSON.stringify(lines)); } catch {
-      // La selección en memoria continúa disponible durante la navegación actual.
-    }
-  }, [lines]);
+    if (!cartHydrated) return;
+    try { trackingSessionStorage()?.setItem("taco-loco-selection", JSON.stringify(lines)); } catch { /* Cart stays in memory. */ }
+  }, [cartHydrated, lines]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 767px), (pointer: coarse)");
@@ -230,17 +228,26 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     if (!pendingProduct && !showSummary && !completedOrder) return;
     function closeOnEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        if (submitInFlight.current) return;
         setPendingProduct(null);
         setEditingLineId(null);
         setShowSummary(false);
+        if (completedOrder) dismissCompletedOrder();
         return;
       }
       if (event.key !== "Tab" || !dialogRef.current) return;
-      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter((element) => !element.hasAttribute("disabled"));
-      if (focusable.length === 0) return;
+      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter((element) => !element.matches(":disabled") && element.getClientRects().length > 0);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialogRef.current.focus();
+        return;
+      }
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      if (!focusable.includes(document.activeElement as HTMLElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     }
     window.addEventListener("keydown", closeOnEscape);
@@ -250,7 +257,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   useEffect(() => {
     if (!pendingProduct && !showSummary && !completedOrder) return;
     const previousFocus = document.activeElement as HTMLElement | null;
-    const focusTimer = window.requestAnimationFrame(() => dialogCloseRef.current?.focus());
+    const focusTimer = window.requestAnimationFrame(() => (dialogCloseRef.current ?? dialogRef.current?.querySelector<HTMLElement>("a[href], button"))?.focus());
     return () => {
       window.cancelAnimationFrame(focusTimer);
       if (previousFocus && previousFocus !== document.body) previousFocus.focus();
@@ -266,6 +273,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
 
   function addProduct(product: Product) {
     if (!product.available) return;
+    setEditingLineId(null);
     setPendingProduct(product);
     setPendingQuantity(1);
     setSelectedOptions({});
@@ -327,7 +335,18 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     setFeedbackMessage(`${line.name} quitado del pedido.`);
   }
 
+  function discardPendingIntent() {
+    if (!pendingIntent.current) return true;
+    if (!window.confirm("El intento anterior pudo haber registrado un pedido. Revisá tu seguimiento o historial antes de descartarlo. ¿Querés descartar la recuperación y continuar con un pedido nuevo?")) return false;
+    pendingIntent.current = null;
+    setNeedsOrderRecovery(false);
+    try { trackingSessionStorage()?.removeItem(checkoutIntentStorageKey); } catch { /* Optional storage. */ }
+    setFeedbackMessage("Recuperación descartada. Volvé a revisar el carrito antes de registrar un pedido nuevo.");
+    return true;
+  }
+
   function clearSelection() {
+    if (!discardPendingIntent()) return;
     setLines([]);
     setFeedbackMessage("Pedido vacío.");
   }
@@ -347,131 +366,159 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     }
   }
 
-  function openMobileWhatsApp(appUrl = whatsappAppHref, webUrl = whatsappHref) {
-    handoffRef.current = { sawBackground: false };
+  function openMobileWhatsApp(appUrl: string) {
     setShowWhatsAppWebFallback(false);
-    setWhatsappWebFallbackHref(webUrl);
-    let appSwitchDetected = false;
-    const markAppSwitch = () => {
-      appSwitchDetected = true;
-      setFeedbackMessage("WhatsApp está abierto. Confirmá el envío en la aplicación y luego podés volver al menú.");
-    };
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") markAppSwitch();
-    };
-    window.addEventListener("blur", markAppSwitch, { once: true });
-    document.addEventListener("visibilitychange", handleVisibilityChange);
     try {
       window.location.assign(appUrl);
       window.setTimeout(() => {
-        window.removeEventListener("blur", markAppSwitch);
-        document.removeEventListener("visibilitychange", handleVisibilityChange);
-        if (!appSwitchDetected) setShowWhatsAppWebFallback(true);
+        if (!handoffRef.current?.sawBackground) setShowWhatsAppWebFallback(true);
       }, 1200);
-    } catch {
-      window.removeEventListener("blur", markAppSwitch);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      setShowWhatsAppWebFallback(true);
-    }
-  }
-
-  function startAnotherOrder() {
-    setCompletedOrder(null);
-    clearActiveTrackingResume(window.localStorage);
-    setFeedbackMessage("Podés armar otro pedido.");
-    try { window.sessionStorage.removeItem("taco-loco-completed-order"); } catch {
-      // El estado visual continúa siendo suficiente para esta navegación.
-    }
+    } catch { setShowWhatsAppWebFallback(true); }
   }
 
   function dismissCompletedOrder() {
+    handoffRef.current = null;
+    finishTrackingHandoff();
     setCompletedOrder(null);
-    clearActiveTrackingResume(window.localStorage);
-    try { window.sessionStorage.removeItem("taco-loco-completed-order"); } catch {
-      // El cierre visual no depende de storage.
-    }
+    setShowWhatsAppWebFallback(false);
+    setCopiedMessage(false);
   }
 
-  async function submitOrderIntent(event: MouseEvent<HTMLAnchorElement>) {
-    event.preventDefault();
-    if (submittingOrder) return;
-    if (count === 0) return;
-    if (!operatingContext.isOpen) {
-      setFeedbackMessage(operatingContext.detail);
-      void refreshOperatingStatus().catch(() => undefined);
+  function startAnotherOrder() {
+    dismissCompletedOrder();
+    setCheckout({ fulfillment: "PICKUP" });
+    setSaveNewAddress(false);
+    setAddressLabel("");
+    setFeedbackMessage("Podés armar otro pedido.");
+  }
+
+  function openPreparedWhatsApp() {
+    if (!completedOrder) return;
+    const reference = createTrackingReference(completedOrder.trackingHref, completedOrder.number);
+    if (!reference) return;
+    reference.ownerId = completedOrder.ownerId;
+    handoffRef.current = { sawBackground: false, reference };
+    writeTrackingReference(trackingSessionStorage(), activeTrackingStorageKey, reference);
+  }
+
+  async function submitOrderIntent() {
+    if (submitInFlight.current || count === 0) return;
+    if (!operatingContext.isOpen && !needsOrderRecovery) return;
+    if (checkout.fulfillment === "DELIVERY" && (!checkout.deliveryAddress?.trim() || !checkout.transferHolderName?.trim())) {
+      setFeedbackMessage("Completá la dirección y el titular de la transferencia.");
       return;
     }
-    // Register before opening the desktop popup: opening it can blur this page
-    // while the order-intent request is still in flight.
-    handoffRef.current = { sawBackground: false };
-    const popup = isMobileDevice ? null : window.open("about:blank", "_blank");
-    if (popup) popup.opener = null;
-    const clientReference = currentOrderIntent?.reference ?? createClientReference();
+    submitInFlight.current = true;
     setSubmittingOrder(true);
     setFeedbackMessage("Preparando tu pedido para WhatsApp…");
+    handoffRef.current = { sawBackground: false };
+    let popup: Window | null = null;
+    const storage = trackingSessionStorage();
+    let registered = false;
+    let rejectionMessage: string | undefined;
     try {
-      const currentStatus = await refreshOperatingStatus();
-      if (!currentStatus.isOpen) {
-        popup?.close();
-        handoffRef.current = null;
-        setFeedbackMessage(currentStatus.detail);
-        return;
+      if (!isMobileDevice) {
+        popup = window.open("about:blank", "_blank");
+        if (popup) popup.opener = null;
       }
-      if (saveNewAddress && authenticatedCustomer && checkout.fulfillment === "DELIVERY" && checkout.deliveryAddress?.trim() && addressLabel.trim()) {
-        await fetch("/api/customer/preferences", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ label: addressLabel.trim(), address: checkout.deliveryAddress.trim(), reference: checkout.deliveryReference?.trim() || null }) });
+      const payload = {
+        customerName: customerName.trim() || null, fulfillment: checkout.fulfillment,
+        deliveryAddress: checkout.fulfillment === "DELIVERY" ? checkout.deliveryAddress?.trim() || null : null,
+        deliveryReference: checkout.fulfillment === "DELIVERY" ? checkout.deliveryReference?.trim() || null : null,
+        transferHolderName: checkout.fulfillment === "DELIVERY" ? checkout.transferHolderName?.trim() || null : null,
+        lines: lines.map((line) => ({ productId: line.productId, quantity: line.quantity, modifiers: line.modifiers })),
+      };
+      const bytes = new TextEncoder().encode(JSON.stringify(payload));
+      const fingerprint = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), (byte) => byte.toString(16).padStart(2, "0")).join("");
+      const saved = pendingIntent.current;
+      if (saved && saved.fingerprint !== fingerprint) {
+        rejectionMessage = "Hay un intento sin confirmar. Restaurá los datos originales y recuperalo antes de enviar un pedido distinto.";
+        throw new Error("ORDER_INTENT_CHANGED");
       }
-      const response = await fetch("/api/orders/intents", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientReference, customerName: customerName.trim() || null, fulfillment: checkout.fulfillment, deliveryAddress: checkout.deliveryAddress || null, deliveryReference: checkout.deliveryReference || null, transferHolderName: checkout.transferHolderName || null, lines: lines.map((line) => ({ productId: line.productId, quantity: line.quantity, modifiers: line.modifiers })) }) });
+      if (!saved && !(await refreshOperatingStatus()).isOpen) throw new Error("ORDERS_CLOSED");
+      if (!menuMounted.current) { popup?.close(); return; }
+      const clientReference = saved?.reference ?? createClientReference();
+      pendingIntent.current = { fingerprint, reference: clientReference };
+      setNeedsOrderRecovery(true);
+      try { storage?.setItem(checkoutIntentStorageKey, JSON.stringify(pendingIntent.current)); } catch { /* Preserve the in-memory attempt. */ }
+      const response = await fetch("/api/orders/intents", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...payload, clientReference }) });
+      if (!menuMounted.current) { popup?.close(); return; }
       if (!response.ok) {
         const error = await response.json().catch(() => null) as { code?: string; message?: string } | null;
+        if (!menuMounted.current) { popup?.close(); return; }
+        if (!saved && (response.status === 400 || error?.code === "ORDERS_CLOSED")) {
+          // On a retry the original request could still commit after this rejection.
+          pendingIntent.current = null;
+          setNeedsOrderRecovery(false);
+          try { storage?.removeItem(checkoutIntentStorageKey); } catch { /* Optional storage. */ }
+        }
         if (error?.code === "ORDERS_CLOSED") {
           await refreshOperatingStatus().catch(() => undefined);
           throw new Error("ORDERS_CLOSED");
         }
+        if (response.status < 500) rejectionMessage = error?.message;
         throw new Error("ORDER_INTENT_FAILED");
       }
-      const result = await response.json() as { order: { orderNumber: number; totalAmount: number }; tracking: { path: string; url: string } | null };
-      if (!result.tracking) throw new Error("TRACKING_UNAVAILABLE");
-      const preparedMessage = buildWhatsAppMessageWithCheckout(lines, menu.settings.businessName, result.order.orderNumber, checkout, result.tracking.url);
-      const preparedWhatsappHref = buildWhatsAppUrl(menu.settings.whatsappUrl, preparedMessage);
-      const preparedWhatsappAppHref = buildWhatsAppAppUrl(menu.settings.whatsappUrl, preparedMessage);
-      const preparedOrder: CompletedOrder = { number: result.order.orderNumber, lines, total: result.order.totalAmount, whatsappHref: preparedWhatsappHref, whatsappAppHref: preparedWhatsappAppHref, trackingHref: result.tracking.path, message: preparedMessage };
-      const trackingResume = createActiveTrackingResume(result.tracking.path, result.order.orderNumber);
-      if (!trackingResume) throw new Error("TRACKING_RESUME_UNAVAILABLE");
-      writeActiveTrackingResume(window.localStorage, trackingResume);
+      const result = await response.json() as { order: { orderNumber: number; totalAmount: number }; tracking: { path: string; url: string } | null; reused?: boolean; customerId: string | null };
+      if (!menuMounted.current) { popup?.close(); return; }
+      const reference = result.tracking && createTrackingReference(result.tracking.path, result.order.orderNumber);
+      if (!reference || !result.tracking) throw new Error("TRACKING_UNAVAILABLE");
+      registered = true;
+      reference.ownerId = result.customerId ?? undefined;
+      const message = buildWhatsAppMessageWithCheckout(lines, menu.settings.businessName, result.order.orderNumber, checkout, result.tracking.url);
+      const preparedOrder: CompletedOrder = {
+        number: result.order.orderNumber, lines, total: result.order.totalAmount, trackingHref: reference.path, message, ownerId: reference.ownerId,
+        whatsappHref: buildWhatsAppUrl(menu.settings.whatsappUrl, message),
+        whatsappAppHref: buildWhatsAppAppUrl(menu.settings.whatsappUrl, message),
+      };
+      const handoff = handoffRef.current;
+      if (handoff) handoff.reference = reference;
+      if (popup || isMobileDevice) writeTrackingReference(storage, activeTrackingStorageKey, reference);
+      if (result.customerId === null) writeTrackingReference(storage, recentGuestTrackingKey, reference);
+      window.dispatchEvent(new Event(trackingChangedEvent));
       setCompletedOrder(preparedOrder);
-      try { window.sessionStorage.setItem("taco-loco-completed-order", JSON.stringify(preparedOrder)); } catch {
-        // El pedido ya quedó persistido en el servidor; solo se pierde el resumen al recargar.
-      }
+      pendingIntent.current = null;
+      setNeedsOrderRecovery(false);
+      try {
+        storage?.removeItem(checkoutIntentStorageKey);
+        storage?.setItem("taco-loco-selection", "[]");
+      } catch { /* The registered order remains authoritative. */ }
       setLines([]);
-      // Clear the submitted cart synchronously before any return handler can
-      // inspect storage while the React state effect is still pending.
-      try { window.sessionStorage.setItem("taco-loco-selection", "[]"); } catch {
-        // The in-memory selection is already cleared; storage is optional.
-      }
       setShowSummary(false);
-      setOrderIntent({ reference: clientReference, signature: selectionSignature, number: result.order.orderNumber });
+      if (!result.reused && saveNewAddress && customerId && customerId === result.customerId && payload.fulfillment === "DELIVERY" && payload.deliveryAddress && addressLabel.trim()) {
+        void fetch("/api/customer/preferences", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ label: addressLabel.trim(), address: payload.deliveryAddress, reference: payload.deliveryReference }) }).catch(() => undefined);
+      }
       setFeedbackMessage(`Pedido TL-${String(result.order.orderNumber).padStart(4, "0")} preparado. Confirmá el mensaje en WhatsApp.`);
-      if (handoffRef.current?.sawBackground) window.setTimeout(() => resumeTrackingRef.current?.(), 0);
-      if (isMobileDevice) openMobileWhatsApp(preparedWhatsappAppHref, preparedWhatsappHref);
+      if (isMobileDevice) openMobileWhatsApp(preparedOrder.whatsappAppHref);
       else if (popup) {
-        popup.location.replace(preparedWhatsappHref);
+        popup.location.replace(preparedOrder.whatsappHref);
         setShowWhatsAppWebFallback(true);
+        if (handoff?.sawBackground && document.hasFocus()) resumeTrackingRef.current?.();
       } else {
+        handoffRef.current = null;
         setShowWhatsAppWebFallback(true);
       }
     } catch (error) {
       popup?.close();
       handoffRef.current = null;
-      setFeedbackMessage(error instanceof Error && error.message === "ORDERS_CLOSED" ? "No estamos tomando pedidos en este momento. Revisá nuestros horarios para volver a pedir." : "No pudimos registrar el pedido. Revisá la conexión e intentá nuevamente.");
+      if (!menuMounted.current) return;
+      if (registered) {
+        setShowWhatsAppWebFallback(true);
+        return;
+      }
+      setFeedbackMessage(error instanceof Error && error.message === "ORDERS_CLOSED"
+        ? "No estamos tomando pedidos en este momento. Revisá nuestros horarios para volver a pedir."
+        : rejectionMessage ?? "No pudimos confirmar si se registró el pedido. Reintentá con los mismos datos para recuperar el intento.");
     } finally {
-      setSubmittingOrder(false);
+      submitInFlight.current = false;
+      if (menuMounted.current) setSubmittingOrder(false);
     }
   }
 
-  return <main className="public-menu"><PublicNavigation cartCount={count} onCartClick={openCart} /><section className="brand-pattern brand-pattern--hero brand-hero"><div className="brand-hero__copy"><p className="eyebrow">{menu.settings.businessName} · Menú digital</p><h1>Elegí tu próximo antojo</h1><p>Sabores para compartir, pedir y volver a disfrutar.</p></div></section><CategoryNav categories={visibleCategories} /><p className="sr-only" aria-live="polite">{addedProductId ? "Producto agregado al pedido" : ""}</p>
+  return <main className="public-menu"><PublicNavigation cartCount={count} onCartClick={openCart} authenticated={Boolean(customerId)} /><section className="brand-pattern brand-pattern--hero brand-hero"><div className="brand-hero__copy"><p className="eyebrow">{menu.settings.businessName} · Menú digital</p><h1>Elegí tu próximo antojo</h1><p>Sabores para compartir, pedir y volver a disfrutar.</p></div></section><CategoryNav categories={visibleCategories} /><p className="sr-only" aria-live="polite">{addedProductId ? "Producto agregado al pedido" : ""}</p>
     <div className="public-menu__content">
       <section className={`operating-status operating-status--${operatingContext.isOpen ? "open" : "closed"}`} aria-live="polite"><strong>{operatingContext.label}</strong><span>{operatingContext.detail}</span></section>
-      {feedbackMessage && <p className="menu-order-feedback" role="status">{feedbackMessage}</p>}
+      {feedbackMessage && !showSummary && <p className="menu-order-feedback" role="status">{feedbackMessage}</p>}
       <label className="menu-search">Buscar en el menú<input type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Ej.: taco, pizza, bebida…" /></label>
       {searchQuery.trim() && visibleCategories.length === 0 && <p className="search-empty" role="status">No encontramos productos con “{searchQuery}”. Probá con otro término.</p>}
       {featured.length > 0 && <section className="menu-section menu-section--featured" aria-labelledby="featured-heading"><h2 id="featured-heading">Favoritos de la casa</h2>{featured.map((product) => <FeaturedProductCard key={product.id} product={product} onAdd={addProduct} added={addedProductId === product.id} />)}</section>}
@@ -479,9 +526,8 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       <SaucesInfo />
     </div>
     {count > 0 && <button className={`selection-bar${addedProductId ? " selection-bar--updated" : ""}`} type="button" onClick={openCart}><span>Pedido · {count} {count === 1 ? "producto" : "productos"}</span><strong>{formatPrice(total)}</strong></button>}
-    {showWhatsAppWebFallback && <aside className="whatsapp-fallback" role="status"><strong>WhatsApp no confirma el envío</strong><span>Si la ventana quedó en blanco o no se abrió, copiá el mensaje o abrí WhatsApp manualmente.</span>{completedOrder && <div className="selection-actions"><button className="button button--secondary" type="button" onClick={() => void copyWhatsAppMessage(completedOrder.message)}>{copiedMessage ? "Mensaje copiado" : "Copiar mensaje"}</button><a className="button" href={completedOrder?.whatsappHref || whatsappWebFallbackHref || whatsappHref} target="_blank" rel="noreferrer">Abrir WhatsApp Web</a><a className="button button--secondary" href={completedOrder?.trackingHref}>Ver seguimiento</a></div>}</aside>}
-    {completedOrder && <div className="selection-overlay" role="presentation"><section ref={dialogRef} className="selection-sheet selection-sheet--success" role="dialog" aria-modal="true" aria-labelledby="completed-order-title" aria-describedby="completed-order-help"><div className="brand-pattern brand-pattern--accent success-pattern"><div className="success-mark" aria-hidden="true">✓</div><p className="eyebrow">Pedido preparado</p><h2 id="completed-order-title">¡Listo, tu pedido está armado!</h2></div><p id="completed-order-help" className="selection-help">Pedido TL-{String(completedOrder.number).padStart(4, "0")}. El mensaje está preparado en WhatsApp; confirmá el envío desde la aplicación.</p><div className="completed-order-summary"><strong>Resumen del pedido</strong>{completedOrder.lines.map((line) => <div key={line.id}><span>{line.quantity} × {line.name}</span><span>{formatPrice(line.priceAmount * line.quantity)}</span></div>)}<div className="completed-order-total"><span>Total informativo</span><strong>{formatPrice(completedOrder.total)}</strong></div></div><div className="selection-actions"><a className="button button--secondary" href={completedOrder.trackingHref}>Ver estado de mi pedido</a><a className="button" href={isMobileDevice ? completedOrder.whatsappAppHref : completedOrder.whatsappHref} target="_blank" rel="noreferrer">Volver a WhatsApp</a><button className="button button--secondary" type="button" onClick={() => void copyWhatsAppMessage(completedOrder.message)}>{copiedMessage ? "Mensaje copiado" : "Copiar mensaje"}</button><button className="button button--secondary" type="button" onClick={startAnotherOrder}>Realizar otro pedido</button><button className="selection-clear" type="button" onClick={dismissCompletedOrder}>Seguir viendo el menú</button></div></section></div>}
+    {completedOrder && <div className="selection-overlay" role="presentation"><section ref={dialogRef} className="selection-sheet selection-sheet--success" role="dialog" aria-modal="true" aria-labelledby="completed-order-title" aria-describedby="completed-order-help"><div className="brand-pattern brand-pattern--accent success-pattern"><div className="success-mark" aria-hidden="true">✓</div><p className="eyebrow">Pedido preparado</p><h2 id="completed-order-title">¡Listo, tu pedido está armado!</h2></div><p id="completed-order-help" className="selection-help">Pedido TL-{String(completedOrder.number).padStart(4, "0")}. El mensaje está preparado en WhatsApp; confirmá el envío desde la aplicación.</p>{showWhatsAppWebFallback && <p className="selection-help">Si WhatsApp no se abrió, copiá el mensaje o abrilo manualmente.</p>}<div className="completed-order-summary"><strong>Resumen del pedido</strong>{completedOrder.lines.map((line) => <div key={line.id}><span>{line.quantity} × {line.name}</span><span>{formatPrice(line.priceAmount * line.quantity)}</span></div>)}<div className="completed-order-total"><span>Total informativo</span><strong>{formatPrice(completedOrder.total)}</strong></div></div><div className="selection-actions"><a className="button button--secondary" href={completedOrder.trackingHref} onClick={dismissCompletedOrder}>Ver estado de mi pedido</a><a className="button" href={isMobileDevice ? completedOrder.whatsappAppHref : completedOrder.whatsappHref} onClick={openPreparedWhatsApp} target="_blank" rel="noreferrer">Volver a WhatsApp</a>{isMobileDevice && <a className="button button--secondary" href={completedOrder.whatsappHref} onClick={openPreparedWhatsApp} target="_blank" rel="noreferrer">Abrir WhatsApp Web</a>}<button className="button button--secondary" type="button" onClick={() => void copyWhatsAppMessage(completedOrder.message)}>{copiedMessage ? "Mensaje copiado" : "Copiar mensaje"}</button><button className="button button--secondary" type="button" onClick={startAnotherOrder}>Realizar otro pedido</button><button className="selection-clear" type="button" onClick={dismissCompletedOrder}>Seguir viendo el menú</button></div></section></div>}
     {pendingProduct && <div className="selection-overlay" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) { setPendingProduct(null); setEditingLineId(null); } }}><section ref={dialogRef} className="selection-sheet selection-sheet--product" role="dialog" aria-modal="true" aria-labelledby="selection-title" aria-describedby="selection-help"><span className="selection-sheet__handle" aria-hidden="true" /><div className="selection-sheet__header"><div><p className="eyebrow">Paso 1 · Personalizá</p><h2 id="selection-title">{pendingProduct.name}</h2></div><button ref={dialogCloseRef} className="selection-close" type="button" onClick={() => { setPendingProduct(null); setEditingLineId(null); }} aria-label="Cerrar">×</button></div><p id="selection-help" className="selection-help">Elegí las opciones necesarias, la cantidad y confirmá para sumar el producto.</p><div className="product-quantity"><span>Cantidad</span><div className="quantity-control"><button type="button" onClick={() => setPendingQuantity((quantity) => Math.max(1, quantity - 1))} aria-label="Quitar una unidad">−</button><strong>{pendingQuantity}</strong><button type="button" onClick={() => setPendingQuantity((quantity) => Math.min(20, quantity + 1))} aria-label="Agregar una unidad">+</button></div><strong>{formatPrice(pendingProduct.priceAmount * pendingQuantity)}</strong></div>{pendingProduct.modifiers.map((group) => <fieldset className="modifier-group" key={group.name}><legend>{group.name}{group.required ? " · obligatorio" : ""}</legend><div className="modifier-options">{group.options.map((option) => { const checked = (selectedOptions[group.name] ?? []).includes(option); return <button className={`modifier-option${checked ? " modifier-option--selected" : ""}`} type="button" aria-pressed={checked} key={option} onClick={() => toggleOption(group, option)}>{option}</button>; })}</div></fieldset>)}{selectionError && <p className="selection-error" role="alert">{selectionError}</p>}<button className="button selection-confirm" type="button" onClick={confirmProduct}>{editingLineId ? "Guardar cambios" : "Agregar al pedido"} · {formatPrice(pendingProduct.priceAmount * pendingQuantity)}</button></section></div>}
-    {showSummary && <div className="selection-overlay" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) setShowSummary(false); }}><section ref={dialogRef} className="selection-sheet selection-sheet--summary" role="dialog" aria-modal="true" aria-labelledby="summary-title" aria-describedby="summary-help"><span className="selection-sheet__handle" aria-hidden="true" /><div className="selection-sheet__header"><div><p className="eyebrow">Paso {checkoutStep === "cart" ? "1 · Carrito" : "2 · Tus datos"}</p><h2 id="summary-title">{checkoutStep === "cart" ? "Revisá tu pedido" : "Completá tus datos"}</h2></div><button ref={dialogCloseRef} className="selection-close" type="button" onClick={() => setShowSummary(false)} aria-label="Cerrar">×</button></div><p id="summary-help" className="selection-help">Podés editar cantidades, quitar productos o seguir viendo el menú.</p><div className="checkout-stepper" aria-label="Pasos del checkout"><span className={checkoutStep === "cart" ? "checkout-step checkout-step--active" : "checkout-step"}>1 Carrito</span><span className={checkoutStep === "details" ? "checkout-step checkout-step--active" : "checkout-step"}>2 Tus datos</span></div>{lines.length === 0 ? <p className="selection-empty">Todavía no agregaste productos.</p> : <><div className="selection-lines">{lines.map((line) => <div className="selection-line" key={line.id}><div><strong>{line.name}</strong>{line.modifiers.length > 0 && <small>{line.modifiers.map((modifier) => `${modifier.group}: ${modifier.option}`).join(" · ")}</small>}<span>{formatPrice(line.priceAmount)} c/u</span></div><div className="selection-line__actions"><button className="selection-edit" type="button" onClick={() => editLine(line)}>Editar</button><button className="selection-remove" type="button" onClick={() => removeLine(line)} aria-label={`Quitar ${line.name} del pedido`}>Quitar</button><div className="quantity-control" aria-label={`Cantidad de ${line.name}`}><button type="button" onClick={() => setLines((current) => updateSelectionQuantity(current, line.id, line.quantity - 1))} aria-label={`Quitar una unidad de ${line.name}`}>−</button><strong>{line.quantity}</strong><button type="button" onClick={() => setLines((current) => updateSelectionQuantity(current, line.id, line.quantity + 1))} aria-label={`Agregar una unidad de ${line.name}`}>+</button></div></div></div>)}</div><button className="selection-clear" type="button" onClick={clearSelection}>Vaciar pedido</button></>}{checkoutStep === "details" && <div className="checkout-details"><label className="checkout-name">Nombre para el pedido (opcional)<input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder={authenticatedCustomer ? "Tu nombre de perfil" : "Cómo te llamamos"} maxLength={160} /></label><fieldset className="checkout-options"><legend>¿Cómo querés recibirlo?</legend><label><input type="radio" name="fulfillment" checked={checkout.fulfillment === "PICKUP"} onChange={() => setCheckout({ fulfillment: "PICKUP" })} /> Retiro</label>{menu.settings.deliveryEnabled && <label><input type="radio" name="fulfillment" checked={checkout.fulfillment === "DELIVERY"} onChange={() => setCheckout({ fulfillment: "DELIVERY", deliveryAddress: "", deliveryReference: "", transferHolderName: "" })} /> Delivery · {formatPrice(menu.settings.deliveryFeeAmount)}</label>}</fieldset>{checkout.fulfillment === "DELIVERY" && <div className="checkout-delivery-fields">{authenticatedCustomer && savedAddresses.length > 0 && <label>Dirección guardada<select value="" onChange={(event) => { const address = savedAddresses.find((item) => item.id === event.target.value); if (address) setCheckout({ ...checkout, deliveryAddress: address.address, deliveryReference: address.reference ?? "" }); }}><option value="">Elegir una dirección</option>{savedAddresses.map((item) => <option value={item.id} key={item.id}>{item.label} · {item.address}</option>)}</select></label>}<label>Dirección<input required value={checkout.deliveryAddress ?? ""} onChange={(event) => setCheckout({ ...checkout, deliveryAddress: event.target.value })} /></label><label className="checkout-save-address"><input type="checkbox" checked={saveNewAddress} onChange={(event) => setSaveNewAddress(event.target.checked)} /> Guardar esta dirección en mi cuenta</label>{saveNewAddress && <label>Etiqueta de la dirección<input value={addressLabel} onChange={(event) => setAddressLabel(event.target.value)} placeholder="Casa, trabajo…" maxLength={80} /></label>}<label>Referencia (opcional)<input value={checkout.deliveryReference ?? ""} onChange={(event) => setCheckout({ ...checkout, deliveryReference: event.target.value })} /></label><label>Titular de la transferencia<input required value={checkout.transferHolderName ?? ""} onChange={(event) => setCheckout({ ...checkout, transferHolderName: event.target.value })} /></label><p className="selection-help">La transferencia se verifica manualmente antes de confirmar el pedido.</p></div>}</div>}<div className="selection-summary"><span>Total informativo{checkout.fulfillment === "DELIVERY" ? " con envío" : ""}</span><strong>{formatPrice(total + (checkout.fulfillment === "DELIVERY" ? menu.settings.deliveryFeeAmount : 0))}</strong></div><div className="selection-actions">{checkoutStep === "cart" ? <><button className="button" type="button" onClick={() => setCheckoutStep("details")}>Continuar con tus datos</button><button className="button button--secondary" type="button" onClick={() => setShowSummary(false)}>Seguir viendo el menú</button></> : <><button className="button button--secondary" type="button" onClick={() => setCheckoutStep("cart")}>Volver al carrito</button><a className="button button--whatsapp" href={whatsappHref} rel="noreferrer" target="_blank" onClick={submitOrderIntent} aria-disabled={submittingOrder}>{submittingOrder ? "Preparando pedido…" : <><WhatsAppIcon /><span>Enviar pedido</span></>}</a></>}</div></section></div>}
+    {showSummary && <div className="selection-overlay" role="presentation" onClick={(event) => { if (event.target === event.currentTarget && !submitInFlight.current) setShowSummary(false); }}><section ref={dialogRef} className="selection-sheet selection-sheet--summary" role="dialog" aria-modal="true" tabIndex={-1} aria-labelledby="summary-title" aria-describedby="summary-help"><span className="selection-sheet__handle" aria-hidden="true" /><div className="selection-sheet__header"><div><p className="eyebrow">Paso {checkoutStep === "cart" ? "1 · Carrito" : "2 · Tus datos"}</p><h2 id="summary-title">{checkoutStep === "cart" ? "Revisá tu pedido" : "Completá tus datos"}</h2></div><button ref={dialogCloseRef} className="selection-close" type="button" onClick={() => setShowSummary(false)} disabled={submittingOrder} aria-label="Cerrar">×</button></div><p id="summary-help" className="selection-help">Podés editar cantidades, quitar productos o seguir viendo el menú.</p>{feedbackMessage && <p className="selection-help" role="status">{feedbackMessage}</p>}{needsOrderRecovery && !submittingOrder && <button className="selection-clear" type="button" onClick={discardPendingIntent}>Descartar intento anterior</button>}<div className="checkout-stepper" aria-label="Pasos del checkout"><span className={checkoutStep === "cart" ? "checkout-step checkout-step--active" : "checkout-step"}>1 Carrito</span><span className={checkoutStep === "details" ? "checkout-step checkout-step--active" : "checkout-step"}>2 Tus datos</span></div>{lines.length === 0 ? <p className="selection-empty">Todavía no agregaste productos.</p> : <><fieldset className="selection-lines" disabled={submittingOrder}>{lines.map((line) => <div className="selection-line" key={line.id}><div><strong>{line.name}</strong>{line.modifiers.length > 0 && <small>{line.modifiers.map((modifier) => `${modifier.group}: ${modifier.option}`).join(" · ")}</small>}<span>{formatPrice(line.priceAmount)} c/u</span></div><div className="selection-line__actions"><button className="selection-edit" type="button" onClick={() => editLine(line)}>Editar</button><button className="selection-remove" type="button" onClick={() => removeLine(line)} aria-label={`Quitar ${line.name} del pedido`}>Quitar</button><div className="quantity-control" aria-label={`Cantidad de ${line.name}`}><button type="button" onClick={() => setLines((current) => updateSelectionQuantity(current, line.id, line.quantity - 1))} aria-label={`Quitar una unidad de ${line.name}`}>−</button><strong>{line.quantity}</strong><button type="button" onClick={() => setLines((current) => updateSelectionQuantity(current, line.id, line.quantity + 1))} aria-label={`Agregar una unidad de ${line.name}`}>+</button></div></div></div>)}</fieldset><button className="selection-clear" type="button" disabled={submittingOrder} onClick={clearSelection}>Vaciar pedido</button></>}{checkoutStep === "details" && <fieldset className="checkout-details" disabled={submittingOrder}><label className="checkout-name">Nombre para el pedido (opcional)<input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder={customerId ? "Tu nombre de perfil" : "Cómo te llamamos"} maxLength={160} /></label><fieldset className="checkout-options"><legend>¿Cómo querés recibirlo?</legend><label><input type="radio" name="fulfillment" checked={checkout.fulfillment === "PICKUP"} onChange={() => setCheckout({ fulfillment: "PICKUP" })} /> Retiro</label>{menu.settings.deliveryEnabled && <label><input type="radio" name="fulfillment" checked={checkout.fulfillment === "DELIVERY"} onChange={() => setCheckout({ fulfillment: "DELIVERY", deliveryAddress: "", deliveryReference: "", transferHolderName: "" })} /> Delivery · {formatPrice(menu.settings.deliveryFeeAmount)}</label>}</fieldset>{checkout.fulfillment === "DELIVERY" && <div className="checkout-delivery-fields">{customerId && savedAddresses.length > 0 && <label>Dirección guardada<select value="" onChange={(event) => { const address = savedAddresses.find((item) => item.id === event.target.value); if (address) setCheckout({ ...checkout, deliveryAddress: address.address, deliveryReference: address.reference ?? "" }); }}><option value="">Elegir una dirección</option>{savedAddresses.map((item) => <option value={item.id} key={item.id}>{item.label} · {item.address}</option>)}</select></label>}<label>Dirección<input required value={checkout.deliveryAddress ?? ""} onChange={(event) => setCheckout({ ...checkout, deliveryAddress: event.target.value })} /></label>{customerId && <label className="checkout-save-address"><input type="checkbox" checked={saveNewAddress} onChange={(event) => setSaveNewAddress(event.target.checked)} /> Guardar esta dirección en mi cuenta</label>}{customerId && saveNewAddress && <label>Etiqueta de la dirección<input value={addressLabel} onChange={(event) => setAddressLabel(event.target.value)} placeholder="Casa, trabajo…" maxLength={80} /></label>}<label>Referencia (opcional)<input value={checkout.deliveryReference ?? ""} onChange={(event) => setCheckout({ ...checkout, deliveryReference: event.target.value })} /></label><label>Titular de la transferencia<input required value={checkout.transferHolderName ?? ""} onChange={(event) => setCheckout({ ...checkout, transferHolderName: event.target.value })} /></label><p className="selection-help">La transferencia se verifica manualmente antes de confirmar el pedido.</p></div>}</fieldset>}<div className="selection-summary"><span>Total informativo{checkout.fulfillment === "DELIVERY" ? " con envío" : ""}</span><strong>{formatPrice(total + (checkout.fulfillment === "DELIVERY" ? menu.settings.deliveryFeeAmount : 0))}</strong></div><div className="selection-actions">{checkoutStep === "cart" ? <><button className="button" type="button" onClick={() => setCheckoutStep("details")}>Continuar con tus datos</button><button className="button button--secondary" type="button" onClick={() => setShowSummary(false)}>Seguir viendo el menú</button></> : <><button className="button button--secondary" type="button" disabled={submittingOrder} onClick={() => setCheckoutStep("cart")}>Volver al carrito</button><button className="button button--whatsapp" type="button" onClick={() => void submitOrderIntent()} disabled={submittingOrder || (!operatingContext.isOpen && !needsOrderRecovery)}>{submittingOrder ? "Preparando pedido…" : <><WhatsAppIcon /><span>{needsOrderRecovery ? "Recuperar intento" : "Enviar pedido"}</span></>}</button>{!operatingContext.isOpen && <p className="selection-help">{needsOrderRecovery ? "El local está cerrado. Sólo podés recuperar el intento anterior." : operatingContext.detail}</p>}</>}</div></section></div>}
   </main>;
 }

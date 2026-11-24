@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const result = await createPublicOrderIntent(await request.json(), customer?.id ?? null);
     const trackingPath = result.order.publicTrackingToken ? `/pedido/${result.order.publicTrackingToken}` : null;
     const trackingUrl = trackingPath ? new URL(trackingPath, request.url).toString() : null;
-    return NextResponse.json({ order: { id: result.order.id, orderNumber: result.order.orderNumber, totalAmount: result.order.totalAmount }, tracking: trackingPath ? { path: trackingPath, url: trackingUrl } : null, reused: result.reused }, { status: result.reused ? 200 : 201 });
+    return NextResponse.json({ order: { id: result.order.id, orderNumber: result.order.orderNumber, totalAmount: result.order.totalAmount }, tracking: trackingPath ? { path: trackingPath, url: trackingUrl } : null, reused: result.reused, customerId: customer?.id ?? null }, { status: result.reused ? 200 : 201 });
   } catch (error) {
     console.error("[orders.intent] request failed", error instanceof Error ? error.message : error);
     if (error instanceof AppError) return NextResponse.json({ code: error.code, message: error.message }, { status: error.status });

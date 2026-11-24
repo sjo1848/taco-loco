@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { PublicOrderTracking } from "@/modules/orders/public-tracking";
-import { clearActiveTrackingResume } from "@/modules/orders/tracking-resume";
+import { finishTrackingHandoff } from "@/modules/orders/tracking-resume";
 import { initialTrackingPollDelay, nextTrackingPollDelay, terminalTrackingStages } from "./tracking-polling";
 import { PublicNavigation } from "@/components/public/PublicNavigation";
 function formatPrice(amount: number) { return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(amount); }
@@ -28,7 +28,7 @@ export function OrderTracking({ initial }: { initial: PublicOrderTracking }) {
   const inFlight = useRef(false);
 
   useEffect(() => {
-    clearActiveTrackingResume(window.localStorage);
+    finishTrackingHandoff(window.location.pathname);
     const token = window.location.pathname.split("/").filter(Boolean).at(-1);
     if (!token) return;
     let cancelled = false;

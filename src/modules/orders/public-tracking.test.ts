@@ -17,7 +17,7 @@ describe("public order tracking projection", () => {
       { sequence: BigInt(2), kind: "NO_SHOW_RECORDED", toStatus: "READY", createdAt: "2026-09-16T20:02:00Z" },
       { sequence: BigInt(4), kind: "PAYMENT_AND_ORDER_CONFIRMED", toStatus: "CONFIRMED", createdAt: "2026-09-16T20:04:00Z" },
     ] });
-    expect(history.map((item) => item.label)).toEqual(["Pedido enviado", "Pedido confirmado", "Pago y pedido confirmados"]);
+    expect(history.map((item) => item.label)).toEqual(["Pedido registrado", "Pedido confirmado", "Pago y pedido confirmados"]);
   });
 
   it("preserves large D1 sequence values without Number precision loss", () => {
@@ -28,7 +28,7 @@ describe("public order tracking projection", () => {
     ] });
     expect(sequenceAsBigInt(large + BigInt(1)).toString()).toBe("9007199254740991");
     expect(result.version).toBe("0");
-    expect(result.history.map((item) => item.label)).toEqual(["Pedido enviado", "Pedido confirmado"]);
+    expect(result.history.map((item) => item.label)).toEqual(["Pedido registrado", "Pedido confirmado"]);
   });
 
   it("fails explicitly instead of silently corrupting an unsafe adapter sequence", () => {

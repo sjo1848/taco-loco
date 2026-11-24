@@ -130,7 +130,7 @@ async function runBrowser(name, launcher) {
         await page.getByRole("button", { name: "Continuar con tus datos" }).click();
         let popup;
         page.on("popup", (child) => { popup = child; });
-        await page.getByRole("link", { name: /Enviar pedido/ }).click();
+        await page.getByText("Enviar pedido", { exact:true }).click();
         const successNotice = page.getByText(/Pedido preparado/);
         await successNotice.waitFor({ state: "visible", timeout: 15_000 });
         const successText = await successNotice.count();

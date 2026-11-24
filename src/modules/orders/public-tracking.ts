@@ -98,7 +98,7 @@ function historyEntry(event: PublicOrderRecord["events"][number], fulfillment: "
   if (kind === "NO_SHOW_RECORDED") return null;
   let stage: PublicOrderStage | null = null;
   let label = "";
-  if (kind === "ORDER_CREATED") { stage = fulfillment === "DELIVERY" ? "WAITING_PAYMENT_CONFIRMATION" : "WAITING_CONFIRMATION"; label = "Pedido enviado"; }
+  if (kind === "ORDER_CREATED") { stage = fulfillment === "DELIVERY" ? "WAITING_PAYMENT_CONFIRMATION" : "WAITING_CONFIRMATION"; label = "Pedido registrado"; }
   else if (kind === "PAYMENT_REPORTED") { stage = "WAITING_PAYMENT_CONFIRMATION"; label = "Pago informado"; }
   else if (kind === "PAYMENT_REJECTED") { stage = "PAYMENT_ISSUE"; label = "No pudimos verificar el pago"; }
   else if (kind === "PAYMENT_AND_ORDER_CONFIRMED") { stage = "CONFIRMED"; label = "Pago y pedido confirmados"; }
