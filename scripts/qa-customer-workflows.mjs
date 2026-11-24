@@ -55,6 +55,7 @@ async function checkout(page) {
 async function noOldDialog(page) {
   await catalog(page);
   await completedDialog(page).waitFor({state:"hidden"});
+  await page.getByRole("heading",{level:1,name:/^Pedido TL-/}).waitFor({state:"hidden"});
   assert.equal(await page.evaluate(() => document.body.style.overflow), "");
 }
 function blockStorage(c) {
@@ -105,6 +106,8 @@ try {
     await page.reload();
     await noOldDialog(page);
     await page.goBack();
+    await page.waitForURL(local(first.data.tracking.path));
+    await page.getByRole("heading",{level:1,name:/^Pedido TL-/}).waitFor();
     await page.goForward();
     await page.waitForURL(local(menu));
     await noOldDialog(page);
@@ -113,6 +116,9 @@ try {
     await noOldDialog(separate);
     assert.equal(await section(separate).getByRole("link",{name:"Pedidos",exact:true}).getAttribute("href"),"/cuenta#customer-orders");
     await separate.close();
+    await page.bringToFront();
+    await page.waitForURL(local(menu));
+    await noOldDialog(page);
     if (process.env.TACO_QA_DESKTOP_SCREENSHOT) await page.screenshot({path:process.env.TACO_QA_DESKTOP_SCREENSHOT});
     console.log("PASS desktop: checkout, WhatsApp handoff, explicit tracking, reload/back/forward, new tab isolation");
   }
@@ -204,7 +210,11 @@ try {
     assert(await phone.getByText(/Total informativo con envío/).isVisible());
     const viewport=await phone.evaluate(() => ({content:document.documentElement.scrollWidth,width:innerWidth}));
     assert(viewport.content <= viewport.width + 1);
-    await phone.screenshot({path:process.env.TACO_QA_SCREENSHOT ?? undefined});
+    await send(phone).scrollIntoViewIfNeeded();
+    assert(await send(phone).isVisible());
+    if (process.env.TACO_QA_SCREENSHOT) await phone.screenshot({path:process.env.TACO_QA_SCREENSHOT});
+    await phone.keyboard.press("Escape");
+    await phone.getByRole("dialog").waitFor({state:"hidden"});
     await mobile.close();
     console.log("PASS mobile: catalogue/search/modifiers, Cuenta → Carrito, DELIVERY details and fee");
 
