@@ -7,12 +7,12 @@ import { ProductCard } from "@/components/public/ProductCard";
 import { SaucesInfo } from "@/components/public/SaucesInfo";
 import { PublicNavigation } from "@/components/public/PublicNavigation";
 import { filterCatalog } from "@/modules/catalog/discovery";
-import { activeTrackingStorageKey, createTrackingReference, finishTrackingHandoff, readTrackingReference, recentGuestTrackingKey, retireLegacyTrackingStorage, trackingChangedEvent, trackingResumeMaxAgeMs, trackingSessionStorage, writeTrackingReference, type TrackingReference } from "@/modules/orders/tracking-resume";
+import { activeTrackingStorageKey, createTrackingReference, finishTrackingHandoff, onCustomerSessionChange, readCustomerSessionGeneration, readTrackingReference, rememberGuestOrder, retireLegacyTrackingStorage, trackingResumeMaxAgeMs, trackingSessionStorage, writeTrackingReference, type TrackingReference } from "@/modules/orders/tracking-resume";
 import { buildWhatsAppAppUrl, buildWhatsAppMessageWithCheckout, buildWhatsAppUrl, checkoutIntentStorageKey, createClientReference, addSelectionLine, lineId, removeSelectionLine, selectionCount, selectionTotal, updateSelectionQuantity, type CheckoutDetails, type SelectionLine } from "@/modules/selection/model";
 
 type Product = { id: string; name: string; description: string | null; priceAmount: number; available: boolean; featured: boolean; imageKey: string | null; imageAlt: string | null; modifiers: Array<{ name: string; required: boolean; minSelections: number | null; maxSelections: number | null; options: string[] }> };
 type Menu = { settings: { businessName: string; whatsappUrl: string; deliveryEnabled: boolean; deliveryFeeAmount: number; operatingContext: { isOpen: boolean; label: string; detail: string } }; categories: Array<{ id: string; name: string; slug: string; products: Product[] }> };
-type CompletedOrder = { number: number; lines: SelectionLine[]; total: number; whatsappHref: string; whatsappAppHref: string; trackingHref: string; message: string; ownerId?: string };
+type CompletedOrder = { number: number; lines: SelectionLine[]; total: number; whatsappHref: string; whatsappAppHref: string; trackingHref: string; message: string; ownerId?: string; sessionGeneration: string | null };
 type CustomerSession = { authenticated?: boolean; customer?: { id?: string; displayName?: string | null } };
 type SavedAddress = { id: string; label: string; address: string; reference: string | null };
 
@@ -52,7 +52,8 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   const [copiedMessage, setCopiedMessage] = useState(false);
   const [needsOrderRecovery, setNeedsOrderRecovery] = useState(false);
   const menuMounted = useRef(false);
-  const pendingIntent = useRef<{ reference: string; fingerprint: string } | null>(null);
+  const pendingIntent = useRef<{ reference: string; fingerprint: string; ownerId?: string | null } | null>(null);
+  const sessionChangeRevision = useRef(0);
   const submitInFlight = useRef(false);
   const handoffRef = useRef<{ sawBackground: boolean; reference?: TrackingReference } | null>(null);
   const resumeTrackingRef = useRef<(() => void) | null>(null);
@@ -104,7 +105,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       }
       try {
         const saved = JSON.parse(storage?.getItem(checkoutIntentStorageKey) ?? "null");
-        if (saved && /^[a-zA-Z0-9-]{16,100}$/.test(saved.reference) && /^[0-9a-f]{64}$/.test(saved.fingerprint)) {
+        if (saved && /^[a-zA-Z0-9-]{16,100}$/.test(saved.reference) && /^[0-9a-f]{64}$/.test(saved.fingerprint) && (saved.ownerId == null || typeof saved.ownerId === "string")) {
           pendingIntent.current = saved;
           setNeedsOrderRecovery(true);
         }
@@ -147,6 +148,8 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   useEffect(() => {
     let mounted = true;
     const navigateToTracking = async (reference: TrackingReference) => {
+      const sessionRevision = sessionChangeRevision.current;
+      if ((reference.sessionGeneration ?? null) !== readCustomerSessionGeneration()) return;
       if (reference.ownerId) {
         try {
           const response = await fetch("/api/customer/auth/session", { cache: "no-store" });
@@ -157,7 +160,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
           }
         } catch { return; }
       }
-      if (mounted) window.location.assign(reference.path);
+      if (mounted && sessionRevision === sessionChangeRevision.current && (reference.sessionGeneration ?? null) === readCustomerSessionGeneration()) window.location.assign(reference.path);
     };
     const resumeTracking = () => {
       const handoff = handoffRef.current;
@@ -168,6 +171,13 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       if (Date.now() - createdAt <= trackingResumeMaxAgeMs) void navigateToTracking(handoff.reference);
     };
     resumeTrackingRef.current = resumeTracking;
+    const unsubscribe = onCustomerSessionChange(() => {
+      sessionChangeRevision.current += 1;
+      handoffRef.current = null;
+      finishTrackingHandoff();
+      setCompletedOrder(null);
+      setShowWhatsAppWebFallback(false);
+    });
     const markBackground = () => {
       if (handoffRef.current) handoffRef.current.sawBackground = true;
     };
@@ -202,6 +212,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     window.addEventListener("pageshow", onPageShow);
     return () => {
       mounted = false;
+      unsubscribe();
       window.clearTimeout(restore);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("blur", markBackground);
@@ -397,6 +408,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     const reference = createTrackingReference(completedOrder.trackingHref, completedOrder.number);
     if (!reference) return;
     reference.ownerId = completedOrder.ownerId;
+    reference.sessionGeneration = completedOrder.sessionGeneration;
     handoffRef.current = { sawBackground: false, reference };
     writeTrackingReference(trackingSessionStorage(), activeTrackingStorageKey, reference);
   }
@@ -408,6 +420,9 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       setFeedbackMessage("Completá la dirección y el titular de la transferencia.");
       return;
     }
+    const sessionGeneration = readCustomerSessionGeneration();
+    const sessionRevision = sessionChangeRevision.current;
+    const sessionStayedCurrent = () => sessionRevision === sessionChangeRevision.current && sessionGeneration === readCustomerSessionGeneration();
     submitInFlight.current = true;
     setSubmittingOrder(true);
     setFeedbackMessage("Preparando tu pedido para WhatsApp…");
@@ -435,18 +450,26 @@ export function MenuExperience({ menu }: { menu: Menu }) {
         rejectionMessage = "Hay un intento sin confirmar. Restaurá los datos originales y recuperalo antes de enviar un pedido distinto.";
         throw new Error("ORDER_INTENT_CHANGED");
       }
+      if (saved?.ownerId !== undefined && saved.ownerId !== customerId) {
+        rejectionMessage = "Este intento pertenece a otra sesión. Volvé a la sesión anterior para recuperarlo.";
+        throw new Error("CHECKOUT_SESSION_CHANGED");
+      }
       if (!saved && !(await refreshOperatingStatus()).isOpen) throw new Error("ORDERS_CLOSED");
       if (!menuMounted.current) { popup?.close(); return; }
+      if (!sessionStayedCurrent()) {
+        rejectionMessage = "La sesión cambió. Recargá la página y revisá tu cuenta antes de enviar el pedido.";
+        throw new Error("CHECKOUT_SESSION_CHANGED");
+      }
       const clientReference = saved?.reference ?? createClientReference();
-      pendingIntent.current = { fingerprint, reference: clientReference };
+      pendingIntent.current = saved ?? { fingerprint, reference: clientReference, ownerId: customerId };
       setNeedsOrderRecovery(true);
       try { storage?.setItem(checkoutIntentStorageKey, JSON.stringify(pendingIntent.current)); } catch { /* Preserve the in-memory attempt. */ }
-      const response = await fetch("/api/orders/intents", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...payload, clientReference }) });
+      const response = await fetch("/api/orders/intents", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...payload, clientReference, expectedCustomerId: saved?.ownerId === undefined ? customerId : saved.ownerId, recoveryOnly: Boolean(saved && saved.ownerId === undefined) }) });
       if (!menuMounted.current) { popup?.close(); return; }
       if (!response.ok) {
         const error = await response.json().catch(() => null) as { code?: string; message?: string } | null;
         if (!menuMounted.current) { popup?.close(); return; }
-        if (!saved && (response.status === 400 || error?.code === "ORDERS_CLOSED")) {
+        if (!saved && (response.status === 400 || error?.code === "ORDERS_CLOSED" || error?.code === "CHECKOUT_SESSION_CHANGED")) {
           // On a retry the original request could still commit after this rejection.
           pendingIntent.current = null;
           setNeedsOrderRecovery(false);
@@ -463,20 +486,13 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       if (!menuMounted.current) { popup?.close(); return; }
       const reference = result.tracking && createTrackingReference(result.tracking.path, result.order.orderNumber);
       if (!reference || !result.tracking) throw new Error("TRACKING_UNAVAILABLE");
+      if (!sessionStayedCurrent()) {
+        popup?.close();
+        handoffRef.current = null;
+        setFeedbackMessage("La sesión cambió durante el envío. Volvé a la sesión anterior y elegí Recuperar intento para consultar el pedido.");
+        return;
+      }
       registered = true;
-      reference.ownerId = result.customerId ?? undefined;
-      const message = buildWhatsAppMessageWithCheckout(lines, menu.settings.businessName, result.order.orderNumber, checkout, result.tracking.url);
-      const preparedOrder: CompletedOrder = {
-        number: result.order.orderNumber, lines, total: result.order.totalAmount, trackingHref: reference.path, message, ownerId: reference.ownerId,
-        whatsappHref: buildWhatsAppUrl(menu.settings.whatsappUrl, message),
-        whatsappAppHref: buildWhatsAppAppUrl(menu.settings.whatsappUrl, message),
-      };
-      const handoff = handoffRef.current;
-      if (handoff) handoff.reference = reference;
-      if (popup || isMobileDevice) writeTrackingReference(storage, activeTrackingStorageKey, reference);
-      if (result.customerId === null) writeTrackingReference(storage, recentGuestTrackingKey, reference);
-      window.dispatchEvent(new Event(trackingChangedEvent));
-      setCompletedOrder(preparedOrder);
       pendingIntent.current = null;
       setNeedsOrderRecovery(false);
       try {
@@ -485,6 +501,19 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       } catch { /* The registered order remains authoritative. */ }
       setLines([]);
       setShowSummary(false);
+      reference.ownerId = result.customerId ?? undefined;
+      reference.sessionGeneration = sessionGeneration;
+      const message = buildWhatsAppMessageWithCheckout(lines, menu.settings.businessName, result.order.orderNumber, checkout, result.tracking.url);
+      const preparedOrder: CompletedOrder = {
+        number: result.order.orderNumber, lines, total: result.order.totalAmount, trackingHref: reference.path, message, ownerId: reference.ownerId, sessionGeneration,
+        whatsappHref: buildWhatsAppUrl(menu.settings.whatsappUrl, message),
+        whatsappAppHref: buildWhatsAppAppUrl(menu.settings.whatsappUrl, message),
+      };
+      const handoff = handoffRef.current;
+      if (handoff) handoff.reference = reference;
+      if (popup || isMobileDevice) writeTrackingReference(storage, activeTrackingStorageKey, reference);
+      if (result.customerId === null) rememberGuestOrder(reference);
+      setCompletedOrder(preparedOrder);
       if (!result.reused && saveNewAddress && customerId && customerId === result.customerId && payload.fulfillment === "DELIVERY" && payload.deliveryAddress && addressLabel.trim()) {
         void fetch("/api/customer/preferences", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ label: addressLabel.trim(), address: payload.deliveryAddress, reference: payload.deliveryReference }) }).catch(() => undefined);
       }
@@ -515,7 +544,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     }
   }
 
-  return <main className="public-menu"><PublicNavigation cartCount={count} onCartClick={openCart} authenticated={Boolean(customerId)} /><section className="brand-pattern brand-pattern--hero brand-hero"><div className="brand-hero__copy"><p className="eyebrow">{menu.settings.businessName} · Menú digital</p><h1>Elegí tu próximo antojo</h1><p>Sabores para compartir, pedir y volver a disfrutar.</p></div></section><CategoryNav categories={visibleCategories} /><p className="sr-only" aria-live="polite">{addedProductId ? "Producto agregado al pedido" : ""}</p>
+  return <main className="public-menu"><PublicNavigation cartCount={count} onCartClick={openCart} /><section className="brand-pattern brand-pattern--hero brand-hero"><div className="brand-hero__copy"><p className="eyebrow">{menu.settings.businessName} · Menú digital</p><h1>Elegí tu próximo antojo</h1><p>Sabores para compartir, pedir y volver a disfrutar.</p></div></section><CategoryNav categories={visibleCategories} /><p className="sr-only" aria-live="polite">{addedProductId ? "Producto agregado al pedido" : ""}</p>
     <div className="public-menu__content">
       <section className={`operating-status operating-status--${operatingContext.isOpen ? "open" : "closed"}`} aria-live="polite"><strong>{operatingContext.label}</strong><span>{operatingContext.detail}</span></section>
       {feedbackMessage && !showSummary && <p className="menu-order-feedback" role="status">{feedbackMessage}</p>}

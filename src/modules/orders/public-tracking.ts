@@ -1,6 +1,8 @@
 import { formatOrderNumber } from "@/modules/orders/model";
 
 export type PublicOrderStage = "WAITING_CONFIRMATION" | "WAITING_PAYMENT_CONFIRMATION" | "PAYMENT_ISSUE" | "CONFIRMED" | "PREPARING" | "READY" | "COMPLETED" | "CANCELLED" | "EXPIRED" | "REFUND_PENDING" | "REFUNDED";
+export const terminalTrackingStages: readonly PublicOrderStage[] = ["COMPLETED", "CANCELLED", "EXPIRED", "REFUNDED"];
+
 export type PublicTrackingEvent = { stage: PublicOrderStage; label: string; at: string };
 export type PublicOrderTracking = {
   orderCode: string;
@@ -63,12 +65,12 @@ export async function publicTrackingCursor(token: string, sequence: bigint | num
 function iso(value: Date | string) { return value instanceof Date ? value.toISOString() : new Date(value).toISOString(); }
 function stageTitle(stage: PublicOrderStage, fulfillment: "PICKUP" | "DELIVERY") {
   const copy: Record<PublicOrderStage, [string, string]> = {
-    WAITING_CONFIRMATION: ["Esperando confirmación", "El local recibió tu pedido y debe confirmarlo."],
+    WAITING_CONFIRMATION: ["Esperando confirmación", "Tu pedido está registrado y pendiente de confirmación del local."],
     WAITING_PAYMENT_CONFIRMATION: ["Verificando el pago", "El local está verificando la transferencia antes de confirmar el pedido."],
     PAYMENT_ISSUE: ["No pudimos verificar el pago", "Revisá la información del pago o contactá al local."],
-    CONFIRMED: ["Pago y pedido confirmados", "Tu pedido fue confirmado."],
+    CONFIRMED: [fulfillment === "PICKUP" ? "Pedido confirmado" : "Pago y pedido confirmados", "Tu pedido fue confirmado."],
     PREPARING: ["En preparación", "Estamos preparando tu pedido."],
-    READY: ["Listo para la entrega", fulfillment === "PICKUP" ? "¡Tu pedido está listo para retirar!" : "Tu pedido está listo para la entrega."],
+    READY: [fulfillment === "PICKUP" ? "Listo para retirar" : "Listo para la entrega", fulfillment === "PICKUP" ? "¡Tu pedido está listo para retirar!" : "Tu pedido está listo para la entrega."],
     COMPLETED: ["Pedido entregado", "Gracias por elegir Taco Loco."],
     CANCELLED: ["Pedido cancelado", "Este pedido fue cancelado."],
     EXPIRED: ["Pedido cerrado", "Este pedido se cerró sin ser confirmado."],

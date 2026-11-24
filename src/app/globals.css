@@ -490,3 +490,9 @@ button.public-bottom-nav__item { border: 0; background: transparent; cursor: poi
 @media (min-width: 700px) { .selection-overlay { align-items: center; padding: 24px; } .selection-sheet { max-height: min(82svh, 720px); border-bottom: 1px solid var(--border); border-radius: 22px; box-shadow: 0 24px 80px rgba(0,0,0,.5); } .selection-sheet__handle { display: none; } }
 
 fieldset.selection-lines, fieldset.checkout-details { border: 0; margin: 0; padding: 0; min-inline-size: 0; }
+
+.customer-order-section { display: grid; gap: 12px; margin-block: 24px; }
+.customer-order-section > h2, .customer-order-card h3 { margin: 0; }
+.customer-order-card--active { border-inline-start: 4px solid var(--green, #217d38); }
+.customer-order-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.customer-order-actions .button { min-height: 44px; }

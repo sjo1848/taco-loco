@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { chromium } from "playwright";
 
 const target = new URL(process.env.TACO_QA_LOCAL_URL ?? "http://127.0.0.1:8845");
@@ -13,6 +14,19 @@ const local = (path) => origin + path;
 const section = (page) => page.getByRole("navigation", { name: "Secciones principales" });
 const go = async (page, path) => { const r = await page.goto(local(path)); assert.equal(r?.status(), 200); };
 const syntheticSessionToken = "b".repeat(64);
+
+function setSyntheticStatus(id, status, original) {
+  assert.match(id, /^[a-f0-9-]{36}$/);
+  assert(["RECEIVED","CONFIRMED"].includes(original));
+  assert(["CONFIRMED","DELIVERED"].includes(status));
+  const state = process.env.TACO_QA_LOCAL_STATE;
+  assert(state?.startsWith("/tmp/"), "Status fixtures require the isolated Wrangler local D1 runner.");
+  execFileSync("./node_modules/.bin/wrangler", ["d1","execute","DB","--config","dist/server/wrangler.json","--local","--persist-to",state,"--command",
+    `UPDATE "Order" SET status='${status}', verificationStatus='VERIFIED', updatedAt=CURRENT_TIMESTAMP WHERE id='${id}'; INSERT INTO OrderEvent (id,sequence,orderId,fromStatus,toStatus,kind) SELECT 'qa-transition-${status}', COALESCE(MAX(sequence),0)+1,'${id}','${original}','${status}','STATUS_TRANSITION' FROM OrderEvent;`],
+  {stdio:"pipe", timeout:15000});
+}
+const activeOrders = (page) => page.getByRole("region",{name:"En curso",exact:true});
+const history = (page) => page.getByRole("region",{name:"Historial",exact:true});
 
 async function context(options = {}) {
   const c = await browser.newContext(options);
@@ -100,6 +114,8 @@ try {
     assert.equal(changed.status(),409);
     assert.equal((await changed.json()).code,"ORDER_INTENT_MISMATCH");
     await section(page).getByRole("link",{name:"Pedidos",exact:true}).click();
+    await page.waitForURL(local("/pedidos"));
+    await activeOrders(page).getByRole("link",{name:/Ver seguimiento/}).click();
     await page.waitForURL(local(first.data.tracking.path));
     await section(page).getByRole("link",{name:"Menú",exact:true}).click();
     await page.waitForURL(local(menu));
@@ -114,7 +130,7 @@ try {
     const separate = await desktop.newPage();
     await go(separate,menu);
     await noOldDialog(separate);
-    assert.equal(await section(separate).getByRole("link",{name:"Pedidos",exact:true}).getAttribute("href"),"/cuenta#customer-orders");
+    assert.equal(await section(separate).getByRole("link",{name:"Pedidos",exact:true}).getAttribute("href"),"/pedidos");
     await separate.close();
     await page.bringToFront();
     await page.waitForURL(local(menu));
@@ -209,6 +225,10 @@ try {
     await completedDialog(page).getByRole("link",{name:"Ver estado de mi pedido"}).click();
     await page.waitForURL(local(delivery.data.tracking.path));
     await page.getByRole("button",{name:"Informé la transferencia"}).waitFor();
+    await section(page).getByRole("link",{name:"Pedidos",exact:true}).click();
+    await page.waitForURL(local("/pedidos"));
+    await activeOrders(page).getByRole("link",{name:/Ver seguimiento/}).nth(2).waitFor();
+    assert.equal(await activeOrders(page).getByRole("link",{name:/Ver seguimiento/}).count(),3);
     console.log("PASS DELIVERY: required fields, current fee, distinct order and payment-pending tracking");
     console.log("PASS idempotence after real local commit + response lost + reload; one-shot return and no stale modal");
   }
@@ -266,6 +286,16 @@ try {
     const customer = await account.newPage();
     await go(customer, "/cuenta");
     await customer.getByText(/Bienvenido, QA Cliente/).waitFor();
+    const changedSession = await account.request.post(local("/api/orders/intents"), {
+      data:{...first.request, clientReference:"qa-session-change-no-create", expectedCustomerId:null}, headers:{origin},
+    });
+    assert.equal(changedSession.status(),409);
+    assert.equal((await changedSession.json()).code,"CHECKOUT_SESSION_CHANGED");
+    const legacyMissing = await account.request.post(local("/api/orders/intents"), {
+      data:{...first.request, clientReference:"qa-legacy-recovery-no-create", expectedCustomerId:"qa-customer", recoveryOnly:true}, headers:{origin},
+    });
+    assert.equal(legacyMissing.status(),409);
+    assert.equal((await legacyMissing.json()).code,"ORDER_INTENT_NOT_REGISTERED");
     // Claim the guest order via its private link and test that an explicit repeat only opens the draft.
     await go(customer,first.data.tracking.path);
     await customer.getByRole("button",{name:/Guardar pedido|Guardar en mi cuenta/}).click();
@@ -282,14 +312,76 @@ try {
       assert(!Object.hasOwn(result,"tracking"));
     } finally { await visitor.close(); }
     await section(customer).getByRole("link",{name:"Pedidos",exact:true}).click();
-    await customer.waitForURL(local("/cuenta#customer-orders"));
-    await customer.getByRole("button",{name:"Repetir pedido",exact:true}).first().click();
+    await customer.waitForURL(local("/pedidos"));
+    const code = "TL-" + String(first.data.order.orderNumber).padStart(4,"0");
+    const current = activeOrders(customer);
+    await current.getByRole("heading",{name:code,exact:true}).waitFor();
+    await current.getByText("Devolución pendiente",{exact:true}).waitFor();
+    await current.getByText("Verificando el pago",{exact:true}).waitFor();
+    assert.equal(await current.getByRole("link",{name:/Ver seguimiento/}).count(),3);
+    assert.equal(await current.getByRole("button",{name:"Repetir pedido"}).count(),0);
+    await customer.setViewportSize({width:390,height:844});
+    assert(await customer.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
+    if(process.env.TACO_QA_ORDERS_SCREENSHOT) await customer.screenshot({path:process.env.TACO_QA_ORDERS_SCREENSHOT,fullPage:true});
+    await customer.setViewportSize({width:1440,height:900});
+    await history(customer).getByRole("button",{name:"Ver más del historial",exact:true}).click();
+    await history(customer).getByRole("heading",{name:"TL-0020",exact:true}).waitFor();
+    const privateId=first.data.order.id;
+    const api=local("/api/customer/orders/"+privateId+"/tracking");
+    const list=await account.request.get(local("/api/customer/orders?view=active"));
+    assert.equal(list.status(),200);
+    assert(!(await list.text()).includes(first.data.tracking.path.split("/").at(-1)));
+    const other = await context();
+    try {
+      assert.equal((await other.request.get(api)).status(),401);
+      await other.addCookies([{name:"taco_loco_customer_session",value:"c".repeat(64),url:origin,httpOnly:true}]);
+      assert.equal((await other.request.get(api)).status(),404);
+      assert.equal((await other.request.post(api+"/payment",{headers:{origin}})).status(),404);
+      const foreignPage = await other.request.get(local("/pedidos/"+privateId));
+      assert.doesNotMatch(await foreignPage.text(),new RegExp(code));
+    } finally { await other.close(); }
+    const cancelledPayment = local("/api/customer/orders/aaaaaaaa-1111-4111-8111-111111111115/tracking/payment");
+    assert.equal((await account.request.post(cancelledPayment,{headers:{origin}})).status(),409);
+    const pay = local("/api/customer/orders/aaaaaaaa-1111-4111-8111-111111111112/tracking/payment");
+    assert.equal((await account.request.post(pay,{headers:{origin:"https://example.invalid"}})).status(),403);
+    const report = await account.request.post(pay,{headers:{origin}});
+    assert.equal(report.status(),200);
+    assert.deepEqual(await report.json(),{reported:true,reused:false});
+    const replay = await account.request.post(pay,{headers:{origin}});
+    assert.equal(replay.status(),200);
+    assert.deepEqual(await replay.json(),{reported:true,reused:true});
+    await current.getByRole("link",{name:"Ver seguimiento de "+code}).click();
+    await customer.waitForURL(local("/pedidos/"+privateId));
+    await customer.getByRole("heading",{name:"Pedido "+code}).waitFor();
+    const initial = await account.request.get(api);
+    assert.equal(initial.headers()["referrer-policy"],"no-referrer");
+    assert.match(initial.headers()["cache-control"],/no-store/);
+    const payload = await initial.json();
+    assert(!(JSON.stringify(payload).includes(first.data.tracking.path.split("/").at(-1))));
+    const unchanged = await account.request.get(api+"?after="+payload.version);
+    assert.equal(unchanged.status(),204);
+    assert.equal(unchanged.headers()["referrer-policy"],"no-referrer");
+    setSyntheticStatus(privateId,"CONFIRMED","RECEIVED");
+    await customer.getByRole("heading",{name:"Pedido confirmado",exact:true}).waitFor({timeout:20000});
+    setSyntheticStatus(privateId,"DELIVERED","CONFIRMED");
+    await customer.getByRole("heading",{name:"Pedido entregado",exact:true}).waitFor({timeout:20000});
+    await section(customer).getByRole("link",{name:"Pedidos",exact:true}).click();
+    await history(customer).getByRole("heading",{name:code,exact:true}).waitFor();
+    await history(customer).getByRole("article").filter({has:customer.getByRole("heading",{name:code,exact:true})})
+      .getByRole("button",{name:"Repetir pedido",exact:true}).click();
     await customer.getByRole("button",{name:"Continuar al checkout",exact:true}).click();
     await customer.getByRole("dialog").getByText("QA Taco",{exact:true}).waitFor();
     assert.equal(await completedDialog(customer).count(),0);
+    await go(customer,"/pedidos/"+privateId);
+    const logout = await account.newPage();
+    await go(logout,"/cuenta");
+    await logout.getByRole("button",{name:"Cerrar sesión",exact:true}).click();
+    await logout.getByText("Sesión cerrada.",{exact:true}).waitFor();
+    await customer.bringToFront();
+    await customer.evaluate(()=>window.dispatchEvent(new Event("focus")));
+    await customer.getByRole("heading",{name:"Seguimiento no disponible",exact:true}).waitFor();
+    assert.equal(await customer.getByRole("heading",{name:"Pedido "+code,exact:true}).count(),0);
     await go(customer,"/cuenta");
-    await customer.getByRole("button",{name:"Cerrar sesión",exact:true}).click();
-    await customer.getByText("Sesión cerrada.",{exact:true}).waitFor();
     assert.equal(await customer.getByRole("heading",{name:"Mis pedidos"}).count(),0);
     await account.close();
     console.log("PASS synthetic session: claim, private history, repeat as draft, logout");

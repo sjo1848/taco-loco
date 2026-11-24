@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { initialTrackingPollDelay, maxTrackingPollDelay, nextTrackingPollDelay, terminalTrackingStages } from "./tracking-polling";
+import { initialTrackingPollDelay, maxTrackingPollDelay, nextTrackingPollDelay } from "./tracking-polling";
+import { terminalTrackingStages } from "@/modules/orders/public-tracking";
 
 describe("tracking polling policy", () => {
   it("backs off to 30 seconds and resets after success", () => {

@@ -15,6 +15,11 @@ const nextConfig: NextConfig = {
       // Config headers are applied after route headers in Vinext; the later match wins.
       ...[
         "/pedido/:token",
+        "/pedidos",
+        "/pedidos/:id",
+        "/api/customer/orders",
+        "/api/customer/orders/:id/tracking",
+        "/api/customer/orders/:id/tracking/payment",
         "/api/orders/tracking/:token",
         "/api/orders/tracking/:token/payment",
       ].map((source) => ({
