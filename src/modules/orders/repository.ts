@@ -115,12 +115,18 @@ const activeCustomerOrder = {
 };
 export const orderRepository = {
   async listForCustomer(customerId: string, cursor: CustomerOrderCursor | null, take = 10, view: CustomerOrderView = "all") {
+    // Prisma compares against the cursor's stored timestamp, preserving D1 formats and ties.
+    // The cursor belongs to the viewer even when the order has moved to the other list.
+    if (cursor && !await db.order.findFirst({ where: { id: cursor.id, customerId }, select: { id: true } })) {
+      return { orders: [], nextCursor: null };
+    }
     const rows = await db.order.findMany({
       where: {
         customerId,
-        ...(view === "all" ? {} : { AND: [view === "active" ? activeCustomerOrder : { NOT: activeCustomerOrder }] }),
-        ...(cursor ? { OR: [{ createdAt: { lt: new Date(cursor.createdAt) } }, { createdAt: new Date(cursor.createdAt), id: { lt: cursor.id } }] } : {}),
+        ...(view === "all" ? {} : view === "active" ? activeCustomerOrder : { NOT: activeCustomerOrder }),
+        ...(cursor ? { id: { not: cursor.id } } : {}),
       },
+      ...(cursor ? { cursor: { id: cursor.id } } : {}),
       include: { lines: true, events: { orderBy: { sequence: "asc" } } },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: take + 1,
