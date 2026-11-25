@@ -457,7 +457,9 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   function openCart() {
     if (submitInFlight.current || showSummary) return;
     opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    window.history.pushState({ ...window.history.state, tacoCart: true }, "", window.location.href);
+    if (window.history.state?.tacoCart !== true) {
+      window.history.pushState({ ...window.history.state, tacoCart: true }, "", window.location.href);
+    }
     setCheckoutStep("cart");
     setShowSummary(true);
   }
