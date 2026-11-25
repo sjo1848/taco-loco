@@ -274,7 +274,7 @@ try {
         if (polished) {
           await confirmation.getByText(/^Pedido TL-\d+\. Pendiente de confirmación del local\. El mensaje está preparado en WhatsApp; confirmá el envío desde la aplicación\.$/).waitFor();
           await confirmation.getByText("Total registrado",{exact:true}).waitFor();
-          assert.deepEqual(await confirmation.locator(".selection-actions > *").allTextContents(),["Ver seguimiento","Volver a WhatsApp","Copiar mensaje","Volver al menú"]);
+          assert.deepEqual(await confirmation.locator(".selection-actions > *").allTextContents(),["Ver seguimiento","Volver a WhatsApp",...(width < 768 ? ["Abrir WhatsApp Web"] : []),"Copiar mensaje","Volver al menú"]);
         }
         await snapshot(guest.page,width,"confirmacion");
         if(polished) {
