@@ -12,7 +12,7 @@ import { clearGuestOrders, onCustomerSessionChange, readGuestOrders, type Tracki
 type OrderCard = Omit<CustomerOrderSummary, "repeatReference"> & { path: string | null; repeatReference?: string | null };
 type CustomerOrdersResponse = { orders: CustomerOrderSummary[]; nextCursor: string | null; viewerId: string };
 type OrderPage = { orders: OrderCard[]; nextCursor: string | null };
-type OrderList = { active: OrderPage; history: OrderPage; guest: boolean; viewerId?: string; guestIncomplete?: boolean; unavailableGuestOrders?: TrackingReference[] };
+type OrderList = { active: OrderPage; history: OrderPage; guest: boolean; viewerId?: string; guestIncomplete?: boolean; guestHidden?: boolean; unavailableGuestOrders?: TrackingReference[] };
 type Bucket = "active" | "history";
 
 const stage = z.enum([
@@ -146,9 +146,11 @@ async function loadOrderLists(signal: AbortSignal, pages: VisiblePages, validate
       }
     }
     const orders = [...verified.values()];
+    const guestHidden = results.some(({ kind }) => kind === "hidden");
     return {
       guest: true,
-      guestIncomplete: results.some(({ kind }) => kind === "hidden" || kind === "unavailable"),
+      guestIncomplete: guestHidden || unavailable.size > 0,
+      guestHidden,
       unavailableGuestOrders: [...unavailable].filter(([code]) => !verified.has(code)).map(([, reference]) => reference),
       active: { orders: orders.filter((order) => !terminalTrackingStages.includes(order.currentStage)), nextCursor: null },
       history: { orders: orders.filter((order) => terminalTrackingStages.includes(order.currentStage)), nextCursor: null },
@@ -325,7 +327,8 @@ export function CustomerOrders() {
         <div className="customer-order-actions"><Link prefetch={false} className="button button--secondary" href={path}>Ver seguimiento</Link></div>
       </article>)}</div>
       <div>{retry}</div>
-    </section> : lists?.guestIncomplete && <p role="status">Algunos estados no se pudieron consultar. {retry}</p>}
+    </section> : null}
+    {lists?.guestIncomplete && (unavailable.length === 0 || lists.guestHidden) && <p role="status">Algunos estados no se pudieron consultar. {unavailable.length === 0 && retry}</p>}
     {!loading && lists && <>
       {lists.guest && <p className="selection-help">Como invitado, ves los pedidos recientes de esta pestaña. Podés abrir un enlace privado de seguimiento. <Link href="/cuenta">Ingresá a Taco Club</Link> para ver los pedidos de tu cuenta.</p>}
       {!lists.guestIncomplete && lists.active.orders.length === 0 && lists.history.orders.length === 0 && <p><Link className="button button--secondary" href="/menu">Ver menú</Link></p>}

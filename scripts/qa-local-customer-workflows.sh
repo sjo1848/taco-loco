@@ -54,7 +54,9 @@ INSERT INTO CustomerFavorite (customerId,productId,createdAt) VALUES ('qa-custom
 SQL
 fi
 if [[ "${TACO_QA_GUEST_TRACKING:-}" == "1" ]]; then
-  cat >>"$state/fixtures.sql" <<'SQL'
+  second_guest_qa_hash=$(node -e 'console.log(require("node:crypto").createHash("sha256").update("f".repeat(64)).digest("hex"))')
+  cat >>"$state/fixtures.sql" <<SQL
+INSERT INTO CustomerSession (id,tokenHash,customerId,expiresAt,createdAt) VALUES ('qa-other-rel-01-session','$second_guest_qa_hash','qa-other','2099-01-01T00:00:00Z',CURRENT_TIMESTAMP);
 WITH orders(n, token, status) AS (
   VALUES (80,'rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr','CONFIRMED'),
          (81,'sssssssssssssssssssssssssssssssssssssssssss','READY'),

@@ -187,6 +187,8 @@ try {
     await caseAt(width, "4xx statuses do not retry and unauthorized references stay hidden", async ({ page, start, counts }) => {
       await start({ 80: [404], 81: [401], 82: [403], 83: [429] });
       await card(unavailable(page), 83).waitFor();
+      await page.getByText(/Algunos estados no se pudieron consultar/).waitFor();
+      assert.equal(await retry(page).count(), 1);
       await noFalseEmpty(page);
       for (const code of [80, 81, 82]) {
         assert.equal(await page.getByText(codeLabel(code), { exact: true }).count(), 0);
@@ -257,7 +259,7 @@ try {
       }] });
       await retry(page).click();
       await captured.promise;
-      await context.addCookies([{ name: "taco_loco_customer_session", value: "c".repeat(64), url: base, httpOnly: true }]);
+      await context.addCookies([{ name: "taco_loco_customer_session", value: (width === 390 ? "c" : "f").repeat(64), url: base, httpOnly: true }]);
       await announce(page);
       await unavailable(page).waitFor({ state: "hidden" });
       await card(active(page), 9).waitFor();
