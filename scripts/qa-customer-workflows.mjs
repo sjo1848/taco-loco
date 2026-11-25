@@ -63,6 +63,7 @@ async function verifyCartClosesAfterEditing(page) {
   await cart.getByRole("button", {name:"Editar",exact:true}).click();
   await page.getByRole("dialog").getByRole("button", {name:/Guardar cambios/}).click();
   await page.getByRole("dialog").waitFor({state:"hidden"});
+  if (process.env.TACO_QA_EDIT_CAPTURE) await page.screenshot({path:`${process.env.TACO_QA_EDIT_CAPTURE}/${page.viewportSize().width}-guardado.png`});
   await openCart.click();
   await cart.getByRole("button", {name:"Cerrar",exact:true}).click();
   await cart.waitFor({state:"hidden"});
