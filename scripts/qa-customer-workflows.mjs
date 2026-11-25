@@ -9,7 +9,7 @@ const baseline = process.argv.includes("--baseline");
 const browser = await chromium.launch({ headless: true });
 const origin = target.origin;
 const menu = "/menu";
-const completedDialog = (page) => page.getByRole("dialog", { name: "¡Listo, tu pedido está armado!" });
+const completedDialog = (page) => page.getByRole("dialog", { name: baseline ? "¡Listo, tu pedido está armado!" : "Pedido registrado" });
 const local = (path) => origin + path;
 const section = (page) => page.getByRole("navigation", { name: "Secciones principales" });
 const go = async (page, path) => { const r = await page.goto(local(path)); assert.equal(r?.status(), 200); };
@@ -50,19 +50,20 @@ async function addTaco(page) {
   await page.getByRole("article").filter({ has: page.getByRole("heading", { name:"QA Taco", exact:true }) }).getByRole("button",{name:"Agregar",exact:true}).click();
   const product = page.getByRole("dialog",{name:"QA Taco"});
   await product.getByRole("button",{name:"Picante",exact:true}).click();
-  await product.getByRole("button",{name:/Agregar al pedido/}).click();
+  await product.getByRole("button",{name:baseline ? /Agregar al pedido/ : /Agregar al carrito/}).click();
 }
 async function details(page) {
   await page.getByRole("button",{name:/Abrir carrito/}).filter({visible:true}).first().click();
-  await page.getByRole("button",{name:"Continuar con tus datos"}).click();
+  await page.getByRole("button",{name:baseline ? "Continuar con tus datos" : "Continuar",exact:true}).click();
 }
 async function verifyCartClosesAfterEditing(page) {
   const openCart = page.getByRole("button", {name:/Abrir carrito/}).filter({visible:true}).first();
-  const cart = page.getByRole("dialog", {name:"Revisá tu pedido",exact:true});
+  const cart = page.getByRole("dialog", {name:"Tu carrito",exact:true});
   await openCart.click();
   await cart.getByRole("button", {name:"Editar",exact:true}).click();
   await page.getByRole("dialog").getByRole("button", {name:/Guardar cambios/}).click();
   await page.getByRole("dialog").waitFor({state:"hidden"});
+  if (process.env.TACO_QA_EDIT_CAPTURE) await page.screenshot({path:`${process.env.TACO_QA_EDIT_CAPTURE}/${page.viewportSize().width}-guardado.png`});
   await openCart.click();
   await cart.getByRole("button", {name:"Cerrar",exact:true}).click();
   await cart.waitFor({state:"hidden"});
@@ -111,7 +112,7 @@ try {
   const first = await checkout(page);
   // The persisted token stays inside the test.
   assert.match(await page.evaluate(() => window.__qaWhatsApp), /^https:\/\/wa\.me\//);
-  await completedDialog(page).getByRole("link",{name:"Ver estado de mi pedido"}).click();
+  await completedDialog(page).getByRole("link",{name:baseline ? "Ver estado de mi pedido" : "Ver seguimiento",exact:true}).click();
   await page.waitForURL(local(first.data.tracking.path));
   await section(page).getByRole("link",{name:"Menú",exact:true}).click();
   await page.waitForURL(local(menu));
@@ -235,7 +236,7 @@ try {
     assert.equal(delivery.data.order.totalAmount,1500);
     assert.equal(delivery.request.fulfillment,"DELIVERY");
     assert.notEqual(delivery.data.order.id,retry.data.order.id);
-    await completedDialog(page).getByRole("link",{name:"Ver estado de mi pedido"}).click();
+    await completedDialog(page).getByRole("link",{name:"Ver seguimiento"}).click();
     await page.waitForURL(local(delivery.data.tracking.path));
     await page.getByRole("button",{name:"Informé la transferencia"}).waitFor();
     await section(page).getByRole("link",{name:"Pedidos",exact:true}).click();
@@ -254,15 +255,17 @@ try {
     await addTaco(phone);
     await verifyCartClosesAfterEditing(phone);
     const nav = phone.getByRole("navigation",{name:"Navegación de la app"});
-    await nav.getByRole("link",{name:"Cuenta",exact:true}).click();
+    await nav.getByRole("link",{name:"Perfil",exact:true}).click();
     await phone.waitForURL(local("/cuenta"));
     await nav.getByRole("link",{name:/^Carrito/}).click();
     await phone.getByRole("dialog").getByText("Salsa: Picante",{exact:false}).waitFor();
-    await phone.getByRole("button",{name:"Continuar con tus datos"}).click();
+    await phone.getByRole("button",{name:"Continuar"}).click();
     await phone.getByRole("radio",{name:/Delivery/}).check();
     await phone.getByRole("textbox",{name:"Dirección",exact:true}).fill("Dirección sintética");
     await phone.getByRole("textbox",{name:"Titular de la transferencia",exact:true}).fill("Titular sintético");
-    assert(await phone.getByText(/Total informativo con envío/).isVisible());
+    assert(await phone.getByText("Total estimado",{exact:true}).isVisible());
+    assert.match(await phone.locator(".selection-summary strong").innerText(), /1[.\s]?500/);
+    assert(await phone.getByText(/Subtotal.*1[.\s]?200.*Envío.*300/).isVisible());
     const viewport=await phone.evaluate(() => ({content:document.documentElement.scrollWidth,width:innerWidth}));
     assert(viewport.content <= viewport.width + 1);
     await send(phone).scrollIntoViewIfNeeded();
@@ -275,10 +278,10 @@ try {
     await send(phone).click();
     await phone.getByText(/No pudimos confirmar si se registró/).waitFor();
     phone.once("dialog", dialog => dialog.accept());
-    await phone.getByRole("button",{name:"Descartar intento anterior",exact:true}).click();
+    await phone.getByRole("button",{name:"Descartar recuperación del intento",exact:true}).click();
     assert.match(await send(phone).textContent(),/Enviar pedido/);
     await mobile.close();
-    console.log("PASS mobile: catalogue/search/modifiers, Cuenta → Carrito, DELIVERY details and fee");
+    console.log("PASS mobile: catalogue/search/modifiers, Perfil → Carrito, DELIVERY details and fee");
 
     const privateContext = await context();
     await blockStorage(privateContext);
@@ -287,7 +290,7 @@ try {
     await addTaco(privatePage);
     await details(privatePage);
     const privateOrder = await checkout(privatePage);
-    await completedDialog(privatePage).getByRole("link",{name:"Ver estado de mi pedido"}).click();
+    await completedDialog(privatePage).getByRole("link",{name:"Ver seguimiento"}).click();
     await privatePage.waitForURL(local(privateOrder.data.tracking.path));
     await section(privatePage).getByRole("link",{name:"Menú",exact:true}).click();
     await privatePage.waitForURL(local(menu));
@@ -383,7 +386,7 @@ try {
     await history(customer).getByRole("heading",{name:code,exact:true}).waitFor();
     await history(customer).getByRole("article").filter({has:customer.getByRole("heading",{name:code,exact:true})})
       .getByRole("button",{name:"Repetir pedido",exact:true}).click();
-    await customer.getByRole("button",{name:"Continuar al checkout",exact:true}).click();
+    await customer.getByRole("button",{name:"Ir al carrito",exact:true}).click();
     await customer.getByRole("dialog").getByText("QA Taco",{exact:true}).waitFor();
     assert.equal(await completedDialog(customer).count(),0);
     await go(customer,"/pedidos/"+privateId);

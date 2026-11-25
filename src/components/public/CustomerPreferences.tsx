@@ -12,7 +12,7 @@ import styles from "./customer-profile.module.css";
 type Address = { id: string; label: string; address: string; reference: string | null };
 type ProfileRoute = "/cuenta/datos" | "/cuenta/direcciones" | "/cuenta/favoritos";
 type Section = "datos" | "direcciones" | "favoritos";
-const labels: Record<Section, string> = { datos: "Mis datos", direcciones: "Mis direcciones", favoritos: "Mis favoritos" };
+const labels: Record<Section, string> = { datos: "Datos personales", direcciones: "Direcciones", favoritos: "Favoritos" };
 const emptyForm = { label: "", address: "", reference: "" };
 const money = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
@@ -30,7 +30,6 @@ export function CustomerPreferences({ section, customer, onCustomerUpdated }: { 
   const [draftName, setDraftName] = useState(customer.displayName ?? "");
   const [nameEditing, setNameEditing] = useState(false);
   const [favoritesBusy, setFavoritesBusy] = useState<string | null>(null);
-  const [avatarFailed, setAvatarFailed] = useState(false);
   const favoriteState = useFavorites({ enabled: active === "favoritos" });
   const requestGeneration = useRef(0);
 
@@ -170,27 +169,22 @@ export function CustomerPreferences({ section, customer, onCustomerUpdated }: { 
 
   const products: Favorite[] = favoriteState.status === "ready" ? favoriteState.items : [];
   return <section className={styles.panel} aria-label={labels[active]}>
-    <PublicPageHeader title={labels[active]} backHref="/cuenta" backLabel="Mi cuenta" />
-    <nav className={styles.subnav} aria-label="Secciones de mi cuenta">{(Object.keys(labels) as Section[]).map((key) => <Link key={key} href={`/cuenta/${key}`} aria-current={key === active ? "page" : undefined}>{labels[key]}</Link>)}</nav>
+    <PublicPageHeader title={labels[active]} backHref="/cuenta" backLabel="Perfil" />
     {loading && <p role="status" aria-live="polite">Cargando {active === "datos" ? "tus datos" : active === "direcciones" ? "tus direcciones" : "tus favoritos"}…</p>}
     {loadError && <div role="alert"><p className={styles.error}>No pudimos cargar esta sección.</p><button className="button button--secondary" type="button" onClick={() => void load()}>Reintentar</button></div>}
     {!loading && !loadError && active === "datos" && customer && <div className={styles.content}>
-      <div className={styles.readonly}><span>Correo de Google</span><strong>{customer.email ?? "Sin correo disponible"}</strong></div>
       {nameEditing ? <form className={styles.form} onSubmit={saveName}>
-        <label htmlFor="display-name">Nombre visible</label><input id="display-name" autoComplete="name" required value={draftName} onChange={(event) => setDraftName(event.target.value)} />
-        <p className={styles.hint}>Este nombre se usará como sugerencia para una compra nueva.</p>
+        <label htmlFor="display-name">Nombre</label><input id="display-name" autoComplete="name" required value={draftName} onChange={(event) => setDraftName(event.target.value)} />
+        <p className={styles.hint}>Este nombre se usará en tus próximas compras.</p>
         <div className={styles.actions}><button className="button" type="submit" disabled={busy}>{busy ? "Guardando…" : "Guardar cambios"}</button><button className="button button--secondary" type="button" disabled={busy} onClick={leaveNameEditor}>Cancelar</button></div>
-      </form> : <div className={styles.dataRow}><div><span>Nombre visible</span><strong>{customer.displayName?.trim() || "Sin nombre"}</strong></div><button className="button button--secondary" type="button" aria-label="Editar nombre" onClick={() => { setDraftName(customer.displayName ?? ""); setNameEditing(true); }}>Editar</button></div>}
-      <div className={styles.avatarReadOnly}>
-        {customer.avatarUrl && !avatarFailed ? <img className={styles.avatar} src={customer.avatarUrl} alt="" referrerPolicy="no-referrer" onError={() => setAvatarFailed(true)} /> : <span className={styles.avatarFallback} aria-hidden="true">{(customer.displayName?.trim().split(/\s+/).map((part) => part[0]).slice(0, 2).join("") || "TL").toLocaleUpperCase()}</span>}
-        <div><span>Foto de perfil</span><strong>Administrada por Google</strong><p className={styles.hint}>Solo lectura</p></div>
-      </div>
+      </form> : <div className={styles.dataRow}><div><span>Nombre</span><strong>{customer.displayName?.trim() || "Sin nombre"}</strong></div><button className="button button--secondary" type="button" aria-label="Editar nombre" onClick={() => { setDraftName(customer.displayName ?? ""); setNameEditing(true); }}>Editar</button></div>}
+      <div className={styles.readonly}><span>Correo electrónico</span><strong>{customer.email ?? "Sin correo disponible"}</strong><p className={styles.hint}>Vinculado a Google. No se puede editar aquí.</p></div>
     </div>}
     {!loading && !loadError && active === "direcciones" && <div className={styles.content}>
       {!formOpen && <button className="button" type="button" onClick={() => beginAddress()}>Agregar dirección</button>}
       {formOpen && <form className={styles.form} onSubmit={saveAddress}>
         <h2>{editing ? "Editar dirección" : "Nueva dirección"}</h2>
-        <label htmlFor="address-label">Etiqueta</label><input id="address-label" required maxLength={80} value={form.label} onChange={(event) => setForm({ ...form, label: event.target.value })} placeholder="Casa, Trabajo…" />
+        <label htmlFor="address-label">Nombre de la dirección</label><input id="address-label" required maxLength={80} value={form.label} onChange={(event) => setForm({ ...form, label: event.target.value })} placeholder="Casa, Trabajo…" />
         <label htmlFor="address-value">Dirección</label><input id="address-value" required maxLength={500} autoComplete="street-address" value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
         <label htmlFor="address-reference">Referencia <span className={styles.hint}>Opcional</span></label><textarea id="address-reference" maxLength={200} value={form.reference} onChange={(event) => setForm({ ...form, reference: event.target.value })} />
         <div className={styles.actions}><button className="button" type="submit" disabled={busy}>{busy ? "Guardando…" : "Guardar dirección"}</button><button className="button button--secondary" type="button" disabled={busy} onClick={() => { if (!confirmDiscard()) return; setFormOpen(false); setForm(emptyForm); setEditing(null); }}>Cancelar</button></div>
@@ -202,11 +196,11 @@ export function CustomerPreferences({ section, customer, onCustomerUpdated }: { 
       {favoriteState.status === "guest" && <div className={styles.empty}><h2>Iniciá sesión para ver tus favoritos</h2><Link className="button" href={`/cuenta?returnTo=${encodeURIComponent(section)}`}>Iniciar sesión</Link></div>}
       {favoriteState.status === "ready" && favoriteState.viewerId !== customer.id && <p role="status">Actualizando tus favoritos…</p>}
       {favoriteState.status === "ready" && favoriteState.viewerId === customer.id && products.length === 0 && <div className={styles.empty}><h2>Todavía no guardaste favoritos</h2><p>Explorá el menú y guardá los productos que quieras encontrar después.</p><Link className="button" href="/menu">Ver menú</Link></div>}
-      {favoriteState.status === "ready" && favoriteState.viewerId === customer.id && products.length > 0 && <div className={styles.list}>{products.map((item) => <article className={styles.favorite} key={item.id}>
+      {favoriteState.status === "ready" && favoriteState.viewerId === customer.id && products.length > 0 && <><Link className="button button--secondary" href="/menu">Ver menú</Link><div className={styles.list}>{products.map((item) => <article className={styles.favorite} key={item.id}>
         {item.imageKey && <img src={resolveStaticProductAsset(item.imageKey) ?? undefined} alt={item.imageAlt ?? ""} loading="lazy" />}
         <div className={styles.favoriteInfo}><p className="eyebrow">{item.category}</p><h2>{item.name}</h2>{item.available && item.published && !item.archived && <strong>{money.format(item.priceAmount)}</strong>}<p className={item.available && item.published && !item.archived ? styles.available : styles.unavailable}>{item.available && item.published && !item.archived ? "Disponible" : "No disponible actualmente"}</p></div>
-        <div className={styles.actions}><Link className="button button--secondary" href="/menu">Ver en el menú</Link><button className="button button--secondary" type="button" aria-label={`Quitar favorito: ${item.name}`} disabled={favoritesBusy === item.id} onClick={() => void removeFavorite(item.id)}>{favoritesBusy === item.id ? "Quitando…" : "Quitar"}</button></div>
-      </article>)}</div>}
+        <div className={styles.actions}><button className="button button--secondary" type="button" aria-label={`Quitar favorito: ${item.name}`} disabled={favoritesBusy === item.id} onClick={() => void removeFavorite(item.id)}>{favoritesBusy === item.id ? "Quitando…" : "Quitar"}</button></div>
+      </article>)}</div></>}
     </div>}
     {message && <p className={styles.feedback} role="status" aria-live="polite">{message}</p>}
   </section>;
