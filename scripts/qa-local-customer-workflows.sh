@@ -23,7 +23,7 @@ cat >"$state/fixtures.sql" <<SQL
 INSERT INTO Category (id,name,slug,active,sortOrder,createdAt,updatedAt) VALUES ('qa-cat','QA','qa',1,0,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
 INSERT INTO Product (id,categoryId,name,priceAmount,available,published,featured,sortOrder,createdAt,updatedAt) VALUES ('acacacac-acac-4aca-8aca-acacacacacac','qa-cat','QA Taco',1200,1,1,0,0,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
 INSERT INTO ModifierGroup (id,name) VALUES ('qa-salsa','Salsa');
-INSERT INTO ModifierOption (id,groupId,name) VALUES ('qa-picante','qa-salsa','Picante');
+INSERT INTO ModifierOption (id,groupId,name) VALUES ('qa-picante','qa-salsa','Picante'),('qa-suave','qa-salsa','Suave');
 INSERT INTO ProductModifierGroup VALUES ('acacacac-acac-4aca-8aca-acacacacacac','qa-salsa',1,1,1);
 INSERT INTO MenuSettings (id,businessName,whatsappPhone,whatsappMessage,currency,acceptingOrders,weeklySchedule,deliveryEnabled,deliveryFeeAmount,updatedAt) VALUES ('00000000-0000-0000-0000-000000000001','QA local','10000000000','QA','ARS',1,'[]',1,300,CURRENT_TIMESTAMP);
 INSERT INTO Customer (id,email,displayName,active,createdAt,updatedAt) VALUES ('qa-customer','customer@example.com','QA Cliente',1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
