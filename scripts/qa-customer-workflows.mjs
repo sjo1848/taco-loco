@@ -56,6 +56,18 @@ async function details(page) {
   await page.getByRole("button",{name:/Abrir carrito/}).filter({visible:true}).first().click();
   await page.getByRole("button",{name:"Continuar con tus datos"}).click();
 }
+async function verifyCartClosesAfterEditing(page) {
+  const openCart = page.getByRole("button", {name:/Abrir carrito/}).filter({visible:true}).first();
+  const cart = page.getByRole("dialog", {name:"Revisá tu pedido",exact:true});
+  await openCart.click();
+  await cart.getByRole("button", {name:"Editar",exact:true}).click();
+  await page.getByRole("dialog").getByRole("button", {name:/Guardar cambios/}).click();
+  await page.getByRole("dialog").waitFor({state:"hidden"});
+  await openCart.click();
+  await cart.getByRole("button", {name:"Cerrar",exact:true}).click();
+  await cart.waitFor({state:"hidden"});
+}
+
 const send = (page) => baseline ? page.getByText("Enviar pedido", { exact:true }) : page.getByRole("button", { name:/^Enviar pedido$|^Recuperar intento$/ });
 async function checkout(page) {
   const result = page.waitForResponse(r => new URL(r.url()).pathname === "/api/orders/intents" && r.request().method() === "POST");
@@ -94,6 +106,7 @@ try {
   const page = await desktop.newPage();
   await go(page, menu);
   await addTaco(page);
+  if (!baseline) await verifyCartClosesAfterEditing(page);
   await details(page);
   const first = await checkout(page);
   // The persisted token stays inside the test.
@@ -239,6 +252,7 @@ try {
     const phone = await mobile.newPage();
     await go(phone,menu);
     await addTaco(phone);
+    await verifyCartClosesAfterEditing(phone);
     const nav = phone.getByRole("navigation",{name:"Navegación de la app"});
     await nav.getByRole("link",{name:"Cuenta",exact:true}).click();
     await phone.waitForURL(local("/cuenta"));
