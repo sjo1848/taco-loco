@@ -127,8 +127,10 @@ async function verifyCartClosesAfterEditing(page) {
   await openCart.click();
   await closeCartOnce(page);
 
-  await go(page,"/menu?carrito=1");
+  await go(page,"/cuenta");
+  await page.getByRole("link",{name:/^Carrito/, exact:false}).filter({visible:true}).click();
   await edit(page).click();
+  assert.equal(new URL(page.url()).pathname,"/menu");
   await page.evaluate(()=>history.back());
   await page.waitForFunction(cartMarker);
   await cart.getByText("Salsa: Picante",{exact:true}).waitFor();
@@ -227,7 +229,12 @@ try {
     if(await completedDialog(page).isVisible()) await completedDialog(page).getByRole("button",{name:"Seguir viendo el menú"}).click();
   }
   await addTaco(page);
-  await details(page);
+  if (baseline) await details(page);
+  else {
+    await go(page,"/cuenta");
+    await section(page).getByRole("link",{name:/^Carrito/}).click();
+    await cartDialog(page).getByRole("button",{name:"Continuar",exact:true}).click();
+  }
   let lost;
   let interruptedReference;
   if (!baseline) {
@@ -242,6 +249,13 @@ try {
     try {
       await page.getByRole("button",{name:"Preparando pedido…",exact:true}).waitFor();
       await page.keyboard.press("Escape");
+      const movedBack = page.evaluate(() => new Promise(resolve => {
+        window.addEventListener("popstate", () => resolve(true), {once:true});
+        history.back();
+      }));
+      assert(await movedBack);
+      await page.waitForFunction(cartMarker);
+      assert.equal(new URL(page.url()).pathname,"/menu");
       await page.getByRole("dialog",{name:"Entrega y datos",exact:true}).waitFor();
       await page.keyboard.press("Tab");
       assert(await page.getByRole("dialog").evaluate(dialog => dialog.contains(document.activeElement)));
