@@ -2,16 +2,97 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { z } from "zod";
 import { useRouter } from "next/navigation";
+import { formatOrderNumber } from "@/modules/orders/model";
 import { checkoutIntentStorageKey } from "@/modules/selection/model";
-import { terminalTrackingStages, type CustomerOrderSummary, type PublicOrderTracking } from "@/modules/orders/public-tracking";
-import { clearGuestOrders, onCustomerSessionChange, readGuestOrders } from "@/modules/orders/tracking-resume";
+import { terminalTrackingStages, type CustomerOrderSummary, type PublicOrderStage, type PublicOrderTracking } from "@/modules/orders/public-tracking";
+import { clearGuestOrders, onCustomerSessionChange, readGuestOrders, type TrackingReference } from "@/modules/orders/tracking-resume";
 
 type OrderCard = Omit<CustomerOrderSummary, "repeatReference"> & { path: string | null; repeatReference?: string | null };
 type CustomerOrdersResponse = { orders: CustomerOrderSummary[]; nextCursor: string | null; viewerId: string };
 type OrderPage = { orders: OrderCard[]; nextCursor: string | null };
-type OrderList = { active: OrderPage; history: OrderPage; guest: boolean; viewerId?: string; guestIncomplete?: boolean };
+type OrderList = { active: OrderPage; history: OrderPage; guest: boolean; viewerId?: string; guestIncomplete?: boolean; unavailableGuestOrders?: TrackingReference[] };
 type Bucket = "active" | "history";
+
+const stage = z.enum([
+  "WAITING_CONFIRMATION", "WAITING_PAYMENT_CONFIRMATION", "PAYMENT_ISSUE", "CONFIRMED",
+  "PREPARING", "READY", "COMPLETED", "CANCELLED", "EXPIRED", "REFUND_PENDING", "REFUNDED",
+] satisfies PublicOrderStage[]);
+const trackingPayload = z.object({
+  orderCode: z.string(),
+  fulfillment: z.enum(["PICKUP", "DELIVERY"]),
+  currentStage: stage,
+  title: z.string(),
+  message: z.string(),
+  totalAmount: z.number(),
+  deliveryFeeAmount: z.number(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  history: z.array(z.object({ stage, label: z.string(), at: z.iso.datetime() })),
+  lines: z.array(z.object({
+    name: z.string(), quantity: z.int(), modifiers: z.array(z.object({ group: z.string(), option: z.string() })),
+  })),
+  version: z.string(),
+}) satisfies z.ZodType<PublicOrderTracking>;
+
+type GuestTrackingResult =
+  | { kind: "verified"; order: OrderCard }
+  | { kind: "missing" | "hidden" }
+  | { kind: "unavailable"; reference: TrackingReference };
+
+function waitForTrackingRetry(signal: AbortSignal) {
+  signal.throwIfAborted();
+  return new Promise<void>((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+      signal.removeEventListener("abort", abort);
+      resolve();
+    }, 500);
+    function abort() {
+      window.clearTimeout(timer);
+      reject(signal.reason);
+    }
+    signal.addEventListener("abort", abort, { once: true });
+  });
+}
+
+async function readGuestTracking(reference: TrackingReference, signal: AbortSignal): Promise<GuestTrackingResult> {
+  const { path, orderNumber } = reference;
+  const url = path.replace("/pedido/", "/api/orders/tracking/");
+  const unavailable = { kind: "unavailable", reference } as const;
+
+  async function read() {
+    const response = await fetch(url, { cache: "no-store", referrerPolicy: "no-referrer", signal });
+    return { status: response.status, body: response.status === 200 ? await response.text() : null };
+  }
+  async function attempt() {
+    try { return await read(); }
+    catch (error) {
+      signal.throwIfAborted();
+      if (error instanceof DOMException && error.name === "AbortError") throw error;
+      return null;
+    }
+  }
+
+  let result = await attempt();
+  if (!result || (result.status >= 500 && result.status <= 599)) {
+    await waitForTrackingRetry(signal);
+    result = await attempt();
+  }
+  signal.throwIfAborted();
+  if (result?.status === 404) return { kind: "missing" };
+  if (result?.status === 401 || result?.status === 403) return { kind: "hidden" };
+  if (result?.status !== 200 || result.body === null) return unavailable;
+
+  try {
+    const parsed = trackingPayload.safeParse(JSON.parse(result.body));
+    if (!parsed.success || parsed.data.orderCode !== formatOrderNumber(orderNumber)) return unavailable;
+    return { kind: "verified", order: { ...parsed.data, path } };
+  } catch (error) {
+    if (error instanceof SyntaxError) return unavailable;
+    throw error;
+  }
+}
 
 function accountOrders(page: CustomerOrdersResponse): OrderPage {
   return { ...page, orders: page.orders.map((order) => ({
@@ -45,21 +126,30 @@ async function collectPages(bucket: Bucket, page: CustomerOrdersResponse, count:
 async function loadOrderLists(signal: AbortSignal, pages: VisiblePages, validateGuest = true): Promise<OrderList> {
   const active = await fetchAccountPage("active", signal);
   if (active.status === 401) {
+    if (!validateGuest) throw new Error("CUSTOMER_SESSION_CHANGED");
     const references = readGuestOrders();
-    const results = await Promise.allSettled(references.map(async ({ path }) => {
-      const response = await fetch(path.replace("/pedido/", "/api/orders/tracking/"), { cache: "no-store", referrerPolicy: "no-referrer", signal });
-      if (response.status === 404) return null;
-      if (!response.ok) throw new Error("GUEST_TRACKING_UNAVAILABLE");
-      return { ...(await response.json() as PublicOrderTracking), path };
-    }));
-    if (references.length && validateGuest) {
+    const results = await Promise.all(references.map((reference) => readGuestTracking(reference, signal)));
+    if (references.length) {
       const session = await fetch("/api/customer/auth/session", { cache: "no-store", signal });
       if (session.ok) return loadOrderLists(signal, firstPages, false);
       if (session.status !== 401) throw new Error("CUSTOMER_SESSION_UNAVAILABLE");
     }
-    const orders = results.flatMap((result) => result.status === "fulfilled" && result.value ? [result.value] : []);
+    signal.throwIfAborted();
+    const verified = new Map<string, OrderCard>();
+    const unavailable = new Map<string, TrackingReference>();
+    for (const result of results) {
+      if (result.kind === "verified" && !verified.has(result.order.orderCode)) {
+        verified.set(result.order.orderCode, result.order);
+      } else if (result.kind === "unavailable") {
+        const code = formatOrderNumber(result.reference.orderNumber);
+        if (!unavailable.has(code)) unavailable.set(code, result.reference);
+      }
+    }
+    const orders = [...verified.values()];
     return {
-      guest: true, guestIncomplete: results.some((row) => row.status === "rejected"),
+      guest: true,
+      guestIncomplete: results.some(({ kind }) => kind === "hidden" || kind === "unavailable"),
+      unavailableGuestOrders: [...unavailable].filter(([code]) => !verified.has(code)).map(([, reference]) => reference),
       active: { orders: orders.filter((order) => !terminalTrackingStages.includes(order.currentStage)), nextCursor: null },
       history: { orders: orders.filter((order) => terminalTrackingStages.includes(order.currentStage)), nextCursor: null },
     };
@@ -91,6 +181,7 @@ export function CustomerOrders() {
   const visiblePages = useRef<VisiblePages>(firstPages);
   const [proposalViewer, setProposalViewer] = useState<string>();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
   const [repeating, setRepeating] = useState<string | null>(null);
@@ -133,7 +224,10 @@ export function CustomerOrders() {
     const controller = new AbortController();
     request.current = controller;
     if (bucket && cursor) setLoadingMore(true);
-    else if (!quiet) setLoading(true);
+    else {
+      setRefreshing(true);
+      if (!quiet) setLoading(true);
+    }
     setError(false);
     try {
       if (bucket && cursor) {
@@ -166,7 +260,7 @@ export function CustomerOrders() {
     } catch {
       if (!controller.signal.aborted) { setLists(null); setError(true); }
     } finally {
-      if (!controller.signal.aborted) { request.current = null; setLoading(false); setLoadingMore(false); }
+      if (!controller.signal.aborted) { request.current = null; setLoading(false); setLoadingMore(false); setRefreshing(false); }
     }
   }, []);
 
@@ -177,6 +271,7 @@ export function CustomerOrders() {
     const initial = window.setTimeout(refresh, 0);
     const interval = window.setInterval(refresh, 30_000);
     const unsubscribe = onCustomerSessionChange(() => {
+      setLists(null);
       void load();
     });
     const events = ["focus", "pageshow", "visibilitychange"] as const;
@@ -190,12 +285,14 @@ export function CustomerOrders() {
     };
   }, [load]);
 
+  const unavailable = lists?.guest ? lists.unavailableGuestOrders ?? [] : [];
+  const retry = <button className="button button--secondary" type="button" disabled={refreshing || loading} onClick={() => void load()}>Reintentar</button>;
   const proposalVisible = proposal && lists?.viewerId && proposalViewer === lists.viewerId;
   function renderBucket(bucket: Bucket, title: string, empty: string) {
     const page = lists?.[bucket];
     return <section className="customer-order-section" aria-labelledby={`orders-${bucket}-title`}>
       <h2 id={`orders-${bucket}-title`}>{title}</h2>
-      {page && page.orders.length === 0 && <p className="selection-help">{empty}</p>}
+      {page && page.orders.length === 0 && <p className="selection-help">{lists?.guestIncomplete ? "No pudimos comprobar todos tus pedidos." : empty}</p>}
       {page && <div className="customer-orders">{page.orders.map((order) => <article className={`customer-order-card customer-order-card--${bucket}`} key={order.orderCode}>
         <header><div><h3>{order.orderCode}</h3><p className="selection-help"><time dateTime={order.createdAt}>{formatDate(order.createdAt)}</time> · {order.fulfillment === "DELIVERY" ? "Delivery" : "Retiro"}</p></div><span className="order-status">{order.title}</span></header>
         {bucket === "active" && <>
@@ -216,10 +313,20 @@ export function CustomerOrders() {
     <h1 id="customer-orders-title">Mis pedidos</h1>
     {loading && <p className="selection-help" role="status">Cargando tus pedidos…</p>}
     {error && <div role="alert"><p className="form-error">No pudimos cargar tus pedidos.</p><button className="button button--secondary" type="button" onClick={() => void load()}>Reintentar</button></div>}
-    {!loading && lists && <>
+    {lists && (!loading || lists.guestIncomplete) && <>
       {renderBucket("active", "En curso", "No tenés pedidos en curso.")}
       {renderBucket("history", "Historial", "Todavía no hay pedidos finalizados.")}
-      {lists.guestIncomplete && <p role="status">Algunos estados no se pudieron consultar. <button className="button button--secondary" type="button" onClick={() => void load()}>Reintentar</button></p>}
+    </>}
+    {unavailable.length > 0 ? <section className="customer-order-section" aria-labelledby="orders-unavailable-title">
+      <h2 id="orders-unavailable-title">Estado temporalmente no disponible</h2>
+      <div className="customer-orders">{unavailable.map(({ path, orderNumber }) => <article className="customer-order-card" key={path}>
+        <h3>{formatOrderNumber(orderNumber)}</h3>
+        <p>No pudimos consultar el estado de este pedido.</p>
+        <div className="customer-order-actions"><Link prefetch={false} className="button button--secondary" href={path}>Ver seguimiento</Link></div>
+      </article>)}</div>
+      <div>{retry}</div>
+    </section> : lists?.guestIncomplete && <p role="status">Algunos estados no se pudieron consultar. {retry}</p>}
+    {!loading && lists && <>
       {lists.guest && <p className="selection-help">Como invitado, ves los pedidos recientes de esta pestaña. Podés abrir un enlace privado de seguimiento. <Link href="/cuenta">Ingresá a Taco Club</Link> para ver los pedidos de tu cuenta.</p>}
       {!lists.guestIncomplete && lists.active.orders.length === 0 && lists.history.orders.length === 0 && <p><Link className="button button--secondary" href="/menu">Ver menú</Link></p>}
     </>}

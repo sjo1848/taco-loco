@@ -53,6 +53,19 @@ INSERT INTO CustomerAddress (id,customerId,label,address,reference,createdAt,upd
 INSERT INTO CustomerFavorite (customerId,productId,createdAt) VALUES ('qa-customer','acacacac-acac-4aca-8aca-acacacacacac',CURRENT_TIMESTAMP),('qa-other','abababab-abab-4aba-8aba-abababababab',CURRENT_TIMESTAMP);
 SQL
 fi
+if [[ "${TACO_QA_GUEST_TRACKING:-}" == "1" ]]; then
+  cat >>"$state/fixtures.sql" <<'SQL'
+WITH orders(n, token, status) AS (
+  VALUES (80,'rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr','CONFIRMED'),
+         (81,'sssssssssssssssssssssssssssssssssssssssssss','READY'),
+         (82,'ttttttttttttttttttttttttttttttttttttttttttt','DELIVERED'),
+         (83,'uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu','CANCELLED')
+)
+INSERT INTO "Order" (id,orderNumber,status,fulfillment,source,verificationStatus,subtotalAmount,totalAmount,publicTrackingToken,createdAt,updatedAt)
+SELECT 'rel-01-' || n,n,status,'PICKUP','PUBLIC_MENU','VERIFIED',1200,1200,token,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP FROM orders;
+UPDATE "Order" SET publicTrackingToken='vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv' WHERE id='aaaaaaaa-1111-4111-8111-111111111114';
+SQL
+fi
 if [[ "${TACO_QA_PROFILE_MODE:-}" == "candidate" && "${TACO_QA_PROFILE_ONLY:-}" != "visual" ]]; then
   timeout 90 node "$qa_root/scripts/qa-profile-worker-checks.mjs" | tee "$state/profile-worker.log"
 fi
@@ -67,6 +80,10 @@ done
 curl -fsS --max-time 5 "$TACO_QA_LOCAL_URL/api/health" >/dev/null
 if [[ -n "${TACO_QA_PROFILE_MODE:-}" ]]; then
   timeout 420 node "$qa_root/scripts/qa-customer-profile-v2.mjs" | tee "$state/profile.log"
+  exit
+fi
+if [[ "${TACO_QA_GUEST_TRACKING:-}" == "1" ]]; then
+  timeout 180 node "$qa_root/scripts/qa-guest-tracking.mjs" | tee "$state/guest-tracking.log"
   exit
 fi
 timeout 180 node scripts/qa-customer-workflows.mjs | tee "$state/workflows.log"
