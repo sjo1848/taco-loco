@@ -56,17 +56,85 @@ async function details(page) {
   await page.getByRole("button",{name:/Abrir carrito/}).filter({visible:true}).first().click();
   await page.getByRole("button",{name:baseline ? "Continuar con tus datos" : "Continuar",exact:true}).click();
 }
-async function verifyCartClosesAfterEditing(page) {
-  const openCart = page.getByRole("button", {name:/Abrir carrito/}).filter({visible:true}).first();
-  const cart = page.getByRole("dialog", {name:"Tu carrito",exact:true});
-  await openCart.click();
-  await cart.getByRole("button", {name:"Editar",exact:true}).click();
-  await page.getByRole("dialog").getByRole("button", {name:/Guardar cambios/}).click();
-  await page.getByRole("dialog").waitFor({state:"hidden"});
-  if (process.env.TACO_QA_EDIT_CAPTURE) await page.screenshot({path:`${process.env.TACO_QA_EDIT_CAPTURE}/${page.viewportSize().width}-guardado.png`});
-  await openCart.click();
-  await cart.getByRole("button", {name:"Cerrar",exact:true}).click();
+const cartDialog = page => page.getByRole("dialog", {name:"Tu carrito",exact:true});
+const editor = page => page.getByRole("dialog", {name:"QA Taco",exact:true});
+const edit = page => cartDialog(page).getByRole("button",{name:"Editar",exact:true});
+const historyLength = page => page.evaluate(()=>history.length);
+const cartMarker = () => history.state?.tacoCart === true;
+
+async function closeCartOnce(page) {
+  const cart = cartDialog(page);
+  await cart.getByRole("button",{name:"Cerrar",exact:true}).click();
   await cart.waitFor({state:"hidden"});
+  assert.equal(await page.evaluate(cartMarker),false);
+  await editor(page).waitFor({state:"hidden"});
+  await noOldDialog(page);
+}
+
+async function verifyCartClosesAfterEditing(page) {
+  const openCart = page.getByRole("button",{name:/Abrir carrito/}).filter({visible:true}).first();
+  const cart = cartDialog(page);
+  await openCart.click();
+  const length = await historyLength(page);
+  await edit(page).click();
+  assert.equal(await historyLength(page),length);
+  await editor(page).getByRole("button",{name:"Picante",exact:true}).click();
+  await editor(page).getByRole("button",{name:/Guardar cambios/}).click();
+  await editor(page).getByRole("alert").getByText("Completá las opciones obligatorias para continuar.",{exact:true}).waitFor();
+  await editor(page).getByRole("button",{name:"Suave",exact:true}).click();
+  await editor(page).getByRole("button",{name:"Agregar una unidad",exact:true}).click();
+  if (process.env.TACO_QA_EDIT_CAPTURE) await page.screenshot({path:`${process.env.TACO_QA_EDIT_CAPTURE}/${page.viewportSize().width}-editar.png`});
+  await editor(page).getByRole("button",{name:/Guardar cambios/}).click();
+  await cart.getByText("Salsa: Suave",{exact:true}).waitFor();
+  assert.equal(await cart.locator(".quantity-control strong").textContent(),"2");
+  await page.waitForFunction(()=>document.activeElement?.id==="summary-title");
+  assert.equal(await historyLength(page),length);
+  if (process.env.TACO_QA_EDIT_CAPTURE) await page.screenshot({path:`${process.env.TACO_QA_EDIT_CAPTURE}/${page.viewportSize().width}-guardado.png`});
+
+  const cancel = [
+    () => editor(page).getByRole("button",{name:"Cerrar",exact:true}).click(),
+    () => page.keyboard.press("Escape"),
+    () => page.locator(".selection-overlay").click({position:{x:2,y:2}}),
+    async () => {
+      await page.evaluate(()=>history.back());
+      await page.waitForFunction(cartMarker);
+    },
+  ];
+  for (const action of cancel) {
+    await edit(page).click();
+    await editor(page).getByRole("button",{name:"Picante",exact:true}).click();
+    await editor(page).getByRole("button",{name:"Agregar una unidad",exact:true}).click();
+    await action();
+    await cart.getByText("Salsa: Suave",{exact:true}).waitFor();
+    assert.equal(await cart.locator(".quantity-control strong").textContent(),"2");
+    await page.waitForFunction(()=>document.activeElement?.matches(".selection-edit"));
+    assert.equal(await historyLength(page),length);
+  }
+
+  await edit(page).click();
+  await editor(page).getByRole("button",{name:"Picante",exact:true}).click();
+  await editor(page).getByRole("button",{name:"Quitar una unidad",exact:true}).click();
+  await editor(page).getByRole("button",{name:/Guardar cambios/}).click();
+  await cart.getByText("Salsa: Picante",{exact:true}).waitFor();
+  await closeCartOnce(page);
+  await page.evaluate(()=>history.forward());
+  await cart.waitFor();
+  assert.equal(await editor(page).count(),0);
+  await closeCartOnce(page);
+  await page.reload();
+  await noOldDialog(page);
+  assert.equal(await cart.count(),0);
+  await openCart.click();
+  await closeCartOnce(page);
+
+  await go(page,"/menu?carrito=1");
+  await edit(page).click();
+  await page.evaluate(()=>history.back());
+  await page.waitForFunction(cartMarker);
+  await cart.getByText("Salsa: Picante",{exact:true}).waitFor();
+  await closeCartOnce(page);
+  assert.equal(new URL(page.url()).pathname,"/menu");
+  console.log(`PASS ${page.viewportSize().width}px: edit save/cancel, required modifier, restored focus, Back/Forward, query, reload and close once`);
 }
 
 const send = (page) => baseline ? page.getByText("Enviar pedido", { exact:true }) : page.getByRole("button", { name:/^Enviar pedido$|^Recuperar intento$/ });
@@ -173,6 +241,8 @@ try {
     await send(page).click();
     try {
       await page.getByRole("button",{name:"Preparando pedido…",exact:true}).waitFor();
+      await page.keyboard.press("Escape");
+      await page.getByRole("dialog",{name:"Entrega y datos",exact:true}).waitFor();
       await page.keyboard.press("Tab");
       assert(await page.getByRole("dialog").evaluate(dialog => dialog.contains(document.activeElement)));
       await page.keyboard.press("Shift+Tab");
@@ -387,7 +457,12 @@ try {
     await history(customer).getByRole("article").filter({has:customer.getByRole("heading",{name:code,exact:true})})
       .getByRole("button",{name:"Repetir pedido",exact:true}).click();
     await customer.getByRole("button",{name:"Ir al carrito",exact:true}).click();
-    await customer.getByRole("dialog").getByText("QA Taco",{exact:true}).waitFor();
+    await cartDialog(customer).getByText("QA Taco",{exact:true}).waitFor();
+    await edit(customer).click();
+    await customer.evaluate(()=>history.back());
+    await customer.waitForFunction(cartMarker);
+    await cartDialog(customer).getByText("QA Taco",{exact:true}).waitFor();
+    await closeCartOnce(customer);
     assert.equal(await completedDialog(customer).count(),0);
     await go(customer,"/pedidos/"+privateId);
     const logout = await account.newPage();
