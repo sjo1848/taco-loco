@@ -242,7 +242,7 @@ try {
     const nav = phone.getByRole("navigation",{name:"Navegación de la app"});
     await nav.getByRole("link",{name:"Cuenta",exact:true}).click();
     await phone.waitForURL(local("/cuenta"));
-    await nav.getByRole("link",{name:"Carrito",exact:true}).click();
+    await nav.getByRole("link",{name:/^Carrito/}).click();
     await phone.getByRole("dialog").getByText("Salsa: Picante",{exact:false}).waitFor();
     await phone.getByRole("button",{name:"Continuar con tus datos"}).click();
     await phone.getByRole("radio",{name:/Delivery/}).check();
@@ -285,7 +285,7 @@ try {
     await account.addCookies([{name:"taco_loco_customer_session",value:syntheticSessionToken,url:origin,httpOnly:true}]);
     const customer = await account.newPage();
     await go(customer, "/cuenta");
-    await customer.getByText(/Bienvenido, QA Cliente/).waitFor();
+    await customer.getByText(/Bienvenido, QA Cliente|^QA Cliente$/).waitFor();
     const changedSession = await account.request.post(local("/api/orders/intents"), {
       data:{...first.request, clientReference:"qa-session-change-no-create", expectedCustomerId:null}, headers:{origin},
     });

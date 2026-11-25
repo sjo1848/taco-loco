@@ -5,7 +5,8 @@ import { CategoryNav } from "@/components/public/CategoryNav";
 import { FeaturedProductCard } from "@/components/public/FeaturedProductCard";
 import { ProductCard } from "@/components/public/ProductCard";
 import { SaucesInfo } from "@/components/public/SaucesInfo";
-import { PublicNavigation } from "@/components/public/PublicNavigation";
+import { PublicShell } from "@/components/public/PublicShell";
+import { useFavorites } from "@/components/public/favorites-store";
 import { filterCatalog } from "@/modules/catalog/discovery";
 import { activeTrackingStorageKey, createTrackingReference, finishTrackingHandoff, onCustomerSessionChange, readCustomerSessionGeneration, readTrackingReference, rememberGuestOrder, retireLegacyTrackingStorage, trackingResumeMaxAgeMs, trackingSessionStorage, writeTrackingReference, type TrackingReference } from "@/modules/orders/tracking-resume";
 import { buildWhatsAppAppUrl, buildWhatsAppMessageWithCheckout, buildWhatsAppUrl, checkoutIntentStorageKey, createClientReference, addSelectionLine, lineId, removeSelectionLine, selectionCount, selectionTotal, updateSelectionQuantity, type CheckoutDetails, type SelectionLine } from "@/modules/selection/model";
@@ -14,13 +15,27 @@ type Product = { id: string; name: string; description: string | null; priceAmou
 type Menu = { settings: { businessName: string; whatsappUrl: string; deliveryEnabled: boolean; deliveryFeeAmount: number; operatingContext: { isOpen: boolean; label: string; detail: string } }; categories: Array<{ id: string; name: string; slug: string; products: Product[] }> };
 type CompletedOrder = { number: number; lines: SelectionLine[]; total: number; whatsappHref: string; whatsappAppHref: string; trackingHref: string; message: string; ownerId?: string; sessionGeneration: string | null };
 type CustomerSession = { authenticated?: boolean; customer?: { id?: string; displayName?: string | null } };
-type SavedAddress = { id: string; label: string; address: string; reference: string | null };
 
 const priceFormatter = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 function formatPrice(amount: number) { return priceFormatter.format(amount); }
 
 function WhatsAppIcon() {
   return <svg className="whatsapp-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M20.5 3.5A11.8 11.8 0 0 0 12.1 0C5.6 0 .3 5.3.3 11.8c0 2.1.5 4.1 1.6 5.9L.2 24l6.5-1.7a11.8 11.8 0 0 0 5.4 1.3h.1c6.5 0 11.8-5.3 11.8-11.8 0-3.2-1.3-6.1-3.5-8.3Zm-8.4 18.1h-.1c-1.7 0-3.4-.5-4.8-1.4l-.3-.2-3.8 1 1-3.7-.2-.3a9.8 9.8 0 1 1 8.2 4.6Zm5.4-7.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.8-2.1-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6.1-.2 0-.5 0-.7-.1-.2-.7-1.7-.9-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.1 1.4 3.3c.2.2 2.3 3.5 5.6 4.9.8.3 1.4.5 1.9.6.8.2 1.5.2 2.1.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.3-.6-.4Z" /></svg>;
+}
+
+function orderIntentPayload(lines: SelectionLine[], checkout: CheckoutDetails, customerName: string) {
+  return {
+        customerName: customerName.trim() || null, fulfillment: checkout.fulfillment,
+        deliveryAddress: checkout.fulfillment === "DELIVERY" ? checkout.deliveryAddress?.trim() || null : null,
+        deliveryReference: checkout.fulfillment === "DELIVERY" ? checkout.deliveryReference?.trim() || null : null,
+        transferHolderName: checkout.fulfillment === "DELIVERY" ? checkout.transferHolderName?.trim() || null : null,
+        lines: lines.map((line) => ({ productId: line.productId, quantity: line.quantity, modifiers: line.modifiers })),
+      };
+}
+
+async function orderIntentFingerprint(payload: ReturnType<typeof orderIntentPayload>) {
+  const bytes = new TextEncoder().encode(JSON.stringify(payload));
+  return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 export function MenuExperience({ menu }: { menu: Menu }) {
@@ -45,8 +60,11 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   const [completedOrder, setCompletedOrder] = useState<CompletedOrder | null>(null);
   const [checkout, setCheckout] = useState<CheckoutDetails>({ fulfillment: "PICKUP" });
   const [customerName, setCustomerName] = useState("");
-  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const preferences = useFavorites();
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const lastProfileOwner = useRef<string | null>(null);
+  const nameEdited = useRef(false);
+  const savedAddresses = preferences.viewerId === customerId ? preferences.addresses : [];
   const [saveNewAddress, setSaveNewAddress] = useState(false);
   const [addressLabel, setAddressLabel] = useState("");
   const [copiedMessage, setCopiedMessage] = useState(false);
@@ -59,6 +77,9 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   const resumeTrackingRef = useRef<(() => void) | null>(null);
   const dialogCloseRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
+  const opener = useRef<HTMLElement | null>(null);
+  const wasDialogOpen = useRef(false);
+  const hasDialog = Boolean(showSummary || pendingProduct || completedOrder);
   const visibleCategories = filterCatalog(menu.categories, searchQuery);
   const featured = visibleCategories.flatMap((category) => category.products.filter((product) => product.featured)).slice(0, 2);
   const count = selectionCount(lines);
@@ -116,9 +137,13 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       retireLegacyTrackingStorage();
       const url = new URL(window.location.href);
       const openCart = url.searchParams.has("carrito");
-      if (openCart) {
+      const historyState = { ...window.history.state };
+      // A reload starts with a closed sheet. Don't stack a second cart entry
+      // over a marker left by the previous document.
+      if (openCart || historyState.tacoCart) {
+        delete historyState.tacoCart;
         url.searchParams.delete("carrito");
-        window.history.replaceState(window.history.state, "", url);
+        window.history.replaceState(historyState, "", url);
       }
       setLines(draft.length ? draft : cart);
       setCartHydrated(true);
@@ -128,21 +153,43 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    void fetch("/api/customer/auth/session", { credentials: "same-origin", cache: "no-store" }).then(async (response) => {
-      if (!response.ok) return null;
-      return await response.json() as CustomerSession;
-    }).then(async (session) => {
-      if (cancelled || !session?.authenticated) return;
-      setCustomerId(session.customer?.id ?? null);
-      setCustomerName(session.customer?.displayName ?? "");
-      const preferences = await fetch("/api/customer/preferences", { credentials: "same-origin", cache: "no-store" });
-      if (preferences.ok && !cancelled) {
-        const body = await preferences.json() as { addresses?: SavedAddress[] };
-        setSavedAddresses(body.addresses ?? []);
-      }
-    }).catch(() => undefined);
-    return () => { cancelled = true; };
+    let controller: AbortController | undefined;
+    function loadSession() {
+      controller?.abort();
+      const next = new AbortController();
+      controller = next;
+      void fetch("/api/customer/auth/session", { cache: "no-store", signal: next.signal }).then(async (response) => {
+        const session = response.ok ? await response.json() as CustomerSession : null;
+        if (next.signal.aborted) return;
+        const owner = session?.authenticated ? session.customer?.id ?? null : null;
+        const previousOwner = lastProfileOwner.current;
+        const ownerChanged = previousOwner !== owner;
+        lastProfileOwner.current = owner;
+        if (previousOwner && ownerChanged) {
+          setCheckout((current) => current.fulfillment === "DELIVERY"
+            ? { fulfillment: "DELIVERY", deliveryAddress: "", deliveryReference: "", transferHolderName: "" } : current);
+          setSaveNewAddress(false);
+          setAddressLabel("");
+        }
+        setCustomerId(owner);
+        if (previousOwner && ownerChanged) { nameEdited.current = false; setCustomerName(""); }
+        const name = session?.customer?.displayName ?? "";
+        let stored = pendingIntent.current;
+        try {
+          const storage = trackingSessionStorage();
+          stored ??= JSON.parse(storage?.getItem(checkoutIntentStorageKey) ?? "null");
+          if (stored && owner && stored.ownerId === owner && name && !nameEdited.current) {
+            const savedLines = JSON.parse(storage?.getItem("taco-loco-selection") ?? "[]") as SelectionLine[];
+            const fingerprint = await orderIntentFingerprint(orderIntentPayload(savedLines, { fulfillment: "PICKUP" }, name));
+            if (!next.signal.aborted && !nameEdited.current && pendingIntent.current?.reference === stored.reference && fingerprint === stored.fingerprint) setCustomerName(name);
+          }
+        } catch { /* A recoverable attempt always keeps its reference. */ }
+        if (!stored && !next.signal.aborted && !nameEdited.current) setCustomerName(name);
+      }).catch(() => undefined);
+    }
+    loadSession();
+    const unsubscribe = onCustomerSessionChange(loadSession);
+    return () => { controller?.abort(); unsubscribe(); };
   }, []);
 
   useEffect(() => {
@@ -236,13 +283,28 @@ export function MenuExperience({ menu }: { menu: Menu }) {
   }, []);
 
   useEffect(() => {
+    function onPop(event: PopStateEvent) {
+      if (window.location.pathname !== "/menu") return;
+      if (event.state?.tacoCart) { setShowSummary(true); setCheckoutStep("cart"); }
+      else if (submitInFlight.current) window.history.pushState({ ...event.state, tacoCart: true }, "", window.location.href);
+      else {
+        handoffRef.current = null;
+        finishTrackingHandoff();
+        setPendingProduct(null); setEditingLineId(null); setShowSummary(false); setCompletedOrder(null);
+      }
+    }
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  useEffect(() => {
     if (!pendingProduct && !showSummary && !completedOrder) return;
     function closeOnEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
         if (submitInFlight.current) return;
         setPendingProduct(null);
         setEditingLineId(null);
-        setShowSummary(false);
+        if (!pendingProduct && showSummary) closeCart();
         if (completedOrder) dismissCompletedOrder();
         return;
       }
@@ -267,23 +329,47 @@ export function MenuExperience({ menu }: { menu: Menu }) {
 
   useEffect(() => {
     if (!pendingProduct && !showSummary && !completedOrder) return;
-    const previousFocus = document.activeElement as HTMLElement | null;
     const focusTimer = window.requestAnimationFrame(() => (dialogCloseRef.current ?? dialogRef.current?.querySelector<HTMLElement>("a[href], button"))?.focus());
-    return () => {
-      window.cancelAnimationFrame(focusTimer);
-      if (previousFocus && previousFocus !== document.body) previousFocus.focus();
-    };
+    return () => window.cancelAnimationFrame(focusTimer);
   }, [pendingProduct, showSummary, completedOrder]);
 
   useEffect(() => {
-    if (!pendingProduct && !showSummary && !completedOrder) return;
+    if (!hasDialog) {
+      if (!wasDialogOpen.current) return;
+      wasDialogOpen.current = false;
+      const frame = requestAnimationFrame(() => {
+        const target = opener.current;
+        opener.current = null;
+        if (target?.isConnected && target.getClientRects().length) target.focus();
+        else Array.from(document.querySelectorAll<HTMLElement>(".public-bottom-nav button:not([disabled]), .public-navigation__cart")).find((control) => control.getClientRects().length)?.focus();
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+    wasDialogOpen.current = true;
     const previousOverflow = document.body.style.overflow;
+    const viewport = window.visualViewport;
+    const root = document.documentElement.style;
+    const updateViewport = () => {
+      if (!viewport) return;
+      root.setProperty("--public-dialog-viewport", `${viewport.height}px`);
+      root.setProperty("--public-dialog-top", `${viewport.offsetTop}px`);
+    };
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = previousOverflow; };
-  }, [pendingProduct, showSummary, completedOrder]);
+    updateViewport();
+    viewport?.addEventListener("resize", updateViewport);
+    viewport?.addEventListener("scroll", updateViewport);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      viewport?.removeEventListener("resize", updateViewport);
+      viewport?.removeEventListener("scroll", updateViewport);
+      root.removeProperty("--public-dialog-viewport");
+      root.removeProperty("--public-dialog-top");
+    };
+  }, [hasDialog]);
 
   function addProduct(product: Product) {
-    if (!product.available) return;
+    if (!product.available || submitInFlight.current) return;
+    opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setEditingLineId(null);
     setPendingProduct(product);
     setPendingQuantity(1);
@@ -362,7 +448,16 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     setFeedbackMessage("Pedido vacío.");
   }
 
+  function closeCart() {
+    if (submitInFlight.current) return;
+    if (window.history.state?.tacoCart === true) window.history.back();
+    else setShowSummary(false);
+  }
+
   function openCart() {
+    if (submitInFlight.current || showSummary) return;
+    opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    window.history.pushState({ ...window.history.state, tacoCart: true }, "", window.location.href);
     setCheckoutStep("cart");
     setShowSummary(true);
   }
@@ -436,15 +531,8 @@ export function MenuExperience({ menu }: { menu: Menu }) {
         popup = window.open("about:blank", "_blank");
         if (popup) popup.opener = null;
       }
-      const payload = {
-        customerName: customerName.trim() || null, fulfillment: checkout.fulfillment,
-        deliveryAddress: checkout.fulfillment === "DELIVERY" ? checkout.deliveryAddress?.trim() || null : null,
-        deliveryReference: checkout.fulfillment === "DELIVERY" ? checkout.deliveryReference?.trim() || null : null,
-        transferHolderName: checkout.fulfillment === "DELIVERY" ? checkout.transferHolderName?.trim() || null : null,
-        lines: lines.map((line) => ({ productId: line.productId, quantity: line.quantity, modifiers: line.modifiers })),
-      };
-      const bytes = new TextEncoder().encode(JSON.stringify(payload));
-      const fingerprint = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), (byte) => byte.toString(16).padStart(2, "0")).join("");
+      const payload = orderIntentPayload(lines, checkout, customerName);
+      const fingerprint = await orderIntentFingerprint(payload);
       const saved = pendingIntent.current;
       if (saved && saved.fingerprint !== fingerprint) {
         rejectionMessage = "Hay un intento sin confirmar. Restaurá los datos originales y recuperalo antes de enviar un pedido distinto.";
@@ -500,6 +588,11 @@ export function MenuExperience({ menu }: { menu: Menu }) {
         storage?.setItem("taco-loco-selection", "[]");
       } catch { /* The registered order remains authoritative. */ }
       setLines([]);
+      if (window.history.state?.tacoCart === true) {
+        const state = { ...window.history.state };
+        delete state.tacoCart;
+        window.history.replaceState(state, "", window.location.href);
+      }
       setShowSummary(false);
       reference.ownerId = result.customerId ?? undefined;
       reference.sessionGeneration = sessionGeneration;
@@ -515,7 +608,7 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       if (result.customerId === null) rememberGuestOrder(reference);
       setCompletedOrder(preparedOrder);
       if (!result.reused && saveNewAddress && customerId && customerId === result.customerId && payload.fulfillment === "DELIVERY" && payload.deliveryAddress && addressLabel.trim()) {
-        void fetch("/api/customer/preferences", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ label: addressLabel.trim(), address: payload.deliveryAddress, reference: payload.deliveryReference }) }).catch(() => undefined);
+        void fetch("/api/customer/preferences", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json", "x-customer-viewer": customerId }, body: JSON.stringify({ label: addressLabel.trim(), address: payload.deliveryAddress, reference: payload.deliveryReference }) }).then((response) => { if (response.ok) preferences.reload(); }).catch(() => undefined);
       }
       setFeedbackMessage(`Pedido TL-${String(result.order.orderNumber).padStart(4, "0")} preparado. Confirmá el mensaje en WhatsApp.`);
       if (isMobileDevice) openMobileWhatsApp(preparedOrder.whatsappAppHref);
@@ -544,7 +637,14 @@ export function MenuExperience({ menu }: { menu: Menu }) {
     }
   }
 
-  return <main className="public-menu"><PublicNavigation cartCount={count} onCartClick={openCart} /><section className="brand-pattern brand-pattern--hero brand-hero"><div className="brand-hero__copy"><p className="eyebrow">{menu.settings.businessName} · Menú digital</p><h1>Elegí tu próximo antojo</h1><p>Sabores para compartir, pedir y volver a disfrutar.</p></div></section><CategoryNav categories={visibleCategories} /><p className="sr-only" aria-live="polite">{addedProductId ? "Producto agregado al pedido" : ""}</p>
+  const cartAction = count > 0 ? <button className={`selection-bar${addedProductId ? " selection-bar--updated" : ""}`} type="button" onClick={openCart}><span>Ver carrito · {count} {count === 1 ? "producto" : "productos"}</span><strong>{formatPrice(total)}</strong></button> : null;
+  const dialogs = hasDialog ? <>
+    {completedOrder && <div className="selection-overlay" role="presentation"><section ref={dialogRef} className="selection-sheet selection-sheet--success" role="dialog" aria-modal="true" aria-labelledby="completed-order-title" aria-describedby="completed-order-help"><div className="brand-pattern brand-pattern--accent success-pattern"><div className="success-mark" aria-hidden="true">✓</div><p className="eyebrow">Pedido preparado</p><h2 id="completed-order-title">¡Listo, tu pedido está armado!</h2></div><p id="completed-order-help" className="selection-help">Pedido TL-{String(completedOrder.number).padStart(4, "0")}. El mensaje está preparado en WhatsApp; confirmá el envío desde la aplicación.</p>{showWhatsAppWebFallback && <p className="selection-help">Si WhatsApp no se abrió, copiá el mensaje o abrilo manualmente.</p>}<div className="completed-order-summary"><strong>Resumen del pedido</strong>{completedOrder.lines.map((line) => <div key={line.id}><span>{line.quantity} × {line.name}</span><span>{formatPrice(line.priceAmount * line.quantity)}</span></div>)}<div className="completed-order-total"><span>Total informativo</span><strong>{formatPrice(completedOrder.total)}</strong></div></div><div className="selection-actions"><a className="button" href={completedOrder.trackingHref} onClick={dismissCompletedOrder}>Ver estado de mi pedido</a><a className="button button--secondary" href={isMobileDevice ? completedOrder.whatsappAppHref : completedOrder.whatsappHref} onClick={openPreparedWhatsApp} target="_blank" rel="noreferrer">Volver a WhatsApp</a>{isMobileDevice && <a className="button button--secondary" href={completedOrder.whatsappHref} onClick={openPreparedWhatsApp} target="_blank" rel="noreferrer">Abrir WhatsApp Web</a>}<button className="button button--secondary" type="button" onClick={() => void copyWhatsAppMessage(completedOrder.message)}>{copiedMessage ? "Mensaje copiado" : "Copiar mensaje"}</button><button className="button button--secondary" type="button" onClick={startAnotherOrder}>Realizar otro pedido</button><button className="selection-clear" type="button" onClick={dismissCompletedOrder}>Seguir viendo el menú</button></div></section></div>}
+    {pendingProduct && <div className="selection-overlay" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) { setPendingProduct(null); setEditingLineId(null); } }}><section ref={dialogRef} className="selection-sheet selection-sheet--product" role="dialog" aria-modal="true" aria-labelledby="selection-title" aria-describedby="selection-help"><div className="selection-sheet__scroll"><span className="selection-sheet__handle" aria-hidden="true" /><div className="selection-sheet__header"><div><p className="eyebrow">Paso 1 · Personalizá</p><h2 id="selection-title">{pendingProduct.name}</h2></div><button ref={dialogCloseRef} className="selection-close" type="button" onClick={() => { setPendingProduct(null); setEditingLineId(null); }} aria-label="Cerrar">×</button></div><p id="selection-help" className="selection-help">Elegí las opciones necesarias, la cantidad y confirmá para sumar el producto.</p><div className="product-quantity"><span>Cantidad</span><div className="quantity-control"><button type="button" onClick={() => setPendingQuantity((quantity) => Math.max(1, quantity - 1))} aria-label="Quitar una unidad">−</button><strong>{pendingQuantity}</strong><button type="button" onClick={() => setPendingQuantity((quantity) => Math.min(20, quantity + 1))} aria-label="Agregar una unidad">+</button></div><strong>{formatPrice(pendingProduct.priceAmount * pendingQuantity)}</strong></div>{pendingProduct.modifiers.map((group) => <fieldset className="modifier-group" key={group.name}><legend>{group.name}{group.required ? " · obligatorio" : ""}</legend><div className="modifier-options">{group.options.map((option) => { const checked = (selectedOptions[group.name] ?? []).includes(option); return <button className={`modifier-option${checked ? " modifier-option--selected" : ""}`} type="button" aria-pressed={checked} key={option} onClick={() => toggleOption(group, option)}>{option}</button>; })}</div></fieldset>)}{selectionError && <p className="selection-error" role="alert">{selectionError}</p>}</div><div className="selection-sheet__footer"><button className="button selection-confirm" type="button" onClick={confirmProduct}>{editingLineId ? "Guardar cambios" : "Agregar al pedido"} · {formatPrice(pendingProduct.priceAmount * pendingQuantity)}</button></div></section></div>}
+    {showSummary && !pendingProduct && !completedOrder && <div className="selection-overlay" role="presentation" onClick={(event) => { if (event.target === event.currentTarget && !submitInFlight.current) closeCart(); }}><section ref={dialogRef} className="selection-sheet selection-sheet--summary" role="dialog" aria-modal="true" tabIndex={-1} aria-labelledby="summary-title" aria-describedby="summary-help"><div className="selection-sheet__scroll"><span className="selection-sheet__handle" aria-hidden="true" /><div className="selection-sheet__header"><div><p className="eyebrow">Paso {checkoutStep === "cart" ? "1 · Carrito" : "2 · Tus datos"}</p><h2 id="summary-title">{checkoutStep === "cart" ? "Revisá tu pedido" : "Completá tus datos"}</h2></div><button ref={dialogCloseRef} className="selection-close" type="button" onClick={closeCart} disabled={submittingOrder} aria-label="Cerrar">×</button></div><p id="summary-help" className="selection-help">Podés editar cantidades, quitar productos o seguir viendo el menú.</p>{feedbackMessage && <p className="selection-help" role="status">{feedbackMessage}</p>}{needsOrderRecovery && !submittingOrder && <button className="selection-clear" type="button" onClick={discardPendingIntent}>Descartar intento anterior</button>}<div className="checkout-stepper" aria-label="Pasos del checkout"><span className={checkoutStep === "cart" ? "checkout-step checkout-step--active" : "checkout-step"}>1 Carrito</span><span className={checkoutStep === "details" ? "checkout-step checkout-step--active" : "checkout-step"}>2 Tus datos</span></div>{lines.length === 0 ? <p className="selection-empty">Todavía no agregaste productos.</p> : <><fieldset className="selection-lines" disabled={submittingOrder}>{lines.map((line) => <div className="selection-line" key={line.id}><div><strong>{line.name}</strong>{line.modifiers.length > 0 && <small>{line.modifiers.map((modifier) => `${modifier.group}: ${modifier.option}`).join(" · ")}</small>}<span>{formatPrice(line.priceAmount)} c/u</span></div><div className="selection-line__actions"><button className="selection-edit" type="button" onClick={() => editLine(line)}>Editar</button><button className="selection-remove" type="button" onClick={() => removeLine(line)} aria-label={`Quitar ${line.name} del pedido`}>Quitar</button><div className="quantity-control" aria-label={`Cantidad de ${line.name}`}><button type="button" onClick={() => setLines((current) => updateSelectionQuantity(current, line.id, line.quantity - 1))} aria-label={`Quitar una unidad de ${line.name}`}>−</button><strong>{line.quantity}</strong><button type="button" onClick={() => setLines((current) => updateSelectionQuantity(current, line.id, line.quantity + 1))} aria-label={`Agregar una unidad de ${line.name}`}>+</button></div></div></div>)}</fieldset><button className="selection-clear" type="button" disabled={submittingOrder} onClick={clearSelection}>Vaciar pedido</button></>}{checkoutStep === "details" && <fieldset className="checkout-details" disabled={submittingOrder}><label className="checkout-name">Nombre para el pedido (opcional)<input value={customerName} onChange={(event) => { nameEdited.current = true; setCustomerName(Array.from(event.target.value).slice(0, 160).join("")); }} placeholder={customerId ? "Tu nombre de perfil" : "Cómo te llamamos"} /></label><fieldset className="checkout-options"><legend>¿Cómo querés recibirlo?</legend><label><input type="radio" name="fulfillment" checked={checkout.fulfillment === "PICKUP"} onChange={() => setCheckout({ fulfillment: "PICKUP" })} /> Retiro</label>{menu.settings.deliveryEnabled && <label><input type="radio" name="fulfillment" checked={checkout.fulfillment === "DELIVERY"} onChange={() => setCheckout({ fulfillment: "DELIVERY", deliveryAddress: "", deliveryReference: "", transferHolderName: "" })} /> Delivery · {formatPrice(menu.settings.deliveryFeeAmount)}</label>}</fieldset>{checkout.fulfillment === "DELIVERY" && <div className="checkout-delivery-fields">{customerId && savedAddresses.length > 0 && <label>Dirección guardada<select value="" onChange={(event) => { const address = savedAddresses.find((item) => item.id === event.target.value); if (address) setCheckout({ ...checkout, deliveryAddress: address.address, deliveryReference: address.reference ?? "" }); }}><option value="">Elegir una dirección</option>{savedAddresses.map((item) => <option value={item.id} key={item.id}>{item.label} · {item.address}</option>)}</select></label>}<label>Dirección<input required value={checkout.deliveryAddress ?? ""} onChange={(event) => setCheckout({ ...checkout, deliveryAddress: event.target.value })} /></label>{customerId && <label className="checkout-save-address"><input type="checkbox" checked={saveNewAddress} onChange={(event) => setSaveNewAddress(event.target.checked)} /> Guardar esta dirección en mi cuenta</label>}{customerId && saveNewAddress && <label>Etiqueta de la dirección<input value={addressLabel} onChange={(event) => setAddressLabel(event.target.value)} placeholder="Casa, trabajo…" maxLength={80} /></label>}<label>Referencia (opcional)<input value={checkout.deliveryReference ?? ""} onChange={(event) => setCheckout({ ...checkout, deliveryReference: event.target.value })} /></label><label>Titular de la transferencia<input required value={checkout.transferHolderName ?? ""} onChange={(event) => setCheckout({ ...checkout, transferHolderName: event.target.value })} /></label><p className="selection-help">La transferencia se verifica manualmente antes de confirmar el pedido.</p></div>}</fieldset>}</div><div className="selection-sheet__footer"><div className="selection-summary"><span>Total informativo{checkout.fulfillment === "DELIVERY" ? " con envío" : ""}</span><strong>{formatPrice(total + (checkout.fulfillment === "DELIVERY" ? menu.settings.deliveryFeeAmount : 0))}</strong></div>{checkout.fulfillment === "DELIVERY" && <p className="selection-help">Subtotal {formatPrice(total)} · Envío {formatPrice(menu.settings.deliveryFeeAmount)}</p>}<div className="selection-actions">{lines.length === 0 ? <button className="button" type="button" onClick={closeCart}>Volver al menú</button> : checkoutStep === "cart" ? <><button className="button" type="button" onClick={() => setCheckoutStep("details")}>Continuar con tus datos</button><button className="button button--secondary" type="button" onClick={closeCart}>Seguir viendo el menú</button></> : <><button className="button button--secondary" type="button" disabled={submittingOrder} onClick={() => setCheckoutStep("cart")}>Volver al carrito</button><button className="button button--whatsapp" type="button" onClick={() => void submitOrderIntent()} disabled={submittingOrder || (!operatingContext.isOpen && !needsOrderRecovery)}>{submittingOrder ? "Preparando pedido…" : <><WhatsAppIcon /><span>{needsOrderRecovery ? "Recuperar intento" : "Enviar pedido"}</span></>}</button>{!operatingContext.isOpen && <p className="selection-help">{needsOrderRecovery ? "El local está cerrado. Sólo podés recuperar el intento anterior." : operatingContext.detail}</p>}</>}</div></div></section></div>}
+  </> : null;
+
+  return <PublicShell className="public-menu" cartCount={count} onCartClick={openCart} cartOpen={showSummary} action={cartAction} modal={dialogs}><section className="brand-pattern brand-pattern--hero brand-hero"><div className="brand-hero__copy"><p className="eyebrow">{menu.settings.businessName} · Menú digital</p><h1>Elegí tu próximo antojo</h1><p>Sabores para compartir, pedir y volver a disfrutar.</p></div></section><CategoryNav categories={visibleCategories} /><p className="sr-only" aria-live="polite">{addedProductId ? "Producto agregado al pedido" : ""}</p>
     <div className="public-menu__content">
       <section className={`operating-status operating-status--${operatingContext.isOpen ? "open" : "closed"}`} aria-live="polite"><strong>{operatingContext.label}</strong><span>{operatingContext.detail}</span></section>
       {feedbackMessage && !showSummary && <p className="menu-order-feedback" role="status">{feedbackMessage}</p>}
@@ -554,9 +654,5 @@ export function MenuExperience({ menu }: { menu: Menu }) {
       {visibleCategories.map((category) => <section className="menu-section" id={`category-${category.id}`} key={category.id} aria-labelledby={`heading-${category.id}`}><h2 id={`heading-${category.id}`}>{category.name}</h2><div className="product-list">{category.products.map((product) => <ProductCard key={product.id} product={product} onAdd={addProduct} added={addedProductId === product.id} />)}</div></section>)}
       <SaucesInfo />
     </div>
-    {count > 0 && <button className={`selection-bar${addedProductId ? " selection-bar--updated" : ""}`} type="button" onClick={openCart}><span>Pedido · {count} {count === 1 ? "producto" : "productos"}</span><strong>{formatPrice(total)}</strong></button>}
-    {completedOrder && <div className="selection-overlay" role="presentation"><section ref={dialogRef} className="selection-sheet selection-sheet--success" role="dialog" aria-modal="true" aria-labelledby="completed-order-title" aria-describedby="completed-order-help"><div className="brand-pattern brand-pattern--accent success-pattern"><div className="success-mark" aria-hidden="true">✓</div><p className="eyebrow">Pedido preparado</p><h2 id="completed-order-title">¡Listo, tu pedido está armado!</h2></div><p id="completed-order-help" className="selection-help">Pedido TL-{String(completedOrder.number).padStart(4, "0")}. El mensaje está preparado en WhatsApp; confirmá el envío desde la aplicación.</p>{showWhatsAppWebFallback && <p className="selection-help">Si WhatsApp no se abrió, copiá el mensaje o abrilo manualmente.</p>}<div className="completed-order-summary"><strong>Resumen del pedido</strong>{completedOrder.lines.map((line) => <div key={line.id}><span>{line.quantity} × {line.name}</span><span>{formatPrice(line.priceAmount * line.quantity)}</span></div>)}<div className="completed-order-total"><span>Total informativo</span><strong>{formatPrice(completedOrder.total)}</strong></div></div><div className="selection-actions"><a className="button button--secondary" href={completedOrder.trackingHref} onClick={dismissCompletedOrder}>Ver estado de mi pedido</a><a className="button" href={isMobileDevice ? completedOrder.whatsappAppHref : completedOrder.whatsappHref} onClick={openPreparedWhatsApp} target="_blank" rel="noreferrer">Volver a WhatsApp</a>{isMobileDevice && <a className="button button--secondary" href={completedOrder.whatsappHref} onClick={openPreparedWhatsApp} target="_blank" rel="noreferrer">Abrir WhatsApp Web</a>}<button className="button button--secondary" type="button" onClick={() => void copyWhatsAppMessage(completedOrder.message)}>{copiedMessage ? "Mensaje copiado" : "Copiar mensaje"}</button><button className="button button--secondary" type="button" onClick={startAnotherOrder}>Realizar otro pedido</button><button className="selection-clear" type="button" onClick={dismissCompletedOrder}>Seguir viendo el menú</button></div></section></div>}
-    {pendingProduct && <div className="selection-overlay" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) { setPendingProduct(null); setEditingLineId(null); } }}><section ref={dialogRef} className="selection-sheet selection-sheet--product" role="dialog" aria-modal="true" aria-labelledby="selection-title" aria-describedby="selection-help"><span className="selection-sheet__handle" aria-hidden="true" /><div className="selection-sheet__header"><div><p className="eyebrow">Paso 1 · Personalizá</p><h2 id="selection-title">{pendingProduct.name}</h2></div><button ref={dialogCloseRef} className="selection-close" type="button" onClick={() => { setPendingProduct(null); setEditingLineId(null); }} aria-label="Cerrar">×</button></div><p id="selection-help" className="selection-help">Elegí las opciones necesarias, la cantidad y confirmá para sumar el producto.</p><div className="product-quantity"><span>Cantidad</span><div className="quantity-control"><button type="button" onClick={() => setPendingQuantity((quantity) => Math.max(1, quantity - 1))} aria-label="Quitar una unidad">−</button><strong>{pendingQuantity}</strong><button type="button" onClick={() => setPendingQuantity((quantity) => Math.min(20, quantity + 1))} aria-label="Agregar una unidad">+</button></div><strong>{formatPrice(pendingProduct.priceAmount * pendingQuantity)}</strong></div>{pendingProduct.modifiers.map((group) => <fieldset className="modifier-group" key={group.name}><legend>{group.name}{group.required ? " · obligatorio" : ""}</legend><div className="modifier-options">{group.options.map((option) => { const checked = (selectedOptions[group.name] ?? []).includes(option); return <button className={`modifier-option${checked ? " modifier-option--selected" : ""}`} type="button" aria-pressed={checked} key={option} onClick={() => toggleOption(group, option)}>{option}</button>; })}</div></fieldset>)}{selectionError && <p className="selection-error" role="alert">{selectionError}</p>}<button className="button selection-confirm" type="button" onClick={confirmProduct}>{editingLineId ? "Guardar cambios" : "Agregar al pedido"} · {formatPrice(pendingProduct.priceAmount * pendingQuantity)}</button></section></div>}
-    {showSummary && <div className="selection-overlay" role="presentation" onClick={(event) => { if (event.target === event.currentTarget && !submitInFlight.current) setShowSummary(false); }}><section ref={dialogRef} className="selection-sheet selection-sheet--summary" role="dialog" aria-modal="true" tabIndex={-1} aria-labelledby="summary-title" aria-describedby="summary-help"><span className="selection-sheet__handle" aria-hidden="true" /><div className="selection-sheet__header"><div><p className="eyebrow">Paso {checkoutStep === "cart" ? "1 · Carrito" : "2 · Tus datos"}</p><h2 id="summary-title">{checkoutStep === "cart" ? "Revisá tu pedido" : "Completá tus datos"}</h2></div><button ref={dialogCloseRef} className="selection-close" type="button" onClick={() => setShowSummary(false)} disabled={submittingOrder} aria-label="Cerrar">×</button></div><p id="summary-help" className="selection-help">Podés editar cantidades, quitar productos o seguir viendo el menú.</p>{feedbackMessage && <p className="selection-help" role="status">{feedbackMessage}</p>}{needsOrderRecovery && !submittingOrder && <button className="selection-clear" type="button" onClick={discardPendingIntent}>Descartar intento anterior</button>}<div className="checkout-stepper" aria-label="Pasos del checkout"><span className={checkoutStep === "cart" ? "checkout-step checkout-step--active" : "checkout-step"}>1 Carrito</span><span className={checkoutStep === "details" ? "checkout-step checkout-step--active" : "checkout-step"}>2 Tus datos</span></div>{lines.length === 0 ? <p className="selection-empty">Todavía no agregaste productos.</p> : <><fieldset className="selection-lines" disabled={submittingOrder}>{lines.map((line) => <div className="selection-line" key={line.id}><div><strong>{line.name}</strong>{line.modifiers.length > 0 && <small>{line.modifiers.map((modifier) => `${modifier.group}: ${modifier.option}`).join(" · ")}</small>}<span>{formatPrice(line.priceAmount)} c/u</span></div><div className="selection-line__actions"><button className="selection-edit" type="button" onClick={() => editLine(line)}>Editar</button><button className="selection-remove" type="button" onClick={() => removeLine(line)} aria-label={`Quitar ${line.name} del pedido`}>Quitar</button><div className="quantity-control" aria-label={`Cantidad de ${line.name}`}><button type="button" onClick={() => setLines((current) => updateSelectionQuantity(current, line.id, line.quantity - 1))} aria-label={`Quitar una unidad de ${line.name}`}>−</button><strong>{line.quantity}</strong><button type="button" onClick={() => setLines((current) => updateSelectionQuantity(current, line.id, line.quantity + 1))} aria-label={`Agregar una unidad de ${line.name}`}>+</button></div></div></div>)}</fieldset><button className="selection-clear" type="button" disabled={submittingOrder} onClick={clearSelection}>Vaciar pedido</button></>}{checkoutStep === "details" && <fieldset className="checkout-details" disabled={submittingOrder}><label className="checkout-name">Nombre para el pedido (opcional)<input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder={customerId ? "Tu nombre de perfil" : "Cómo te llamamos"} maxLength={160} /></label><fieldset className="checkout-options"><legend>¿Cómo querés recibirlo?</legend><label><input type="radio" name="fulfillment" checked={checkout.fulfillment === "PICKUP"} onChange={() => setCheckout({ fulfillment: "PICKUP" })} /> Retiro</label>{menu.settings.deliveryEnabled && <label><input type="radio" name="fulfillment" checked={checkout.fulfillment === "DELIVERY"} onChange={() => setCheckout({ fulfillment: "DELIVERY", deliveryAddress: "", deliveryReference: "", transferHolderName: "" })} /> Delivery · {formatPrice(menu.settings.deliveryFeeAmount)}</label>}</fieldset>{checkout.fulfillment === "DELIVERY" && <div className="checkout-delivery-fields">{customerId && savedAddresses.length > 0 && <label>Dirección guardada<select value="" onChange={(event) => { const address = savedAddresses.find((item) => item.id === event.target.value); if (address) setCheckout({ ...checkout, deliveryAddress: address.address, deliveryReference: address.reference ?? "" }); }}><option value="">Elegir una dirección</option>{savedAddresses.map((item) => <option value={item.id} key={item.id}>{item.label} · {item.address}</option>)}</select></label>}<label>Dirección<input required value={checkout.deliveryAddress ?? ""} onChange={(event) => setCheckout({ ...checkout, deliveryAddress: event.target.value })} /></label>{customerId && <label className="checkout-save-address"><input type="checkbox" checked={saveNewAddress} onChange={(event) => setSaveNewAddress(event.target.checked)} /> Guardar esta dirección en mi cuenta</label>}{customerId && saveNewAddress && <label>Etiqueta de la dirección<input value={addressLabel} onChange={(event) => setAddressLabel(event.target.value)} placeholder="Casa, trabajo…" maxLength={80} /></label>}<label>Referencia (opcional)<input value={checkout.deliveryReference ?? ""} onChange={(event) => setCheckout({ ...checkout, deliveryReference: event.target.value })} /></label><label>Titular de la transferencia<input required value={checkout.transferHolderName ?? ""} onChange={(event) => setCheckout({ ...checkout, transferHolderName: event.target.value })} /></label><p className="selection-help">La transferencia se verifica manualmente antes de confirmar el pedido.</p></div>}</fieldset>}<div className="selection-summary"><span>Total informativo{checkout.fulfillment === "DELIVERY" ? " con envío" : ""}</span><strong>{formatPrice(total + (checkout.fulfillment === "DELIVERY" ? menu.settings.deliveryFeeAmount : 0))}</strong></div><div className="selection-actions">{checkoutStep === "cart" ? <><button className="button" type="button" onClick={() => setCheckoutStep("details")}>Continuar con tus datos</button><button className="button button--secondary" type="button" onClick={() => setShowSummary(false)}>Seguir viendo el menú</button></> : <><button className="button button--secondary" type="button" disabled={submittingOrder} onClick={() => setCheckoutStep("cart")}>Volver al carrito</button><button className="button button--whatsapp" type="button" onClick={() => void submitOrderIntent()} disabled={submittingOrder || (!operatingContext.isOpen && !needsOrderRecovery)}>{submittingOrder ? "Preparando pedido…" : <><WhatsAppIcon /><span>{needsOrderRecovery ? "Recuperar intento" : "Enviar pedido"}</span></>}</button>{!operatingContext.isOpen && <p className="selection-help">{needsOrderRecovery ? "El local está cerrado. Sólo podés recuperar el intento anterior." : operatingContext.detail}</p>}</>}</div></section></div>}
-  </main>;
+  </PublicShell>;
 }

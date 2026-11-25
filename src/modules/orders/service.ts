@@ -41,7 +41,7 @@ const publicOrderIntentLineSchema = manualOrderLineSchema.omit({ note: true });
 export const createPublicOrderIntentInputSchema = z.object({
   clientReference: z.string().trim().min(16).max(100),
   fulfillment: orderFulfillmentSchema.extract(["PICKUP", "DELIVERY"]).default("PICKUP"),
-  customerName: z.string().trim().max(160).nullable().optional(),
+  customerName: z.string().trim().refine((value) => Array.from(value).length <= 160, "El nombre admite hasta 160 caracteres.").nullable().optional(),
   deliveryAddress: z.string().trim().max(500).nullable().optional(),
   deliveryReference: z.string().trim().max(200).nullable().optional(),
   transferHolderName: z.string().trim().max(160).nullable().optional(),

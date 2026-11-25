@@ -3,18 +3,26 @@
 import { useEffect, useState } from "react";
 
 export function CategoryNav({ categories }: { categories: Array<{ id: string; name: string }> }) {
-  const [activeId, setActiveId] = useState(categories[0]?.id ?? "");
+  const [activeId, setActiveId] = useState("");
+  const categoryIds = JSON.stringify(categories.map(({ id }) => id));
 
   useEffect(() => {
-    const sections = categories.map((category) => document.getElementById(`category-${category.id}`)).filter((section): section is HTMLElement => Boolean(section));
-    if (sections.length === 0) return;
-    const observer = new IntersectionObserver((entries) => {
-      const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-      if (visible[0]) setActiveId(visible[0].target.id.replace("category-", ""));
-    }, { rootMargin: "-132px 0px -58% 0px", threshold: [0, .2, .6] });
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
-  }, [categories]);
+    const ids: string[] = JSON.parse(categoryIds);
+    const sections = ids.map((id) => document.getElementById(`category-${id}`)).filter((section): section is HTMLElement => Boolean(section));
+    if (!sections.length) return;
+    const sync = () => {
+      const nav = document.querySelector(".category-nav");
+      const offset = (nav?.getBoundingClientRect().bottom ?? 120) + 16;
+      const current = sections.findLast((section) => section.getBoundingClientRect().top <= offset) ?? sections[0];
+      setActiveId(current.id.slice("category-".length));
+    };
+    const frame = window.requestAnimationFrame(sync);
+    window.addEventListener("scroll", sync, { passive: true });
+    window.addEventListener("resize", sync);
+    return () => { window.cancelAnimationFrame(frame); window.removeEventListener("scroll", sync); window.removeEventListener("resize", sync); };
+  }, [categoryIds]);
 
-  return <nav className="category-nav" aria-label="Categorías del menú"><div className="category-nav__scroll">{categories.map((category) => <a className={`category-chip${activeId === category.id ? " category-chip--active" : ""}`} href={`#category-${category.id}`} aria-current={activeId === category.id ? "location" : undefined} onClick={() => setActiveId(category.id)} key={category.id}>{category.name}</a>)}</div></nav>;
+  if (!categories.length) return null;
+  const selected = categories.some(({ id }) => id === activeId) ? activeId : categories[0].id;
+  return <nav className="category-nav" aria-label="Categorías del menú"><div className="category-nav__scroll">{categories.map((category) => <a className={`category-chip${selected === category.id ? " category-chip--active" : ""}`} href={`#category-${category.id}`} aria-current={selected === category.id ? "location" : undefined} onClick={() => setActiveId(category.id)} key={category.id}>{category.name}</a>)}</div></nav>;
 }

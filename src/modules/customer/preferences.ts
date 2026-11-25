@@ -17,7 +17,7 @@ export async function listCustomerPreferences(customerId: string) {
   ]);
   return {
     addresses,
-    favorites: favorites.map((favorite: { product: { id: string; name: string; description: string | null; priceAmount: number; available: boolean; published: boolean; archivedAt: Date | null; imageKey: string | null; category: { name: string } } }) => { const product = favorite.product; return { id: product.id, name: product.name, description: product.description, priceAmount: product.priceAmount, available: product.available, published: product.published, archived: Boolean(product.archivedAt), imageKey: product.imageKey, category: product.category.name }; }),
+    favorites: favorites.map((favorite: { product: { id: string; name: string; description: string | null; priceAmount: number; available: boolean; published: boolean; archivedAt: Date | null; imageKey: string | null; imageAlt: string | null; category: { name: string } } }) => { const product = favorite.product; return { id: product.id, name: product.name, description: product.description, priceAmount: product.priceAmount, available: product.available, published: product.published, archived: Boolean(product.archivedAt), imageKey: product.imageKey, imageAlt: product.imageAlt, category: product.category.name }; }),
   };
 }
 

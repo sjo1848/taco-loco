@@ -2,7 +2,8 @@
 # Build the Vinext artifact first. This runner never connects Wrangler to remote D1.
 set -euo pipefail
 umask 077
-cd "$(dirname "$0")/.."
+qa_root=$(cd "$(dirname "$0")/.." && pwd)
+cd "${TACO_QA_APP_ROOT:-$qa_root}"
 state=$(mktemp -d)
 port=${TACO_QA_PORT:-8845}
 config=dist/server/wrangler.json
@@ -39,6 +40,20 @@ INSERT INTO "Order" (id,orderNumber,customerId,status,fulfillment,source,verific
 SELECT printf('bbbbbbbb-1111-4111-8111-%012d',i),i,'qa-customer','DELIVERED','PICKUP','PUBLIC_MENU','VERIFIED',1200,1200,'2001-01-01T00:00:00.000Z',CURRENT_TIMESTAMP FROM n;
 
 SQL
+if [[ -n "${TACO_QA_PROFILE_MODE:-}" ]]; then
+  relogin_hash=$(node -e 'console.log(require("node:crypto").createHash("sha256").update("d".repeat(64)).digest("hex"))')
+  cat >>"$state/fixtures.sql" <<SQL
+INSERT INTO Category (id,name,slug,active,sortOrder,createdAt,updatedAt) VALUES ('qa-side-cat','Bebidas QA','qa-drinks',1,1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
+UPDATE Product SET featured=1,imageKey='/products/taco-carne.jpg',description='Taco con salsa a elección' WHERE id='acacacac-acac-4aca-8aca-acacacacacac';
+INSERT INTO Product (id,categoryId,name,priceAmount,available,published,featured,sortOrder,createdAt,updatedAt) VALUES ('abababab-abab-4aba-8aba-abababababab','qa-side-cat','Limonada QA',600,1,1,0,0,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
+INSERT INTO CustomerSession (id,tokenHash,customerId,expiresAt,createdAt) VALUES ('qa-customer-next','$relogin_hash','qa-customer','2099-01-01T00:00:00Z',CURRENT_TIMESTAMP);
+INSERT INTO CustomerAddress (id,customerId,label,address,reference,createdAt,updatedAt) VALUES ('qa-home-a','qa-customer','Casa QA','Calle sintética 123','Puerta verde',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),('qa-home-b','qa-other','Dirección B','Calle sintética 456',NULL,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
+INSERT INTO CustomerFavorite (customerId,productId,createdAt) VALUES ('qa-customer','acacacac-acac-4aca-8aca-acacacacacac',CURRENT_TIMESTAMP),('qa-other','abababab-abab-4aba-8aba-abababababab',CURRENT_TIMESTAMP);
+SQL
+fi
+if [[ "${TACO_QA_PROFILE_MODE:-}" == "candidate" && "${TACO_QA_PROFILE_ONLY:-}" != "visual" ]]; then
+  timeout 90 node "$qa_root/scripts/qa-profile-worker-checks.mjs" | tee "$state/profile-worker.log"
+fi
 "$w" d1 execute DB "${args[@]}" --file "$state/fixtures.sql" >"$state/seed.log"
 setsid "$w" dev "${args[@]}" --ip 127.0.0.1 --port "$port" --inspector-port "${TACO_QA_INSPECTOR_PORT:-9285}" --show-interactive-dev-session false >"$state/worker.log" 2>&1 &
 worker=$!
@@ -48,7 +63,11 @@ for _ in {1..30}; do
   sleep 1
 done
 curl -fsS --max-time 5 "$TACO_QA_LOCAL_URL/api/health" >/dev/null
-timeout 150 node scripts/qa-customer-workflows.mjs | tee "$state/workflows.log"
+if [[ -n "${TACO_QA_PROFILE_MODE:-}" ]]; then
+  timeout 420 node "$qa_root/scripts/qa-customer-profile-v2.mjs" | tee "$state/profile.log"
+  exit
+fi
+timeout 180 node scripts/qa-customer-workflows.mjs | tee "$state/workflows.log"
 schedule=$(node -e 'const n = new Date(Date.now()+12*60*60*1000);const t = (x)=>x.toISOString().slice(11,16); console.log(JSON.stringify(Array.from({length:7},(_,day)=>({day,enabled:true,open:t(n),close:t(new Date(+n+60000))}))))')
 "$w" d1 execute DB "${args[@]}" --command "UPDATE MenuSettings SET weeklySchedule='$schedule';" >"$state/closed.log"
 timeout 60 node scripts/qa-customer-workflows.mjs --closed | tee -a "$state/workflows.log"
