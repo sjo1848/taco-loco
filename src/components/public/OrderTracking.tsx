@@ -7,13 +7,6 @@ import { finishTrackingHandoff, onCustomerSessionChange } from "@/modules/orders
 import { initialTrackingPollDelay, maxTrackingPollDelay, nextTrackingPollDelay } from "./tracking-polling";
 import { PublicShell } from "@/components/public/PublicShell";
 function formatPrice(amount: number) { return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(amount); }
-async function trackingSpotlightStorageKey(token: string) {
-  const bytes = new TextEncoder().encode(token);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  const fingerprint = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-  return `taco-loco:tracking-spotlight:v1:${fingerprint}`;
-}
-
 export function OrderTracking({ initial, privateOrderId, children }: { initial: PublicOrderTracking; privateOrderId?: string; children?: React.ReactNode }) {
   const [tracking, setTracking] = useState(initial);
   const [denied, setDenied] = useState(false);
@@ -21,9 +14,7 @@ export function OrderTracking({ initial, privateOrderId, children }: { initial: 
   const [error, setError] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState("");
   const [reportingPayment, setReportingPayment] = useState(false);
-  const [spotlightOpen, setSpotlightOpen] = useState(false);
   const [statusChanged, setStatusChanged] = useState(false);
-  const spotlightDismissRef = useRef<HTMLButtonElement>(null);
   const timer = useRef<number | undefined>(undefined);
   const delay = useRef(initialTrackingPollDelay);
   const visible = useRef(true);
@@ -32,34 +23,7 @@ export function OrderTracking({ initial, privateOrderId, children }: { initial: 
 
   useEffect(() => {
     if (!privateOrderId) finishTrackingHandoff(window.location.pathname);
-    const token = window.location.pathname.split("/").filter(Boolean).at(-1);
-    if (!token) return;
-    let cancelled = false;
-    const reveal = window.setTimeout(() => {
-      if (cancelled) return;
-      void trackingSpotlightStorageKey(token).then((storageKey) => {
-        if (cancelled) return;
-        try {
-          if (window.localStorage.getItem(storageKey) !== "seen") setSpotlightOpen(true);
-        } catch { setSpotlightOpen(true); }
-      }).catch(() => { if (!cancelled) setSpotlightOpen(true); });
-    }, 0);
-    return () => { cancelled = true; window.clearTimeout(reveal); };
   }, [privateOrderId]);
-
-  function dismissSpotlight() {
-    const token = window.location.pathname.split("/").filter(Boolean).at(-1);
-    if (token) {
-      void trackingSpotlightStorageKey(token).then((storageKey) => {
-        try { window.localStorage.setItem(storageKey, "seen"); } catch { /* privacy storage may be unavailable */ }
-      }).catch(() => undefined);
-    }
-    setSpotlightOpen(false);
-  }
-
-  useEffect(() => {
-    if (spotlightOpen) spotlightDismissRef.current?.focus();
-  }, [spotlightOpen]);
 
   async function reportPayment() {
     setReportingPayment(true); setPaymentMessage("");
@@ -131,8 +95,8 @@ export function OrderTracking({ initial, privateOrderId, children }: { initial: 
   if (checkingAccess) return <PublicShell><section className="public-panel"><h1>Seguimiento</h1><p role="status">{error ? "No pudimos verificar el acceso. Estamos reintentando…" : "Verificando acceso al pedido…"}</p></section></PublicShell>;
 
   return <PublicShell className="public-menu public-tracking" live="polite">
-    <section className={`brand-pattern brand-pattern--hero tracking-hero${spotlightOpen ? " tracking-hero--spotlight" : ""}`}><div className="public-menu__content"><Link className="tracking-back" href="/pedidos"><span aria-hidden="true">‹</span> Volver a Pedidos</Link><p className="eyebrow">Taco Loco · Seguimiento</p><h1>Pedido {tracking.orderCode}</h1>
-      <section className={`tracking-current tracking-current--active${spotlightOpen ? " tracking-current--spotlight" : ""}${statusChanged ? " tracking-current--changed" : ""}`} aria-labelledby="tracking-current-title" aria-describedby="tracking-current-message"><p className="eyebrow">Estado actual</p><h2 id="tracking-current-title">{tracking.title}</h2><p id="tracking-current-message">{tracking.message}</p>{spotlightOpen && <button ref={spotlightDismissRef} className="tracking-spotlight-dismiss" type="button" onClick={dismissSpotlight}>Entendido</button>}</section></div></section>
+    <section className="brand-pattern brand-pattern--hero tracking-hero"><div className="public-menu__content"><Link className="tracking-back" href="/pedidos"><span aria-hidden="true">‹</span> Volver a Pedidos</Link><p className="eyebrow">Taco Loco · Seguimiento</p><h1>Pedido {tracking.orderCode}</h1>
+      <section className={`tracking-current tracking-current--active${statusChanged ? " tracking-current--changed" : ""}`} aria-labelledby="tracking-current-title" aria-describedby="tracking-current-message"><p className="eyebrow">Estado actual</p><h2 id="tracking-current-title">{tracking.title}</h2><p id="tracking-current-message">{tracking.message}</p></section></div></section>
     <div className="public-menu__content">
       {error && <p role="status">Estamos intentando actualizar el estado…</p>}
       {tracking.fulfillment === "DELIVERY" && tracking.currentStage === "WAITING_PAYMENT_CONFIRMATION" && <section className="tracking-payment" aria-labelledby="tracking-payment-title"><h2 id="tracking-payment-title">¿Ya hiciste la transferencia?</h2><p>Informalo para que el local revise el ingreso. La confirmación final la realiza el operador.</p><button className="button" type="button" disabled={reportingPayment} onClick={() => void reportPayment()}>{reportingPayment ? "Informando…" : "Informé la transferencia"}</button>{paymentMessage && <p role="status">{paymentMessage}</p>}</section>}

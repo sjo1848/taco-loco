@@ -108,10 +108,10 @@ async function runBrowser(name, launcher) {
         for (const requiredGroup of await productSheet.locator(".modifier-group").all()) {
           if ((await requiredGroup.locator("legend").innerText()).includes("obligatorio")) await requiredGroup.locator(".modifier-option").first().click();
         }
-        await productSheet.getByRole("button", { name: /Agregar al pedido/ }).click();
+        await productSheet.getByRole("button", { name: /Agregar al carrito/ }).click();
         await productSheet.waitFor({ state: "hidden" });
         await page.getByRole("button", { name: /Abrir carrito/ }).click();
-        await page.getByRole("button", { name: "Continuar con tus datos" }).click();
+        await page.getByRole("button", { name: "Continuar" }).click();
         await page.getByLabel("Nombre para el pedido (opcional)").fill("QA Agent Synthetic");
         const checkoutShot = await screenshot(page, "chromium-checkout-pickup-390"); evidence.push(checkoutShot);
         record("chromium:checkout:pickup", "PASS", "Cart state, order name and pickup checkout rendered", evidence);
@@ -127,14 +127,14 @@ async function runBrowser(name, launcher) {
         await page.getByRole("button", { name: "Volver al carrito" }).click();
         await page.getByRole("button", { name: "Seguir viendo el menú" }).click();
         await page.getByRole("button", { name: /Abrir carrito/ }).click();
-        await page.getByRole("button", { name: "Continuar con tus datos" }).click();
+        await page.getByRole("button", { name: "Continuar" }).click();
         let popup;
         page.on("popup", (child) => { popup = child; });
         await page.getByText("Enviar pedido", { exact:true }).click();
         const successNotice = page.getByText(/Pedido preparado/);
         await successNotice.waitFor({ state: "visible", timeout: 15_000 });
         const successText = await successNotice.count();
-        const trackingLink = page.getByRole("link", { name: "Ver estado de mi pedido" });
+        const trackingLink = page.getByRole("link", { name: "Ver seguimiento" });
         await trackingLink.waitFor({ state: "visible", timeout: 5_000 });
         if (!successText || !(await trackingLink.count())) throw new Error("ORDER_SUCCESS_OR_TRACKING_MISSING");
         record("chromium:checkout:synthetic-order", "PASS", "Synthetic order created; success, tracking and WhatsApp fallback surfaced", [await screenshot(page, "chromium-success-390")]);

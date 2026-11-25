@@ -198,6 +198,10 @@ export function CustomerOrders() {
       {page && page.orders.length === 0 && <p className="selection-help">{empty}</p>}
       {page && <div className="customer-orders">{page.orders.map((order) => <article className={`customer-order-card customer-order-card--${bucket}`} key={order.orderCode}>
         <header><div><h3>{order.orderCode}</h3><p className="selection-help"><time dateTime={order.createdAt}>{formatDate(order.createdAt)}</time> · {order.fulfillment === "DELIVERY" ? "Delivery" : "Retiro"}</p></div><span className="order-status">{order.title}</span></header>
+        {bucket === "active" && <>
+          <div>{order.lines.slice(0, 2).map((line, index) => <div key={`${line.name}-${index}`}>{line.quantity} × {line.name}</div>)}{order.lines.length > 2 && <div>+ {order.lines.length - 2} productos</div>}</div>
+          <strong>{formatPrice(order.totalAmount)}</strong>
+        </>}
         {bucket === "history" && <><div>{order.lines.map((line, index) => <div key={`${line.name}-${index}`}>{line.quantity} × {line.name}{line.modifiers.length > 0 && <small> · {line.modifiers.map((modifier) => `${modifier.group}: ${modifier.option}`).join(", ")}</small>}</div>)}</div><strong>{formatPrice(order.totalAmount)}</strong></>}
         <div className="customer-order-actions">
           {order.path && <Link prefetch={false} className={bucket === "active" ? "button" : "button button--secondary"} href={order.path}>{bucket === "active" ? "Ver seguimiento" : "Ver detalle"}<span className="sr-only"> de {order.orderCode}</span></Link>}
@@ -216,9 +220,10 @@ export function CustomerOrders() {
       {renderBucket("active", "En curso", "No tenés pedidos en curso.")}
       {renderBucket("history", "Historial", "Todavía no hay pedidos finalizados.")}
       {lists.guestIncomplete && <p role="status">Algunos estados no se pudieron consultar. <button className="button button--secondary" type="button" onClick={() => void load()}>Reintentar</button></p>}
-      {lists.guest && <p className="selection-help">Como invitado, acá ves los pedidos recientes de esta pestaña. Si tenés un enlace privado, podés abrirlo directamente. <Link href="/cuenta">Ingresá a Taco Club</Link> para ver los pedidos de tu cuenta.</p>}
+      {lists.guest && <p className="selection-help">Como invitado, ves los pedidos recientes de esta pestaña. Podés abrir un enlace privado de seguimiento. <Link href="/cuenta">Ingresá a Taco Club</Link> para ver los pedidos de tu cuenta.</p>}
+      {!lists.guestIncomplete && lists.active.orders.length === 0 && lists.history.orders.length === 0 && <p><Link className="button button--secondary" href="/menu">Ver menú</Link></p>}
     </>}
-    {!loading && proposalVisible && <section className="public-panel" aria-labelledby="repeat-proposal-title"><h2 id="repeat-proposal-title">Revisá tu pedido repetido</h2><p className="selection-help">Estos son los precios, disponibilidad y modificadores actuales. La orden todavía no fue creada.</p>{proposal.lines.map((line) => <p key={`${line.productId}-${line.name}`}><strong>{line.quantity} × {line.name}</strong> · {formatPrice(line.priceAmount)}{line.modifiers.length > 0 && ` · ${line.modifiers.map((modifier) => `${modifier.group}: ${modifier.option}`).join(", ")}`}</p>)}<strong>Subtotal actual: {formatPrice(proposal.subtotalAmount)}</strong><div className="selection-actions"><button className="button" type="button" onClick={openRepeatDraft}>Continuar al checkout</button><button className="button button--secondary" type="button" onClick={() => setProposal(null)}>Cancelar</button></div></section>}
+    {!loading && proposalVisible && <section className="public-panel" aria-labelledby="repeat-proposal-title"><h2 id="repeat-proposal-title">Revisá tu pedido repetido</h2><p className="selection-help">Estos son los precios, disponibilidad y modificadores actuales. La orden todavía no fue creada.</p>{proposal.lines.map((line) => <p key={`${line.productId}-${line.name}`}><strong>{line.quantity} × {line.name}</strong> · {formatPrice(line.priceAmount)}{line.modifiers.length > 0 && ` · ${line.modifiers.map((modifier) => `${modifier.group}: ${modifier.option}`).join(", ")}`}</p>)}<strong>Subtotal actual: {formatPrice(proposal.subtotalAmount)}</strong><div className="selection-actions"><button className="button" type="button" onClick={openRepeatDraft}>Ir al carrito</button><button className="button button--secondary" type="button" onClick={() => setProposal(null)}>Cancelar</button></div></section>}
     {repeatMessage && lists && !lists.guest && <p className="selection-help" role="status">{repeatMessage}</p>}
   </section>;
 }

@@ -54,15 +54,15 @@ export function PublicNavigation({ cartCount, onCartClick, cartOpen = false }: {
       <nav className="public-navigation__links" aria-label="Secciones principales">
         <Link href="/menu" aria-current={menuActive ? "page" : undefined}>Menú</Link>
         <Link href="/pedidos" prefetch={false} aria-current={ordersActive ? "page" : undefined}>Pedidos</Link>
-        <Link href="/cuenta" aria-current={accountActive ? "page" : undefined}>Cuenta</Link>
         {cartControl(true)}
+        <Link href="/cuenta" aria-current={accountActive ? "page" : undefined}>Perfil</Link>
       </nav>
     </header>
     <nav className="public-bottom-nav" aria-label="Navegación de la app">
       {tab("Menú", "⌂", "/menu", menuActive)}
       {tab("Pedidos", "▣", "/pedidos", ordersActive)}
       {cartControl()}
-      {tab("Cuenta", "◎", "/cuenta", accountActive)}
+      {tab("Perfil", "◎", "/cuenta", accountActive)}
     </nav>
   </>;
 }

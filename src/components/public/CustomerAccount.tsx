@@ -105,10 +105,10 @@ export function CustomerAccount() {
 
   return <PublicShell className={`public-shell ${styles.page}`}>
     {state === "loading" && <section className={styles.panel} aria-busy="true"><p role="status">Verificando tu sesión…</p></section>}
-    {state === "error" && <section className={styles.panel}><h1>Mi cuenta</h1><p className={styles.error} role="alert">No pudimos verificar tu sesión.</p><button className="button button--secondary" type="button" onClick={() => void loadSession()}>Reintentar</button></section>}
+    {state === "error" && <section className={styles.panel}><h1>Mi perfil</h1><p className={styles.error} role="alert">No pudimos verificar tu sesión.</p><button className="button button--secondary" type="button" onClick={() => void loadSession()}>Reintentar</button></section>}
     {state === "visitor" || state === "authenticating" ? <section className={styles.panel} aria-labelledby="account-title">
-      <p className="eyebrow">Taco Club</p><h1 id="account-title">Mi cuenta</h1>
-      <p className={styles.muted}>Al iniciar sesión podés guardar tus pedidos vinculados, direcciones y favoritos.</p>
+      <p className="eyebrow">Taco Club</p><h1 id="account-title">Mi perfil</h1>
+      <p className={styles.muted}>Iniciá sesión para guardar tus pedidos vinculados, direcciones y favoritos.</p>
       <GoogleSignInButton onStatusChange={handleAuthStatus} onAuthenticated={handleAuthenticated} />
       {state === "authenticating" && <p role="status" aria-live="polite">Validando tu cuenta…</p>}
       {message && <p role="status">{message}</p>}
@@ -118,19 +118,17 @@ export function CustomerAccount() {
     {state === "authenticated" && customer && (isProfileRoute ? <CustomerPreferences key={customer.id} customer={customer} onCustomerUpdated={handleCustomerUpdated} section={pathname as ProfileRoute} /> : <>
       <section className={`${styles.panel} ${styles.identity}`} aria-labelledby="account-title">
         {customer.avatarUrl && failedAvatarUrl !== customer.avatarUrl ? <img className={styles.avatar} src={customer.avatarUrl} alt="" referrerPolicy="no-referrer" onError={() => setFailedAvatarUrl(customer.avatarUrl)} /> : <span className={styles.avatarFallback} aria-hidden="true">{initials(customer.displayName)}</span>}
-        <div className={styles.identityText}><p className="eyebrow">Taco Club</p><h1 id="account-title">{customer.displayName?.trim() || "Mi cuenta"}</h1><p className={styles.muted}>{customer.email}</p></div>
+        <div className={styles.identityText}><p className="eyebrow">Taco Club</p><h1 id="account-title">{customer.displayName?.trim() || "Mi perfil"}</h1><p className={styles.muted}>{customer.email}</p><Link className={styles.editProfile} href="/cuenta/datos">Editar perfil</Link></div>
       </section>
       <nav className={styles.panel} aria-label="Secciones de mi cuenta">
-        <AccountRow href="/cuenta/datos" title="Mis datos" detail="Nombre y datos de acceso" />
-        <AccountRow href="/cuenta/direcciones" title="Mis direcciones" detail="Administrá tus direcciones guardadas" />
-        <AccountRow href="/cuenta/favoritos" title="Mis favoritos" detail="Productos que guardaste" />
-        <AccountRow id="customer-orders" href="/pedidos" title="Mis pedidos" detail="Consultá tus pedidos" />
+        <AccountRow href="/cuenta/direcciones" title="Direcciones" />
+        <AccountRow href="/cuenta/favoritos" title="Favoritos" />
       </nav>
       <section className={styles.panel}><button className="button button--secondary" type="button" onClick={() => void logout()}>Cerrar sesión</button>{message && <p role="status">{message}</p>}</section>
     </>)}
   </PublicShell>;
 }
 
-function AccountRow({ href, title, detail, id }: { href: string; title: string; detail: string; id?: string }) {
-  return <Link className={styles.row} href={href} id={id}><span><strong>{title}</strong><small>{detail}</small></span><span className={styles.chevron} aria-hidden="true">›</span></Link>;
+function AccountRow({ href, title }: { href: string; title: string }) {
+  return <Link className={styles.row} href={href}><span><strong>{title}</strong></span><span className={styles.chevron} aria-hidden="true">›</span></Link>;
 }
